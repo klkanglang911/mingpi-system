@@ -12,7 +12,19 @@
 
 ## 快速开始
 
-### 方式一：Docker 部署（推荐）
+### 方式一：一键部署（推荐）
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/klkanglang911/mingpi-system/main/deploy.sh | bash
+```
+
+或指定部署目录：
+
+```bash
+DEPLOY_DIR=/your/path curl -fsSL https://raw.githubusercontent.com/klkanglang911/mingpi-system/main/deploy.sh | bash
+```
+
+### 方式二：Docker 手动部署
 
 1. 克隆仓库
 
@@ -46,7 +58,7 @@ docker-compose up -d
 
 默认管理员账号: `admin` / `admin123`（首次登录需修改密码）
 
-### 方式二：本地开发
+### 方式三：本地开发
 
 1. 安装依赖
 
