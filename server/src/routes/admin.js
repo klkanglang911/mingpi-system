@@ -1047,6 +1047,86 @@ router.get('/stats/logs', (req, res) => {
 });
 
 /**
+ * GET /api/admin/stats/devices
+ * 获取访问设备统计
+ */
+router.get('/stats/devices', (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 30;
+        const validDays = Math.min(Math.max(days, 7), 90);
+
+        // 按设备类型统计
+        const deviceTypeStats = query(`
+            SELECT
+                COALESCE(device_type, '未知') as device_type,
+                COUNT(*) as count
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+            GROUP BY device_type
+            ORDER BY count DESC
+        `);
+
+        // 按操作系统统计
+        const osStats = query(`
+            SELECT
+                COALESCE(os, '未知') as os,
+                COUNT(*) as count
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+            GROUP BY os
+            ORDER BY count DESC
+            LIMIT 10
+        `);
+
+        // 按浏览器统计
+        const browserStats = query(`
+            SELECT
+                COALESCE(browser, '未知') as browser,
+                COUNT(*) as count
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+            GROUP BY browser
+            ORDER BY count DESC
+            LIMIT 10
+        `);
+
+        // 统计总访问量
+        const totalVisits = queryOne(`
+            SELECT COUNT(*) as count FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+        `);
+
+        const total = totalVisits?.count || 1;
+
+        res.json({
+            success: true,
+            data: {
+                days: validDays,
+                totalVisits: total,
+                deviceTypeStats: deviceTypeStats.map(d => ({
+                    deviceType: d.device_type,
+                    count: d.count,
+                    percentage: Math.round((d.count / total) * 100)
+                })),
+                osStats: osStats.map(o => ({
+                    os: o.os,
+                    count: o.count,
+                    percentage: Math.round((o.count / total) * 100)
+                })),
+                browserStats: browserStats.map(b => ({
+                    browser: b.browser,
+                    count: b.count,
+                    percentage: Math.round((b.count / total) * 100)
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('获取设备统计错误:', error);
+        res.status(500).json({ error: '获取统计数据失败' });
+    }
+});
+
+/**
  * GET /api/admin/stats/locations
  * 获取访问地理位置统计
  */

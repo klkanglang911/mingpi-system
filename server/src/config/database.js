@@ -95,6 +95,9 @@ function createTables() {
             page VARCHAR(100),
             ip_address VARCHAR(50),
             location VARCHAR(100),
+            device_type VARCHAR(20),
+            os VARCHAR(50),
+            browser VARCHAR(50),
             user_agent VARCHAR(500),
             extra_data TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -108,11 +111,23 @@ function createTables() {
         // 字段已存在，忽略错误
     }
 
+    // 为已存在的表添加设备相关字段（兼容旧数据）
+    try {
+        db.run(`ALTER TABLE access_logs ADD COLUMN device_type VARCHAR(20)`);
+    } catch (e) {}
+    try {
+        db.run(`ALTER TABLE access_logs ADD COLUMN os VARCHAR(50)`);
+    } catch (e) {}
+    try {
+        db.run(`ALTER TABLE access_logs ADD COLUMN browser VARCHAR(50)`);
+    } catch (e) {}
+
     // 访问日志索引
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_created_at ON access_logs(created_at)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_user_id ON access_logs(user_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_action ON access_logs(action)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_location ON access_logs(location)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_device ON access_logs(device_type)`);
 
     console.log('数据表初始化完成');
 }

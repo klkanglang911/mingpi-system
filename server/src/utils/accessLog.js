@@ -1,6 +1,6 @@
 /**
  * 访问日志工具
- * 记录用户访问和操作日志，包含IP地理位置
+ * 记录用户访问和操作日志，包含IP地理位置和设备信息
  */
 
 const { run } = require('../config/database');
@@ -34,6 +34,92 @@ const ActionTypes = {
 const locationCache = new Map();
 const CACHE_MAX_SIZE = 1000;
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24小时
+
+/**
+ * 解析 User-Agent 获取设备信息
+ * @param {string} ua - User-Agent 字符串
+ * @returns {Object} 设备信息 { deviceType, os, browser }
+ */
+function parseUserAgent(ua) {
+    if (!ua) {
+        return { deviceType: '未知', os: '未知', browser: '未知' };
+    }
+
+    const uaLower = ua.toLowerCase();
+
+    // 设备类型检测
+    let deviceType = '桌面';
+    if (/mobile|android.*mobile|iphone|ipod|blackberry|iemobile|opera mini|opera mobi/i.test(ua)) {
+        deviceType = '手机';
+    } else if (/tablet|ipad|android(?!.*mobile)|kindle|silk/i.test(ua)) {
+        deviceType = '平板';
+    } else if (/bot|spider|crawl|scrape/i.test(ua)) {
+        deviceType = '爬虫';
+    }
+
+    // 操作系统检测
+    let os = '未知';
+    if (/windows nt 10/i.test(ua)) {
+        os = 'Windows 10/11';
+    } else if (/windows nt 6\.3/i.test(ua)) {
+        os = 'Windows 8.1';
+    } else if (/windows nt 6\.2/i.test(ua)) {
+        os = 'Windows 8';
+    } else if (/windows nt 6\.1/i.test(ua)) {
+        os = 'Windows 7';
+    } else if (/windows/i.test(ua)) {
+        os = 'Windows';
+    } else if (/mac os x/i.test(ua)) {
+        if (/iphone|ipad|ipod/i.test(ua)) {
+            const match = ua.match(/os (\d+)[_\.]/i);
+            os = match ? `iOS ${match[1]}` : 'iOS';
+        } else {
+            const match = ua.match(/mac os x (\d+)[_\.](\d+)/i);
+            os = match ? `macOS ${match[1]}.${match[2]}` : 'macOS';
+        }
+    } else if (/android/i.test(ua)) {
+        const match = ua.match(/android (\d+(\.\d+)?)/i);
+        os = match ? `Android ${match[1]}` : 'Android';
+    } else if (/linux/i.test(ua)) {
+        os = 'Linux';
+    } else if (/ubuntu/i.test(ua)) {
+        os = 'Ubuntu';
+    } else if (/chrome os/i.test(ua)) {
+        os = 'Chrome OS';
+    }
+
+    // 浏览器检测（顺序很重要，需要先检测特殊浏览器）
+    let browser = '未知';
+    if (/edg\//i.test(ua)) {
+        const match = ua.match(/edg\/(\d+)/i);
+        browser = match ? `Edge ${match[1]}` : 'Edge';
+    } else if (/opr\/|opera/i.test(ua)) {
+        const match = ua.match(/(?:opr|opera)\/(\d+)/i);
+        browser = match ? `Opera ${match[1]}` : 'Opera';
+    } else if (/firefox/i.test(ua)) {
+        const match = ua.match(/firefox\/(\d+)/i);
+        browser = match ? `Firefox ${match[1]}` : 'Firefox';
+    } else if (/chrome/i.test(ua) && !/chromium/i.test(ua)) {
+        const match = ua.match(/chrome\/(\d+)/i);
+        browser = match ? `Chrome ${match[1]}` : 'Chrome';
+    } else if (/safari/i.test(ua) && !/chrome/i.test(ua)) {
+        const match = ua.match(/version\/(\d+)/i);
+        browser = match ? `Safari ${match[1]}` : 'Safari';
+    } else if (/msie|trident/i.test(ua)) {
+        const match = ua.match(/(?:msie |rv:)(\d+)/i);
+        browser = match ? `IE ${match[1]}` : 'IE';
+    } else if (/micromessenger/i.test(ua)) {
+        browser = '微信';
+    } else if (/qq\//i.test(ua)) {
+        browser = 'QQ';
+    } else if (/weibo/i.test(ua)) {
+        browser = '微博';
+    } else if (/alipayclient/i.test(ua)) {
+        browser = '支付宝';
+    }
+
+    return { deviceType, os, browser };
+}
 
 /**
  * 获取IP的地理位置
@@ -98,27 +184,23 @@ async function getIpLocation(ip) {
 /**
  * 记录访问日志
  * @param {Object} options - 日志选项
- * @param {number|null} options.userId - 用户ID
- * @param {string} options.action - 操作类型
- * @param {string} [options.page] - 页面路径
- * @param {string} [options.ipAddress] - IP地址
- * @param {string} [options.location] - 地理位置
- * @param {string} [options.userAgent] - 浏览器信息
- * @param {Object} [options.extraData] - 额外数据
  */
 function logAccess(options) {
-    const { userId, action, page, ipAddress, location, userAgent, extraData } = options;
+    const { userId, action, page, ipAddress, location, deviceType, os, browser, userAgent, extraData } = options;
 
     try {
         run(
-            `INSERT INTO access_logs (user_id, action, page, ip_address, location, user_agent, extra_data, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"))`,
+            `INSERT INTO access_logs (user_id, action, page, ip_address, location, device_type, os, browser, user_agent, extra_data, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"))`,
             [
                 userId || null,
                 action,
                 page || null,
                 ipAddress || null,
                 location || null,
+                deviceType || null,
+                os || null,
+                browser || null,
                 userAgent ? userAgent.substring(0, 500) : null,
                 extraData ? JSON.stringify(extraData) : null
             ]
@@ -145,6 +227,9 @@ async function logFromRequest(req, action, extraData = null) {
         ipAddress = ipAddress.split(',')[0].trim();
     }
 
+    // 解析设备信息
+    const { deviceType, os, browser } = parseUserAgent(userAgent);
+
     // 异步获取地理位置，不阻塞主流程
     getIpLocation(ipAddress).then(location => {
         logAccess({
@@ -153,6 +238,9 @@ async function logFromRequest(req, action, extraData = null) {
             page,
             ipAddress,
             location,
+            deviceType,
+            os,
+            browser,
             userAgent,
             extraData
         });
@@ -165,6 +253,9 @@ async function logFromRequest(req, action, extraData = null) {
             page,
             ipAddress,
             location: '未知',
+            deviceType,
+            os,
+            browser,
             userAgent,
             extraData
         });
@@ -175,5 +266,6 @@ module.exports = {
     ActionTypes,
     logAccess,
     logFromRequest,
-    getIpLocation
+    getIpLocation,
+    parseUserAgent
 };
