@@ -398,6 +398,30 @@
         </div>
     </div>
 
+    <!-- 删除确认 Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>确认删除用户</h3>
+                <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
+            </div>
+            <div class="alert alert-error" style="margin-bottom: 1rem;">
+                ⚠️ 此操作不可恢复！删除用户将同时删除该用户的所有命批数据。
+            </div>
+            <p style="margin-bottom: 1rem;">您即将删除用户：<strong id="deleteUserName" style="color: var(--danger);"></strong></p>
+            <div class="form-group">
+                <label>请输入该用户的显示名称以确认删除：</label>
+                <input type="text" id="deleteConfirmInput" placeholder="输入显示名称确认...">
+            </div>
+            <input type="hidden" id="deleteUserId">
+            <input type="hidden" id="deleteUserDisplayName">
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('deleteModal')">取消</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -471,14 +495,16 @@
 
                     // 操作按钮
                     let actions = [];
+                    const escapedDisplayName = u.displayName.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                    const escapedUsername = u.username.replace(/'/g, "\\'").replace(/"/g, '\\"');
 
                     // 命批按钮（非管理员）
                     if (!u.isAdmin) {
-                        actions.push(`<button class="btn btn-sm btn-info" onclick="goToMingpi(${u.id}, '${u.displayName}')">命批</button>`);
+                        actions.push(`<button class="btn btn-sm btn-info" onclick="goToMingpi(${u.id}, '${escapedDisplayName}')">命批</button>`);
                     }
 
                     // 编辑按钮
-                    actions.push(`<button class="btn btn-sm btn-primary" onclick="showEditModal(${u.id}, '${u.username}', '${u.displayName}')">编辑</button>`);
+                    actions.push(`<button class="btn btn-sm btn-primary" onclick="showEditModal(${u.id}, '${escapedUsername}', '${escapedDisplayName}')">编辑</button>`);
 
                     // 锁定/解锁按钮（非管理员且不是自己）
                     if (!u.isAdmin && u.id !== user.id) {
@@ -491,7 +517,7 @@
 
                     // 删除按钮（不能删除自己）
                     if (u.id !== user.id) {
-                        actions.push(`<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.displayName}')">删除</button>`);
+                        actions.push(`<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id}, '${escapedDisplayName}')">删除</button>`);
                     }
 
                     return `
@@ -649,8 +675,26 @@
             }
         }
 
-        async function deleteUser(userId, name) {
-            if (!confirm(`确定要删除用户 "${name}" 吗？此操作不可恢复！`)) return;
+        // 显示删除确认模态框
+        function deleteUser(userId, displayName) {
+            document.getElementById('deleteUserId').value = userId;
+            document.getElementById('deleteUserDisplayName').value = displayName;
+            document.getElementById('deleteUserName').textContent = displayName;
+            document.getElementById('deleteConfirmInput').value = '';
+            document.getElementById('deleteModal').classList.add('show');
+        }
+
+        // 确认删除
+        async function confirmDelete() {
+            const userId = document.getElementById('deleteUserId').value;
+            const displayName = document.getElementById('deleteUserDisplayName').value;
+            const inputValue = document.getElementById('deleteConfirmInput').value.trim();
+
+            // 验证输入的显示名称是否匹配
+            if (inputValue !== displayName) {
+                showAlert('输入的显示名称不匹配，请重新输入', 'error');
+                return;
+            }
 
             try {
                 const response = await fetch(`/api/admin/users/${userId}`, {
@@ -659,6 +703,7 @@
                 });
 
                 if (response.ok) {
+                    closeModal('deleteModal');
                     showAlert('用户已删除');
                     loadUsers(document.getElementById('searchInput').value);
                 } else {
