@@ -376,10 +376,166 @@
             html { font-size: 14px; }
             .container { padding: 1rem; }
         }
+
+        /* ========== 加载页面样式 ========== */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--paper-white);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loading-screen::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 10%, rgba(200, 195, 185, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(180, 175, 165, 0.3) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .loading-screen.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loading-brand {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .loading-seal {
+            width: 80px;
+            height: 80px;
+            border: 3px solid var(--vermilion);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            animation: seal-pulse 2s ease-in-out infinite;
+        }
+
+        .loading-seal-text {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2.5rem;
+            color: var(--vermilion);
+        }
+
+        .loading-title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2rem;
+            color: var(--ink-black);
+            letter-spacing: 0.3em;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading-subtitle {
+            font-size: 0.85rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.2em;
+        }
+
+        .loading-progress {
+            width: 200px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: rgba(26, 26, 26, 0.1);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--vermilion), var(--gold-accent));
+            border-radius: 2px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.1em;
+        }
+
+        /* 印章呼吸动画 */
+        @keyframes seal-pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(194, 58, 43, 0.2);
+            }
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 20px 5px rgba(194, 58, 43, 0.1);
+            }
+        }
+
+        /* 进度条流光动画 */
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* 主内容区默认隐藏 */
+        .container {
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .container.show {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <!-- 加载页面 -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-brand">
+            <div class="loading-seal">
+                <span class="loading-seal-text">灵庐</span>
+            </div>
+            <h1 class="loading-title">灵庐书院</h1>
+            <p class="loading-subtitle">年批月令</p>
+        </div>
+        <div class="loading-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">正在加载...</p>
+        </div>
+    </div>
+
+    <div class="container" id="mainContainer">
         <button class="logout-btn" id="logoutBtn">退出</button>
 
         <header class="header">
@@ -442,6 +598,47 @@
     </div>
 
     <script>
+        // ========== 加载页面控制 ==========
+        const loadingScreen = document.getElementById('loadingScreen');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const mainContainer = document.getElementById('mainContainer');
+        let progress = 0;
+
+        // 模拟进度增长
+        function updateProgress(value, text) {
+            progress = Math.min(value, 100);
+            progressFill.style.width = progress + '%';
+            if (text) progressText.textContent = text;
+        }
+
+        // 隐藏加载页面并显示主内容
+        function hideLoadingScreen() {
+            updateProgress(100, '加载完成');
+            setTimeout(() => {
+                loadingScreen.classList.add('fade-out');
+                mainContainer.classList.add('show');
+                // 完全隐藏后移除元素
+                setTimeout(() => {
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }, 200);
+        }
+
+        // 初始进度动画
+        updateProgress(10, '正在加载...');
+        setTimeout(() => updateProgress(30, '加载字体资源...'), 100);
+
+        // 监听字体加载
+        if (document.fonts) {
+            document.fonts.ready.then(() => {
+                updateProgress(70, '字体加载完成...');
+                setTimeout(() => {
+                    updateProgress(90, '准备就绪...');
+                }, 100);
+            });
+        }
+
         // ========== 认证检查 ==========
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -817,6 +1014,9 @@
         }
 
         init();
+
+        // 初始化完成后隐藏加载页面
+        hideLoadingScreen();
     </script>
 </body>
 </html>
