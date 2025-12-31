@@ -7,7 +7,8 @@ node_modules/
 .env.*.local
 
 # Database
-data/*.db
+*.db
+server/data/
 
 # Logs
 *.log
