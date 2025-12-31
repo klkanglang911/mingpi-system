@@ -12,15 +12,26 @@ const { generatePassword, hashPassword } = require('../utils/password');
 
 /**
  * GET /api/admin/users
- * 获取用户列表
+ * 获取用户列表（支持搜索）
  */
 router.get('/users', (req, res) => {
     try {
-        const users = query(`
-            SELECT id, username, display_name, is_admin, must_change_password, created_at, last_login_at
+        const { search } = req.query;
+        let sql = `
+            SELECT id, username, display_name, is_admin, is_locked, must_change_password, created_at, last_login_at
             FROM users
-            ORDER BY created_at DESC
-        `);
+        `;
+        const params = [];
+
+        if (search && search.trim()) {
+            sql += ` WHERE username LIKE ? OR display_name LIKE ?`;
+            const searchPattern = `%${search.trim()}%`;
+            params.push(searchPattern, searchPattern);
+        }
+
+        sql += ` ORDER BY created_at DESC`;
+
+        const users = query(sql, params);
 
         res.json({
             success: true,
@@ -29,6 +40,7 @@ router.get('/users', (req, res) => {
                 username: u.username,
                 displayName: u.display_name,
                 isAdmin: u.is_admin === 1,
+                isLocked: u.is_locked === 1,
                 mustChangePassword: u.must_change_password === 1,
                 createdAt: u.created_at,
                 lastLoginAt: u.last_login_at
@@ -62,9 +74,10 @@ router.post('/users', async (req, res) => {
         const password = generatePassword(8);
         const passwordHash = await hashPassword(password);
 
-        // 创建用户
+        // 创建用户（使用北京时间）
         const result = run(
-            'INSERT INTO users (username, password_hash, display_name, is_admin, must_change_password) VALUES (?, ?, ?, 0, 1)',
+            `INSERT INTO users (username, password_hash, display_name, is_admin, must_change_password, created_at)
+             VALUES (?, ?, ?, 0, 1, datetime("now", "+8 hours"))`,
             [username, passwordHash, displayName]
         );
 
@@ -85,30 +98,72 @@ router.post('/users', async (req, res) => {
 
 /**
  * PUT /api/admin/users/:id
- * 编辑用户
+ * 编辑用户（用户名、显示名称）
  */
 router.put('/users/:id', (req, res) => {
     try {
         const userId = parseInt(req.params.id);
-        const { displayName } = req.body;
+        const { username, displayName } = req.body;
 
         if (!displayName) {
             return res.status(400).json({ error: '显示名称不能为空' });
         }
 
         // 检查用户是否存在
-        const user = queryOne('SELECT id FROM users WHERE id = ?', [userId]);
+        const user = queryOne('SELECT id, username FROM users WHERE id = ?', [userId]);
         if (!user) {
             return res.status(404).json({ error: '用户不存在' });
         }
 
-        // 更新用户
-        run('UPDATE users SET display_name = ? WHERE id = ?', [displayName, userId]);
+        // 如果修改了用户名，检查是否重复
+        if (username && username !== user.username) {
+            const existing = queryOne('SELECT id FROM users WHERE username = ? AND id != ?', [username, userId]);
+            if (existing) {
+                return res.status(400).json({ error: '用户名已被使用' });
+            }
+            run('UPDATE users SET username = ?, display_name = ? WHERE id = ?', [username, displayName, userId]);
+        } else {
+            run('UPDATE users SET display_name = ? WHERE id = ?', [displayName, userId]);
+        }
 
         res.json({ success: true });
     } catch (error) {
         console.error('编辑用户错误:', error);
         res.status(500).json({ error: '编辑用户失败' });
+    }
+});
+
+/**
+ * POST /api/admin/users/:id/lock
+ * 锁定/解锁用户
+ */
+router.post('/users/:id/lock', (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+        const { locked } = req.body;
+
+        // 不能锁定自己
+        if (userId === req.user.id) {
+            return res.status(400).json({ error: '不能锁定自己的账户' });
+        }
+
+        // 检查用户是否存在
+        const user = queryOne('SELECT id, is_admin FROM users WHERE id = ?', [userId]);
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        // 不能锁定管理员
+        if (user.is_admin === 1) {
+            return res.status(400).json({ error: '不能锁定管理员账户' });
+        }
+
+        run('UPDATE users SET is_locked = ? WHERE id = ?', [locked ? 1 : 0, userId]);
+
+        res.json({ success: true, locked: !!locked });
+    } catch (error) {
+        console.error('锁定用户错误:', error);
+        res.status(500).json({ error: '操作失败' });
     }
 });
 
@@ -291,14 +346,15 @@ router.post('/mingpi', (req, res) => {
         if (existing) {
             // 更新
             run(
-                'UPDATE mingpi SET content = ?, updated_at = datetime("now") WHERE id = ?',
+                'UPDATE mingpi SET content = ?, updated_at = datetime("now", "+8 hours") WHERE id = ?',
                 [content, existing.id]
             );
             res.json({ success: true, action: 'updated', id: existing.id });
         } else {
             // 创建
             const result = run(
-                'INSERT INTO mingpi (user_id, lunar_year, lunar_month, content) VALUES (?, ?, ?, ?)',
+                `INSERT INTO mingpi (user_id, lunar_year, lunar_month, content, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
                 [userId, lunarYear, lunarMonth, content]
             );
             res.json({ success: true, action: 'created', id: result.lastInsertRowid });
@@ -375,13 +431,14 @@ router.post('/mingpi/batch', (req, res) => {
 
                 if (existing) {
                     run(
-                        'UPDATE mingpi SET content = ?, updated_at = datetime("now") WHERE id = ?',
+                        'UPDATE mingpi SET content = ?, updated_at = datetime("now", "+8 hours") WHERE id = ?',
                         [content.trim(), existing.id]
                     );
                     results.updated++;
                 } else {
                     run(
-                        'INSERT INTO mingpi (user_id, lunar_year, lunar_month, content) VALUES (?, ?, ?, ?)',
+                        `INSERT INTO mingpi (user_id, lunar_year, lunar_month, content, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
                         [userId, lunarYear, month, content.trim()]
                     );
                     results.created++;
@@ -425,13 +482,14 @@ router.post('/mingpi/batch', (req, res) => {
 
                 if (existing) {
                     run(
-                        'UPDATE mingpi SET content = ?, updated_at = datetime("now") WHERE id = ?',
+                        'UPDATE mingpi SET content = ?, updated_at = datetime("now", "+8 hours") WHERE id = ?',
                         [content.trim(), existing.id]
                     );
                     results.updated++;
                 } else {
                     run(
-                        'INSERT INTO mingpi (user_id, lunar_year, lunar_month, content) VALUES (?, ?, ?, ?)',
+                        `INSERT INTO mingpi (user_id, lunar_year, lunar_month, content, created_at, updated_at)
+                         VALUES (?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
                         [uid, year, month, content.trim()]
                     );
                     results.created++;

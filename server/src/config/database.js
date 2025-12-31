@@ -54,11 +54,19 @@ function createTables() {
             password_hash VARCHAR(255) NOT NULL,
             display_name VARCHAR(100) NOT NULL,
             is_admin INTEGER DEFAULT 0,
+            is_locked INTEGER DEFAULT 0,
             must_change_password INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             last_login_at DATETIME
         )
     `);
+
+    // 为已存在的表添加 is_locked 字段（兼容旧数据）
+    try {
+        db.run(`ALTER TABLE users ADD COLUMN is_locked INTEGER DEFAULT 0`);
+    } catch (e) {
+        // 字段已存在，忽略错误
+    }
 
     // 命批表
     db.run(`

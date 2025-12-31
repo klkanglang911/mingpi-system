@@ -29,6 +29,11 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: '用户名或密码错误' });
         }
 
+        // 检查用户是否被锁定
+        if (user.is_locked === 1) {
+            return res.status(403).json({ error: '该账户已被锁定，请联系管理员' });
+        }
+
         // 验证密码
         const isValid = await verifyPassword(password, user.password_hash);
 
@@ -36,8 +41,8 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: '用户名或密码错误' });
         }
 
-        // 更新最后登录时间
-        run('UPDATE users SET last_login_at = datetime("now") WHERE id = ?', [user.id]);
+        // 更新最后登录时间（使用北京时间）
+        run('UPDATE users SET last_login_at = datetime("now", "+8 hours") WHERE id = ?', [user.id]);
 
         // 生成 token
         const token = generateToken(user, rememberMe === true);

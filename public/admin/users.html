@@ -16,6 +16,8 @@
             --border-light: rgba(26, 26, 26, 0.1);
             --success: #2e7d32;
             --danger: #c62828;
+            --info: #1976d2;
+            --warning: #f57c00;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -82,9 +84,36 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .toolbar h2 { font-size: 1.25rem; font-weight: 500; }
+
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-box input {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 0.875rem;
+            width: 200px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+        }
 
         .btn {
             padding: 0.5rem 1rem;
@@ -93,17 +122,25 @@
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s;
+            text-decoration: none;
         }
 
-        .btn-primary {
-            background: var(--ink-black);
-            color: var(--paper-white);
-        }
-
+        .btn-primary { background: var(--ink-black); color: var(--paper-white); }
         .btn-primary:hover { background: var(--ink-light); }
         .btn-danger { background: var(--danger); color: white; }
         .btn-danger:hover { opacity: 0.9; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-info:hover { opacity: 0.9; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-warning:hover { opacity: 0.9; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { opacity: 0.9; }
         .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .btn-secondary {
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            border: 1px solid var(--border-light);
+        }
 
         .table-container {
             background: var(--paper-white);
@@ -132,7 +169,11 @@
 
         td { font-size: 0.9rem; }
 
-        .actions { display: flex; gap: 0.5rem; }
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
 
         .badge {
             display: inline-block;
@@ -143,6 +184,7 @@
 
         .badge-admin { background: var(--gold-accent); color: white; }
         .badge-user { background: var(--mist-gray); color: white; }
+        .badge-locked { background: var(--danger); color: white; }
 
         /* Modal */
         .modal {
@@ -213,12 +255,6 @@
             margin-top: 1.5rem;
         }
 
-        .btn-secondary {
-            background: var(--paper-cream);
-            color: var(--ink-black);
-            border: 1px solid var(--border-light);
-        }
-
         .alert {
             padding: 0.75rem 1rem;
             border-radius: 4px;
@@ -238,6 +274,12 @@
             text-align: center;
             margin: 1rem 0;
             border: 2px dashed var(--gold-accent);
+        }
+
+        .status-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
     </style>
 </head>
@@ -261,7 +303,14 @@
     <div class="container">
         <div class="toolbar">
             <h2>用户列表</h2>
-            <button class="btn btn-primary" onclick="showCreateModal()">创建用户</button>
+            <div class="toolbar-right">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="搜索用户名或名称...">
+                    <button class="btn btn-secondary" onclick="searchUsers()">搜索</button>
+                    <button class="btn btn-secondary" onclick="clearSearch()">清除</button>
+                </div>
+                <button class="btn btn-primary" onclick="showCreateModal()">创建用户</button>
+            </div>
         </div>
 
         <div id="alertBox"></div>
@@ -273,7 +322,7 @@
                         <th>ID</th>
                         <th>用户名</th>
                         <th>显示名称</th>
-                        <th>角色</th>
+                        <th>状态</th>
                         <th>创建时间</th>
                         <th>最后登录</th>
                         <th>操作</th>
@@ -308,11 +357,37 @@
         </div>
     </div>
 
+    <!-- 编辑用户 Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑用户</h3>
+                <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" name="userId" id="editUserId">
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" name="username" id="editUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>显示名称</label>
+                    <input type="text" name="displayName" id="editDisplayName" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
+                    <button type="button" class="btn btn-warning" onclick="resetPasswordFromEdit()">重置密码</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- 密码显示 Modal -->
     <div class="modal" id="passwordModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>用户创建成功</h3>
+                <h3 id="passwordModalTitle">用户创建成功</h3>
                 <button class="modal-close" onclick="closeModal('passwordModal')">&times;</button>
             </div>
             <p>请将以下密码告知用户，用户首次登录后需修改密码：</p>
@@ -354,30 +429,167 @@
             document.getElementById(id).classList.remove('show');
         }
 
-        async function loadUsers() {
+        // 搜索功能
+        function searchUsers() {
+            loadUsers(document.getElementById('searchInput').value);
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            loadUsers();
+        }
+
+        // 回车搜索
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchUsers();
+            }
+        });
+
+        async function loadUsers(search = '') {
             try {
-                const response = await fetch('/api/admin/users', {
+                const url = search
+                    ? `/api/admin/users?search=${encodeURIComponent(search)}`
+                    : '/api/admin/users';
+
+                const response = await fetch(url, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const data = await response.json();
 
                 const tbody = document.getElementById('userTable');
-                tbody.innerHTML = data.data.map(u => `
-                    <tr>
-                        <td>${u.id}</td>
-                        <td>${u.username}</td>
-                        <td>${u.displayName}</td>
-                        <td><span class="badge ${u.isAdmin ? 'badge-admin' : 'badge-user'}">${u.isAdmin ? '管理员' : '用户'}</span></td>
-                        <td>${u.createdAt || '-'}</td>
-                        <td>${u.lastLoginAt || '-'}</td>
-                        <td class="actions">
-                            <button class="btn btn-sm btn-primary" onclick="resetPassword(${u.id})">重置密码</button>
-                            ${u.id !== user.id ? `<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.displayName}')">删除</button>` : ''}
-                        </td>
-                    </tr>
-                `).join('');
+                tbody.innerHTML = data.data.map(u => {
+                    // 状态显示
+                    let statusBadge = '';
+                    if (u.isAdmin) {
+                        statusBadge = '<span class="badge badge-admin">管理员</span>';
+                    } else if (u.isLocked) {
+                        statusBadge = '<span class="badge badge-locked">已锁定</span>';
+                    } else {
+                        statusBadge = '<span class="badge badge-user">正常</span>';
+                    }
+
+                    // 操作按钮
+                    let actions = [];
+
+                    // 命批按钮（非管理员）
+                    if (!u.isAdmin) {
+                        actions.push(`<button class="btn btn-sm btn-info" onclick="goToMingpi(${u.id}, '${u.displayName}')">命批</button>`);
+                    }
+
+                    // 编辑按钮
+                    actions.push(`<button class="btn btn-sm btn-primary" onclick="showEditModal(${u.id}, '${u.username}', '${u.displayName}')">编辑</button>`);
+
+                    // 锁定/解锁按钮（非管理员且不是自己）
+                    if (!u.isAdmin && u.id !== user.id) {
+                        if (u.isLocked) {
+                            actions.push(`<button class="btn btn-sm btn-success" onclick="toggleLock(${u.id}, false)">解锁</button>`);
+                        } else {
+                            actions.push(`<button class="btn btn-sm btn-warning" onclick="toggleLock(${u.id}, true)">锁定</button>`);
+                        }
+                    }
+
+                    // 删除按钮（不能删除自己）
+                    if (u.id !== user.id) {
+                        actions.push(`<button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id}, '${u.displayName}')">删除</button>`);
+                    }
+
+                    return `
+                        <tr>
+                            <td>${u.id}</td>
+                            <td>${u.username}</td>
+                            <td>${u.displayName}</td>
+                            <td>${statusBadge}</td>
+                            <td>${u.createdAt || '-'}</td>
+                            <td>${u.lastLoginAt || '-'}</td>
+                            <td class="actions">${actions.join('')}</td>
+                        </tr>
+                    `;
+                }).join('');
             } catch (error) {
                 showAlert('加载用户失败', 'error');
+            }
+        }
+
+        // 跳转到命批管理页面
+        function goToMingpi(userId, displayName) {
+            // 存储选中的用户信息，命批页面会读取
+            sessionStorage.setItem('selectedMingpiUser', JSON.stringify({ id: userId, displayName }));
+            window.location.href = '/admin/mingpi.html';
+        }
+
+        // 显示编辑模态框
+        function showEditModal(userId, username, displayName) {
+            document.getElementById('editUserId').value = userId;
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editDisplayName').value = displayName;
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        // 编辑表单提交
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userId = document.getElementById('editUserId').value;
+            const username = document.getElementById('editUsername').value;
+            const displayName = document.getElementById('editDisplayName').value;
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ username, displayName })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeModal('editModal');
+                    showAlert('用户信息已更新');
+                    loadUsers(document.getElementById('searchInput').value);
+                } else {
+                    showAlert(data.error || '更新失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        });
+
+        // 从编辑页面重置密码
+        function resetPasswordFromEdit() {
+            const userId = document.getElementById('editUserId').value;
+            if (confirm('确定要重置该用户的密码吗？')) {
+                resetPassword(userId);
+            }
+        }
+
+        // 锁定/解锁用户
+        async function toggleLock(userId, locked) {
+            const action = locked ? '锁定' : '解锁';
+            if (!confirm(`确定要${action}该用户吗？`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/lock`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ locked })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert(`用户已${action}`);
+                    loadUsers(document.getElementById('searchInput').value);
+                } else {
+                    showAlert(data.error || `${action}失败`, 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
             }
         }
 
@@ -403,6 +615,7 @@
                 if (response.ok) {
                     closeModal('createModal');
                     e.target.reset();
+                    document.getElementById('passwordModalTitle').textContent = '用户创建成功';
                     document.getElementById('generatedPassword').textContent = data.data.generatedPassword;
                     document.getElementById('passwordModal').classList.add('show');
                     loadUsers();
@@ -415,8 +628,6 @@
         });
 
         async function resetPassword(userId) {
-            if (!confirm('确定要重置该用户的密码吗？')) return;
-
             try {
                 const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
                     method: 'POST',
@@ -426,6 +637,8 @@
                 const data = await response.json();
 
                 if (response.ok) {
+                    closeModal('editModal');
+                    document.getElementById('passwordModalTitle').textContent = '密码重置成功';
                     document.getElementById('generatedPassword').textContent = data.data.generatedPassword;
                     document.getElementById('passwordModal').classList.add('show');
                 } else {
@@ -447,7 +660,7 @@
 
                 if (response.ok) {
                     showAlert('用户已删除');
-                    loadUsers();
+                    loadUsers(document.getElementById('searchInput').value);
                 } else {
                     const data = await response.json();
                     showAlert(data.error || '删除失败', 'error');

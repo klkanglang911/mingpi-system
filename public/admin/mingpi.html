@@ -1247,9 +1247,41 @@
             }
         });
 
+        // 检查是否从用户列表跳转过来并预选用户
+        function checkPreselectedUser() {
+            const preselected = sessionStorage.getItem('selectedMingpiUser');
+            if (preselected) {
+                try {
+                    const userData = JSON.parse(preselected);
+                    // 清除存储，避免刷新时重复选择
+                    sessionStorage.removeItem('selectedMingpiUser');
+
+                    // 等待用户列表加载完成后选中
+                    setTimeout(() => {
+                        // 选中单条编辑的用户下拉框
+                        const userSelect = document.getElementById('userSelect');
+                        const batchUserSelect = document.getElementById('batchUserSelect');
+
+                        if (userSelect) {
+                            userSelect.value = userData.id;
+                            userSelect.dispatchEvent(new Event('change'));
+                        }
+
+                        if (batchUserSelect) {
+                            batchUserSelect.value = userData.id;
+                        }
+                    }, 500);
+                } catch (e) {
+                    console.error('解析预选用户信息失败:', e);
+                }
+            }
+        }
+
         // 初始化
         initYearSelect();
-        loadUsers();
+        loadUsers().then(() => {
+            checkPreselectedUser();
+        });
         loadMingpiList();
     </script>
 </body>
