@@ -212,26 +212,59 @@
         }
 
         /* 活动日志表格 */
+        .log-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
         .log-table {
             width: 100%;
+            min-width: 600px;
             border-collapse: collapse;
             font-size: 0.875rem;
+            table-layout: auto;
         }
 
         .log-table th {
             text-align: left;
-            padding: 0.75rem;
+            padding: 0.75rem 1rem;
             background: var(--paper-cream);
             font-weight: 500;
             color: var(--ink-light);
+            white-space: nowrap;
         }
 
         .log-table td {
-            padding: 0.75rem;
+            padding: 0.75rem 1rem;
             border-bottom: 1px solid var(--border-light);
+            vertical-align: top;
         }
 
         .log-table tr:last-child td { border-bottom: none; }
+
+        /* 表格列宽控制 */
+        .log-table .col-time { width: 10%; min-width: 90px; white-space: nowrap; }
+        .log-table .col-user { width: 12%; min-width: 80px; }
+        .log-table .col-action { width: 10%; min-width: 70px; }
+        .log-table .col-location { width: 18%; min-width: 100px; }
+        .log-table .col-detail { width: 50%; word-break: break-word; }
+
+        /* 文字溢出处理 */
+        .log-table .text-ellipsis {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .log-table {
+                font-size: 0.8rem;
+            }
+            .log-table th, .log-table td {
+                padding: 0.5rem 0.75rem;
+            }
+        }
 
         .action-tag {
             display: inline-block;
@@ -587,20 +620,22 @@
                 <h2>最近活动</h2>
             </div>
             <div class="panel-body" style="padding: 0;">
-                <table class="log-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 120px;">时间</th>
-                            <th style="width: 80px;">用户</th>
-                            <th style="width: 80px;">操作</th>
-                            <th style="width: 120px;">地区</th>
-                            <th>详情</th>
-                        </tr>
-                    </thead>
-                    <tbody id="logTableBody">
-                        <tr><td colspan="5" class="loading">加载中...</td></tr>
-                    </tbody>
-                </table>
+                <div class="log-table-wrapper">
+                    <table class="log-table">
+                        <thead>
+                            <tr>
+                                <th class="col-time">时间</th>
+                                <th class="col-user">用户</th>
+                                <th class="col-action">操作</th>
+                                <th class="col-location">地区</th>
+                                <th class="col-detail">详情</th>
+                            </tr>
+                        </thead>
+                        <tbody id="logTableBody">
+                            <tr><td colspan="5" class="loading">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -834,11 +869,11 @@
 
                         return `
                             <tr>
-                                <td>${formatTime(log.createdAt)}</td>
-                                <td>${escapeHtml(log.userDisplayName)}</td>
-                                <td><span class="action-tag ${tagClass}">${log.actionName}</span></td>
-                                <td>${escapeHtml(log.location || '未知')}</td>
-                                <td>${detail}</td>
+                                <td class="col-time">${formatTime(log.createdAt)}</td>
+                                <td class="col-user">${escapeHtml(log.userDisplayName)}</td>
+                                <td class="col-action"><span class="action-tag ${tagClass}">${log.actionName}</span></td>
+                                <td class="col-location">${escapeHtml(log.location || '未知')}</td>
+                                <td class="col-detail">${detail}</td>
                             </tr>
                         `;
                     }).join('');
