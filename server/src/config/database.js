@@ -94,16 +94,25 @@ function createTables() {
             action VARCHAR(50) NOT NULL,
             page VARCHAR(100),
             ip_address VARCHAR(50),
+            location VARCHAR(100),
             user_agent VARCHAR(500),
             extra_data TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     `);
 
+    // 为已存在的表添加 location 字段（兼容旧数据）
+    try {
+        db.run(`ALTER TABLE access_logs ADD COLUMN location VARCHAR(100)`);
+    } catch (e) {
+        // 字段已存在，忽略错误
+    }
+
     // 访问日志索引
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_created_at ON access_logs(created_at)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_user_id ON access_logs(user_id)`);
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_action ON access_logs(action)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_location ON access_logs(location)`);
 
     console.log('数据表初始化完成');
 }

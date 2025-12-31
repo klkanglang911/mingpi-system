@@ -1035,6 +1035,7 @@ router.get('/stats/logs', (req, res) => {
                 actionName: actionNames[log.action] || log.action,
                 page: log.page,
                 ipAddress: log.ip_address,
+                location: log.location || '未知',
                 extraData: log.extra_data ? JSON.parse(log.extra_data) : null,
                 createdAt: log.created_at
             }))
@@ -1042,6 +1043,93 @@ router.get('/stats/logs', (req, res) => {
     } catch (error) {
         console.error('获取活动日志错误:', error);
         res.status(500).json({ error: '获取日志失败' });
+    }
+});
+
+/**
+ * GET /api/admin/stats/locations
+ * 获取访问地理位置统计
+ */
+router.get('/stats/locations', (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 30;
+        const validDays = Math.min(Math.max(days, 7), 90);
+
+        // 按地理位置统计访问量
+        const locationStats = query(`
+            SELECT
+                COALESCE(location, '未知') as location,
+                COUNT(*) as count,
+                COUNT(DISTINCT user_id) as user_count
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+            AND location IS NOT NULL
+            AND location != ''
+            GROUP BY location
+            ORDER BY count DESC
+            LIMIT 20
+        `);
+
+        // 统计总访问量
+        const totalVisits = queryOne(`
+            SELECT COUNT(*) as count FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+        `);
+
+        // 按国家/地区汇总（提取第一个词作为国家）
+        const countryStats = query(`
+            SELECT
+                CASE
+                    WHEN location IS NULL OR location = '' THEN '未知'
+                    WHEN location = '本地网络' THEN '本地网络'
+                    ELSE SUBSTR(location, 1, INSTR(location || ' ', ' ') - 1)
+                END as country,
+                COUNT(*) as count
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+            GROUP BY country
+            ORDER BY count DESC
+            LIMIT 10
+        `);
+
+        // 最近访问的地理位置（去重）
+        const recentLocations = query(`
+            SELECT DISTINCT location, MAX(created_at) as last_visit
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-7 days")
+            AND location IS NOT NULL
+            AND location != ''
+            AND location != '未知'
+            GROUP BY location
+            ORDER BY last_visit DESC
+            LIMIT 10
+        `);
+
+        res.json({
+            success: true,
+            data: {
+                days: validDays,
+                totalVisits: totalVisits?.count || 0,
+                locationStats: locationStats.map(l => ({
+                    location: l.location,
+                    count: l.count,
+                    userCount: l.user_count,
+                    percentage: totalVisits?.count ? Math.round((l.count / totalVisits.count) * 100) : 0
+                })),
+                countryStats: countryStats.map(c => ({
+                    country: c.country,
+                    count: c.count,
+                    percentage: totalVisits?.count ? Math.round((c.count / totalVisits.count) * 100) : 0
+                })),
+                recentLocations: recentLocations.map(r => ({
+                    location: r.location,
+                    lastVisit: r.last_visit
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('获取地理位置统计错误:', error);
+        res.status(500).json({ error: '获取统计数据失败' });
     }
 });
 
