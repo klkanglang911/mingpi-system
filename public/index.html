@@ -7,11 +7,9 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>登录 · 灵庐书院年批月令</title>
-    <!-- 异步加载字体，不阻塞渲染 -->
+    <!-- 预连接加速 -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
     <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-    <link rel="preload" href="https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap"></noscript>
     <style>
         :root {
             --ink-black: #1a1a1a;
@@ -426,18 +424,18 @@
     </div>
 
     <script>
+        // ========== 异步加载字体（不阻塞渲染）==========
+        (function() {
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap';
+            document.head.appendChild(link);
+        })();
+
         // ========== 加载页面控制 ==========
         const loadingScreen = document.getElementById('loadingScreen');
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
-
-        // 检测字体是否已缓存/加载
-        function areFontsReady() {
-            if (!document.fonts) return true;
-            // 检查主要使用的字体是否已可用
-            return document.fonts.check('1em "Ma Shan Zheng"') &&
-                   document.fonts.check('1em "Noto Serif SC"');
-        }
 
         // 更新进度条
         function updateProgress(value, text) {
@@ -456,17 +454,11 @@
             }, 100);
         }
 
-        // 直接显示登录页（字体已缓存时使用）
-        function showLoginFormImmediately() {
-            loadingScreen.style.display = 'none';
-            document.getElementById('loginContainer').classList.add('show');
-        }
-
-        // 等待字体加载后显示登录页
-        async function showLoginFormWithLoading() {
+        // 显示登录页（等待字体加载完成）
+        async function showLoginForm() {
             updateProgress(50, '加载字体资源...');
 
-            // 真正等待字体加载完成（不设超时）
+            // 等待字体加载完成
             if (document.fonts) {
                 await document.fonts.ready;
             }
@@ -477,20 +469,12 @@
         }
 
         // ========== 初始化 ==========
-        // 检查字体是否已缓存
-        const fontsAlreadyCached = areFontsReady();
-
-        if (fontsAlreadyCached) {
-            // 字体已缓存，跳过加载页
-            loadingScreen.style.display = 'none';
-        } else {
-            updateProgress(10, '正在加载...');
-        }
+        updateProgress(10, '正在加载...');
 
         // 检查是否已登录
         const token = localStorage.getItem('token');
         if (token) {
-            if (!fontsAlreadyCached) updateProgress(30, '验证登录状态...');
+            updateProgress(30, '验证登录状态...');
             // 验证 token 是否有效
             fetch('/api/auth/me?_t=' + Date.now(), {
                 headers: {
@@ -503,7 +487,7 @@
                 throw new Error('Token invalid');
             })
             .then(data => {
-                if (!fontsAlreadyCached) updateProgress(80, '跳转中...');
+                updateProgress(80, '跳转中...');
                 if (data.user.mustChangePassword) {
                     window.location.href = '/change-password.html';
                 } else {
@@ -513,19 +497,11 @@
             .catch(() => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                if (fontsAlreadyCached) {
-                    showLoginFormImmediately();
-                } else {
-                    showLoginFormWithLoading();
-                }
+                showLoginForm();
             });
         } else {
-            // 没有 token
-            if (fontsAlreadyCached) {
-                showLoginFormImmediately();
-            } else {
-                showLoginFormWithLoading();
-            }
+            // 没有 token，等待字体后显示登录表单
+            showLoginForm();
         }
 
         // 登录表单提交
