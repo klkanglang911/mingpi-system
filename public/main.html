@@ -651,17 +651,19 @@
             document.getElementById('lunarYearInfo').textContent =
                 Gan[(viewLunarYear - 4) % 10] + Zhi[(viewLunarYear - 4) % 12] + '年';
 
-            const endDate = new Date(range.end.year, range.end.month - 1, range.end.day);
-            const todayTime = new Date(todayYear, todayMonth - 1, todayDate);
-            const daysRemaining = Math.ceil((endDate - todayTime) / 86400000);
-
             const countdownEl = document.getElementById('countdownText');
-            if (daysRemaining > 0) {
-                countdownEl.innerHTML = `距本月结束还剩 <span class="countdown-number">${daysRemaining}</span> 天`;
-            } else if (daysRemaining === 0) {
-                countdownEl.innerHTML = `<span class="countdown-number">今日</span> 是本月最后一天`;
+            const todayLunar = solarToLunar(todayYear, todayMonth, todayDate);
+
+            // 只有当前农历月才显示剩余天数
+            if (todayLunar && viewLunarYear === todayLunar.year && viewLunarMonth === todayLunar.month) {
+                const remaining = todayLunar.monthDays - todayLunar.day;
+                countdownEl.innerHTML = `距本月结束还剩 <span class="countdown-number">${remaining}</span> 天`;
             } else {
-                countdownEl.innerHTML = `${range.start.year}年${range.start.month}月${range.start.day}日 - ${range.end.month}月${range.end.day}日`;
+                // 非当前月份，显示日期范围
+                const startStr = `${range.start.month}月${range.start.day}日`;
+                const endStr = `${range.end.month}月${range.end.day}日`;
+                const yearPrefix = range.end.year !== range.start.year ? range.end.year + '年' : '';
+                countdownEl.innerHTML = `<span style="font-size: 0.8rem;">${range.start.year}年${startStr} - ${yearPrefix}${endStr}</span>`;
             }
         }
 
