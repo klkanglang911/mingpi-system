@@ -332,4 +332,291 @@ router.delete('/mingpi/:id', (req, res) => {
     }
 });
 
+/**
+ * POST /api/admin/mingpi/batch
+ * 批量导入命批
+ * 支持两种格式：
+ * 1. 可视化导入：{ userId, lunarYear, items: [{month, content}] }
+ * 2. CSV导入：{ data: [{username, lunarYear, lunarMonth, content}] }
+ */
+router.post('/mingpi/batch', (req, res) => {
+    try {
+        const { userId, lunarYear, items, data } = req.body;
+        const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+
+        // 格式1：可视化导入（单用户单年份）
+        if (userId && lunarYear && items) {
+            // 检查用户是否存在
+            const user = queryOne('SELECT id FROM users WHERE id = ?', [userId]);
+            if (!user) {
+                return res.status(404).json({ error: '用户不存在' });
+            }
+
+            for (const item of items) {
+                const { month, content } = item;
+
+                // 跳过空内容
+                if (!content || content.trim() === '') {
+                    results.skipped++;
+                    continue;
+                }
+
+                // 验证月份
+                if (month < 1 || month > 12) {
+                    results.errors.push(`无效的月份: ${month}`);
+                    continue;
+                }
+
+                // UPSERT
+                const existing = queryOne(
+                    'SELECT id FROM mingpi WHERE user_id = ? AND lunar_year = ? AND lunar_month = ?',
+                    [userId, lunarYear, month]
+                );
+
+                if (existing) {
+                    run(
+                        'UPDATE mingpi SET content = ?, updated_at = datetime("now") WHERE id = ?',
+                        [content.trim(), existing.id]
+                    );
+                    results.updated++;
+                } else {
+                    run(
+                        'INSERT INTO mingpi (user_id, lunar_year, lunar_month, content) VALUES (?, ?, ?, ?)',
+                        [userId, lunarYear, month, content.trim()]
+                    );
+                    results.created++;
+                }
+            }
+        }
+        // 格式2：CSV导入（多用户多年份）
+        else if (data && Array.isArray(data)) {
+            // 构建用户名到ID的映射
+            const users = query('SELECT id, username FROM users');
+            const userMap = {};
+            users.forEach(u => { userMap[u.username] = u.id; });
+
+            for (const row of data) {
+                const { username, lunarYear: year, lunarMonth: month, content } = row;
+
+                // 跳过空内容
+                if (!content || content.trim() === '') {
+                    results.skipped++;
+                    continue;
+                }
+
+                // 查找用户
+                const uid = userMap[username];
+                if (!uid) {
+                    results.errors.push(`用户不存在: ${username}`);
+                    continue;
+                }
+
+                // 验证年月
+                if (year < 1900 || year > 2100 || month < 1 || month > 12) {
+                    results.errors.push(`无效的年月: ${year}/${month}`);
+                    continue;
+                }
+
+                // UPSERT
+                const existing = queryOne(
+                    'SELECT id FROM mingpi WHERE user_id = ? AND lunar_year = ? AND lunar_month = ?',
+                    [uid, year, month]
+                );
+
+                if (existing) {
+                    run(
+                        'UPDATE mingpi SET content = ?, updated_at = datetime("now") WHERE id = ?',
+                        [content.trim(), existing.id]
+                    );
+                    results.updated++;
+                } else {
+                    run(
+                        'INSERT INTO mingpi (user_id, lunar_year, lunar_month, content) VALUES (?, ?, ?, ?)',
+                        [uid, year, month, content.trim()]
+                    );
+                    results.created++;
+                }
+            }
+        } else {
+            return res.status(400).json({ error: '无效的导入数据格式' });
+        }
+
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('批量导入命批错误:', error);
+        res.status(500).json({ error: '批量导入失败' });
+    }
+});
+
+/**
+ * POST /api/admin/mingpi/batch/preview
+ * 预览批量导入（不实际写入）
+ */
+router.post('/mingpi/batch/preview', (req, res) => {
+    try {
+        const { userId, lunarYear, items } = req.body;
+        const preview = [];
+
+        if (!userId || !lunarYear || !items) {
+            return res.status(400).json({ error: '参数不完整' });
+        }
+
+        // 检查用户是否存在
+        const user = queryOne('SELECT id, display_name FROM users WHERE id = ?', [userId]);
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        const lunarMonthNames = ['正月', '二月', '三月', '四月', '五月', '六月',
+                                  '七月', '八月', '九月', '十月', '冬月', '腊月'];
+
+        for (const item of items) {
+            const { month, content } = item;
+
+            const existing = queryOne(
+                'SELECT id, content FROM mingpi WHERE user_id = ? AND lunar_year = ? AND lunar_month = ?',
+                [userId, lunarYear, month]
+            );
+
+            preview.push({
+                month,
+                monthName: lunarMonthNames[month - 1],
+                content: content || '',
+                isEmpty: !content || content.trim() === '',
+                exists: !!existing,
+                existingContent: existing ? existing.content : null,
+                action: !content || content.trim() === '' ? 'skip' : (existing ? 'update' : 'create')
+            });
+        }
+
+        res.json({
+            success: true,
+            user: { id: user.id, displayName: user.display_name },
+            lunarYear,
+            preview,
+            summary: {
+                create: preview.filter(p => p.action === 'create').length,
+                update: preview.filter(p => p.action === 'update').length,
+                skip: preview.filter(p => p.action === 'skip').length
+            }
+        });
+    } catch (error) {
+        console.error('预览批量导入错误:', error);
+        res.status(500).json({ error: '预览失败' });
+    }
+});
+
+/**
+ * DELETE /api/admin/mingpi/batch
+ * 批量清空命批
+ */
+router.delete('/mingpi/batch', (req, res) => {
+    try {
+        const { userId, lunarYear } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ error: '请指定用户' });
+        }
+
+        // 检查用户是否存在
+        const user = queryOne('SELECT id FROM users WHERE id = ?', [userId]);
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        let sql = 'DELETE FROM mingpi WHERE user_id = ?';
+        const params = [userId];
+
+        if (lunarYear) {
+            sql += ' AND lunar_year = ?';
+            params.push(lunarYear);
+        }
+
+        const result = run(sql, params);
+
+        res.json({
+            success: true,
+            deleted: result.changes,
+            message: lunarYear
+                ? `已清空该用户 ${lunarYear} 年的所有命批`
+                : '已清空该用户的所有命批'
+        });
+    } catch (error) {
+        console.error('批量清空命批错误:', error);
+        res.status(500).json({ error: '批量清空失败' });
+    }
+});
+
+/**
+ * GET /api/admin/mingpi/export
+ * 导出命批为CSV格式
+ */
+router.get('/mingpi/export', (req, res) => {
+    try {
+        const { userId, lunarYear } = req.query;
+
+        let sql = `
+            SELECT u.username, m.lunar_year, m.lunar_month, m.content
+            FROM mingpi m
+            JOIN users u ON m.user_id = u.id
+        `;
+        const params = [];
+        const conditions = [];
+
+        if (userId) {
+            conditions.push('m.user_id = ?');
+            params.push(parseInt(userId));
+        }
+
+        if (lunarYear) {
+            conditions.push('m.lunar_year = ?');
+            params.push(parseInt(lunarYear));
+        }
+
+        if (conditions.length > 0) {
+            sql += ' WHERE ' + conditions.join(' AND ');
+        }
+
+        sql += ' ORDER BY u.username, m.lunar_year, m.lunar_month';
+
+        const mingpis = query(sql, params);
+
+        // 生成CSV
+        const header = '用户名,农历年份,月份,命批内容';
+        const rows = mingpis.map(m => {
+            // 处理内容中的逗号和换行
+            const content = m.content
+                .replace(/"/g, '""')
+                .replace(/\n/g, '\\n');
+            return `${m.username},${m.lunar_year},${m.lunar_month},"${content}"`;
+        });
+
+        const csv = [header, ...rows].join('\n');
+
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename=mingpi_export.csv');
+        // 添加 BOM 以支持 Excel 正确识别 UTF-8
+        res.send('\uFEFF' + csv);
+    } catch (error) {
+        console.error('导出命批错误:', error);
+        res.status(500).json({ error: '导出失败' });
+    }
+});
+
+/**
+ * GET /api/admin/mingpi/template
+ * 下载CSV导入模板
+ */
+router.get('/mingpi/template', (req, res) => {
+    const template = `用户名,农历年份,月份,命批内容
+zhangsan,2025,1,正月命批内容示例...
+zhangsan,2025,2,二月命批内容示例...
+zhangsan,2025,3,三月命批内容示例...
+lisi,2025,1,正月命批内容示例...`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=mingpi_template.csv');
+    res.send('\uFEFF' + template);
+});
+
 module.exports = router;

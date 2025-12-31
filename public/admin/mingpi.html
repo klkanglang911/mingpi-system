@@ -16,6 +16,7 @@
             --border-light: rgba(26, 26, 26, 0.1);
             --success: #2e7d32;
             --danger: #c62828;
+            --info: #1976d2;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -90,6 +91,14 @@
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
             border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 0.5rem;
         }
 
         .form-row {
@@ -136,6 +145,10 @@
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
         .btn-primary {
@@ -151,8 +164,10 @@
             border: 1px solid var(--border-light);
         }
 
+        .btn-success { background: var(--success); color: white; }
+        .btn-info { background: var(--info); color: white; }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { opacity: 0.9; }
+        .btn-danger:hover, .btn-success:hover, .btn-info:hover { opacity: 0.9; }
         .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
 
         .alert {
@@ -164,15 +179,11 @@
 
         .alert-success { background: rgba(46, 125, 50, 0.1); color: var(--success); }
         .alert-error { background: rgba(198, 40, 40, 0.1); color: var(--danger); }
+        .alert-info { background: rgba(25, 118, 210, 0.1); color: var(--info); }
 
-        .table-container {
-            overflow-x: auto;
-        }
+        .table-container { overflow-x: auto; }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+        table { width: 100%; border-collapse: collapse; }
 
         th, td {
             padding: 0.75rem;
@@ -213,19 +224,213 @@
             transition: all 0.2s;
         }
 
-        .lunar-month-btn:hover {
+        .lunar-month-btn:hover { border-color: var(--gold-accent); }
+        .lunar-month-btn.has-content { background: rgba(46, 125, 50, 0.1); border-color: var(--success); }
+        .lunar-month-btn.active { background: var(--gold-accent); color: white; border-color: var(--gold-accent); }
+
+        /* 标签页 */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-light);
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            color: var(--ink-light);
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .tab:hover { color: var(--ink-black); }
+        .tab.active {
+            color: var(--gold-accent);
             border-color: var(--gold-accent);
         }
 
-        .lunar-month-btn.has-content {
-            background: rgba(46, 125, 50, 0.1);
-            border-color: var(--success);
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* 批量输入框 */
+        .batch-textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 1rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            resize: vertical;
         }
 
-        .lunar-month-btn.active {
-            background: var(--gold-accent);
+        .batch-textarea:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+        }
+
+        .input-hint {
+            font-size: 0.8rem;
+            color: var(--mist-gray);
+            margin-top: 0.5rem;
+        }
+
+        .line-count {
+            font-size: 0.875rem;
+            color: var(--gold-accent);
+            font-weight: 500;
+        }
+
+        /* 模态框 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: var(--paper-white);
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h4 { font-size: 1rem; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--mist-gray);
+        }
+
+        .modal-body { padding: 1.5rem; }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border-light);
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .preview-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .preview-item:last-child { border-bottom: none; }
+
+        .preview-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .preview-status.create { background: var(--success); color: white; }
+        .preview-status.update { background: var(--info); color: white; }
+        .preview-status.skip { background: var(--mist-gray); color: white; }
+
+        .preview-content {
+            flex: 1;
+            font-size: 0.875rem;
+        }
+
+        .preview-month { font-weight: 500; }
+        .preview-text {
+            color: var(--ink-light);
+            margin-top: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .preview-badge {
+            font-size: 0.7rem;
+            padding: 0.15rem 0.4rem;
+            border-radius: 3px;
+            background: var(--info);
             color: white;
+        }
+
+        .summary-box {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--paper-cream);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .summary-label {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+        }
+
+        .summary-item.create .summary-number { color: var(--success); }
+        .summary-item.update .summary-number { color: var(--info); }
+        .summary-item.skip .summary-number { color: var(--mist-gray); }
+
+        /* CSV 上传区域 */
+        .upload-area {
+            border: 2px dashed var(--border-light);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover {
             border-color: var(--gold-accent);
+            background: rgba(184, 134, 11, 0.05);
+        }
+
+        .upload-area input[type="file"] { display: none; }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--mist-gray);
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -249,8 +454,72 @@
     <div class="container">
         <div id="alertBox"></div>
 
+        <!-- 批量导入面板 -->
         <div class="panel">
-            <h3>编辑命批</h3>
+            <h3>
+                批量导入
+                <div class="panel-actions">
+                    <a href="/api/admin/mingpi/template" class="btn btn-sm btn-secondary">下载CSV模板</a>
+                    <a href="/api/admin/mingpi/export" class="btn btn-sm btn-secondary">导出全部</a>
+                </div>
+            </h3>
+
+            <div class="tabs">
+                <div class="tab active" data-tab="visual">可视化导入</div>
+                <div class="tab" data-tab="csv">CSV导入</div>
+            </div>
+
+            <!-- 可视化导入 -->
+            <div class="tab-content active" id="tab-visual">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择用户</label>
+                        <select id="batchUserSelect">
+                            <option value="">-- 请选择用户 --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>农历年份</label>
+                        <select id="batchYearSelect"></select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>批量输入命批内容 <span class="line-count" id="lineCount">(0/12行)</span></label>
+                    <textarea class="batch-textarea" id="batchInput" placeholder="每行一个月的命批内容，第1行=正月，第2行=二月...第12行=腊月
+
+格式A（推荐）：直接输入内容，按行自动对应月份
+正月命批内容...
+二月命批内容...
+
+格式B：带月份前缀，可只导入部分月份
+1:正月命批内容...
+5:五月命批内容...
+12:腊月命批内容..."></textarea>
+                    <p class="input-hint">支持两种格式：① 纯内容按行（12行对应12个月）② 带月份前缀（如"1:内容"）可只导入部分月份。空行将跳过该月。</p>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="previewBatchImport()">预览导入</button>
+                    <button class="btn btn-danger" onclick="showClearConfirm()">批量清空</button>
+                </div>
+            </div>
+
+            <!-- CSV导入 -->
+            <div class="tab-content" id="tab-csv">
+                <div class="upload-area" onclick="document.getElementById('csvFile').click()">
+                    <div class="upload-icon">📄</div>
+                    <p>点击选择 CSV 文件或拖拽到此处</p>
+                    <p class="input-hint">格式：用户名,农历年份,月份,命批内容</p>
+                    <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(this)">
+                </div>
+                <div id="csvPreview" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+
+        <!-- 单条编辑面板 -->
+        <div class="panel">
+            <h3>单条编辑</h3>
             <div class="form-row">
                 <div class="form-group">
                     <label>选择用户</label>
@@ -281,6 +550,7 @@
             </div>
         </div>
 
+        <!-- 命批列表 -->
         <div class="panel">
             <h3>命批列表</h3>
             <div class="table-container">
@@ -297,6 +567,56 @@
                     </thead>
                     <tbody id="mingpiTable"></tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 预览模态框 -->
+    <div class="modal" id="previewModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 id="previewTitle">导入预览</h4>
+                <button class="modal-close" onclick="closeModal('previewModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="summary-box" id="previewSummary"></div>
+                <div id="previewList"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('previewModal')">取消</button>
+                <button class="btn btn-success" onclick="confirmBatchImport()">确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 清空确认模态框 -->
+    <div class="modal" id="clearModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>批量清空确认</h4>
+                <button class="modal-close" onclick="closeModal('clearModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>请选择要清空的范围：</p>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>
+                        <input type="radio" name="clearScope" value="year" checked>
+                        仅清空 <span id="clearYearLabel">2025</span> 年的命批
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="radio" name="clearScope" value="all">
+                        清空该用户所有年份的命批
+                    </label>
+                </div>
+                <div class="alert alert-error" style="margin-top: 1rem;">
+                    ⚠️ 此操作不可恢复，请谨慎操作！
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('clearModal')">取消</button>
+                <button class="btn btn-danger" onclick="confirmClear()">确认清空</button>
             </div>
         </div>
     </div>
@@ -324,6 +644,7 @@
         let selectedYear = null;
         let selectedMonth = null;
         let userMingpiMap = {};
+        let pendingImportData = null;
 
         function showAlert(message, type = 'success') {
             const alertBox = document.getElementById('alertBox');
@@ -331,17 +652,28 @@
             setTimeout(() => { alertBox.innerHTML = ''; }, 3000);
         }
 
+        function openModal(id) {
+            document.getElementById(id).classList.add('show');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
         // 初始化年份选择器
         function initYearSelect() {
-            const select = document.getElementById('yearSelect');
             const currentYear = new Date().getFullYear();
-            for (let y = currentYear + 1; y >= currentYear - 5; y--) {
-                const option = document.createElement('option');
-                option.value = y;
-                option.textContent = y + '年';
-                if (y === currentYear) option.selected = true;
-                select.appendChild(option);
-            }
+            ['yearSelect', 'batchYearSelect'].forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                for (let y = currentYear + 1; y >= currentYear - 5; y--) {
+                    const option = document.createElement('option');
+                    option.value = y;
+                    option.textContent = y + '年';
+                    if (y === currentYear) option.selected = true;
+                    select.appendChild(option);
+                }
+            });
         }
 
         // 加载用户列表
@@ -352,19 +684,333 @@
                 });
                 const data = await response.json();
 
-                const select = document.getElementById('userSelect');
-                data.data.filter(u => !u.isAdmin).forEach(u => {
-                    const option = document.createElement('option');
-                    option.value = u.id;
-                    option.textContent = u.displayName + ' (' + u.username + ')';
-                    select.appendChild(option);
+                const users = data.data.filter(u => !u.isAdmin);
+
+                ['userSelect', 'batchUserSelect'].forEach(selectId => {
+                    const select = document.getElementById(selectId);
+                    const firstOption = select.querySelector('option');
+                    select.innerHTML = '';
+                    select.appendChild(firstOption);
+
+                    users.forEach(u => {
+                        const option = document.createElement('option');
+                        option.value = u.id;
+                        option.textContent = u.displayName + ' (' + u.username + ')';
+                        select.appendChild(option);
+                    });
                 });
             } catch (error) {
                 showAlert('加载用户失败', 'error');
             }
         }
 
-        // 加载用户的命批数据
+        // ============ 标签页切换 ============
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ============ 批量导入 ============
+
+        // 解析批量输入
+        function parseBatchInput(text) {
+            const lines = text.split('\n');
+            const items = [];
+
+            // 检测格式：是否带月份前缀
+            const hasPrefix = lines.some(line => /^\d{1,2}[:：]/.test(line.trim()));
+
+            if (hasPrefix) {
+                // 格式B：带月份前缀
+                lines.forEach(line => {
+                    const match = line.trim().match(/^(\d{1,2})[:：](.*)$/);
+                    if (match) {
+                        const month = parseInt(match[1]);
+                        const content = match[2].trim();
+                        if (month >= 1 && month <= 12) {
+                            items.push({ month, content });
+                        }
+                    }
+                });
+            } else {
+                // 格式A：纯内容按行
+                lines.forEach((line, index) => {
+                    if (index < 12) {
+                        items.push({ month: index + 1, content: line.trim() });
+                    }
+                });
+            }
+
+            return items;
+        }
+
+        // 更新行数显示
+        document.getElementById('batchInput').addEventListener('input', (e) => {
+            const lines = e.target.value.split('\n').filter(l => l.trim()).length;
+            document.getElementById('lineCount').textContent = `(${lines}/12行)`;
+        });
+
+        // 预览批量导入
+        async function previewBatchImport() {
+            const userId = document.getElementById('batchUserSelect').value;
+            const lunarYear = parseInt(document.getElementById('batchYearSelect').value);
+            const text = document.getElementById('batchInput').value;
+
+            if (!userId) {
+                showAlert('请选择用户', 'error');
+                return;
+            }
+
+            if (!text.trim()) {
+                showAlert('请输入命批内容', 'error');
+                return;
+            }
+
+            const items = parseBatchInput(text);
+
+            try {
+                const response = await fetch('/api/admin/mingpi/batch/preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ userId: parseInt(userId), lunarYear, items })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    showAlert(data.error || '预览失败', 'error');
+                    return;
+                }
+
+                // 显示预览
+                pendingImportData = { userId: parseInt(userId), lunarYear, items };
+
+                document.getElementById('previewTitle').textContent =
+                    `导入预览 - ${data.user.displayName} · ${lunarYear}年`;
+
+                document.getElementById('previewSummary').innerHTML = `
+                    <div class="summary-item create">
+                        <div class="summary-number">${data.summary.create}</div>
+                        <div class="summary-label">新增</div>
+                    </div>
+                    <div class="summary-item update">
+                        <div class="summary-number">${data.summary.update}</div>
+                        <div class="summary-label">覆盖</div>
+                    </div>
+                    <div class="summary-item skip">
+                        <div class="summary-number">${data.summary.skip}</div>
+                        <div class="summary-label">跳过</div>
+                    </div>
+                `;
+
+                document.getElementById('previewList').innerHTML = data.preview.map(p => `
+                    <div class="preview-item">
+                        <div class="preview-status ${p.action}">
+                            ${p.action === 'create' ? '+' : p.action === 'update' ? '↻' : '-'}
+                        </div>
+                        <div class="preview-content">
+                            <div class="preview-month">
+                                ${p.monthName}
+                                ${p.action === 'update' ? '<span class="preview-badge">将覆盖</span>' : ''}
+                                ${p.action === 'skip' ? '<span class="preview-badge" style="background:var(--mist-gray)">跳过</span>' : ''}
+                            </div>
+                            <div class="preview-text">${p.content || '(空)'}</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                openModal('previewModal');
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // 确认批量导入
+        async function confirmBatchImport() {
+            if (!pendingImportData) return;
+
+            try {
+                const response = await fetch('/api/admin/mingpi/batch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(pendingImportData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert(`导入完成：新增 ${data.results.created} 条，更新 ${data.results.updated} 条，跳过 ${data.results.skipped} 条`);
+                    closeModal('previewModal');
+                    document.getElementById('batchInput').value = '';
+                    document.getElementById('lineCount').textContent = '(0/12行)';
+                    loadMingpiList();
+                    if (selectedUserId) loadUserMingpi(selectedUserId);
+                } else {
+                    showAlert(data.error || '导入失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // ============ CSV 导入 ============
+        function handleCSVUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const text = e.target.result;
+                const lines = text.split('\n').filter(l => l.trim());
+
+                if (lines.length < 2) {
+                    showAlert('CSV 文件格式错误', 'error');
+                    return;
+                }
+
+                // 解析 CSV（跳过表头）
+                const data = [];
+                for (let i = 1; i < lines.length; i++) {
+                    const parts = parseCSVLine(lines[i]);
+                    if (parts.length >= 4) {
+                        data.push({
+                            username: parts[0],
+                            lunarYear: parseInt(parts[1]),
+                            lunarMonth: parseInt(parts[2]),
+                            content: parts[3].replace(/\\n/g, '\n')
+                        });
+                    }
+                }
+
+                // 显示预览
+                document.getElementById('csvPreview').innerHTML = `
+                    <div class="alert alert-info">
+                        解析到 ${data.length} 条记录，点击下方按钮导入
+                    </div>
+                    <button class="btn btn-success" onclick="importCSVData()">确认导入</button>
+                `;
+
+                window.csvImportData = data;
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+
+        // 解析 CSV 行（处理引号）
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current);
+            return result;
+        }
+
+        async function importCSVData() {
+            if (!window.csvImportData || window.csvImportData.length === 0) {
+                showAlert('没有可导入的数据', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/mingpi/batch', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ data: window.csvImportData })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    let msg = `导入完成：新增 ${result.results.created} 条，更新 ${result.results.updated} 条`;
+                    if (result.results.errors.length > 0) {
+                        msg += `，错误 ${result.results.errors.length} 条`;
+                    }
+                    showAlert(msg);
+                    document.getElementById('csvPreview').innerHTML = '';
+                    document.getElementById('csvFile').value = '';
+                    loadMingpiList();
+                } else {
+                    showAlert(result.error || '导入失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // ============ 批量清空 ============
+        function showClearConfirm() {
+            const userId = document.getElementById('batchUserSelect').value;
+            if (!userId) {
+                showAlert('请先选择用户', 'error');
+                return;
+            }
+
+            const year = document.getElementById('batchYearSelect').value;
+            document.getElementById('clearYearLabel').textContent = year;
+            openModal('clearModal');
+        }
+
+        async function confirmClear() {
+            const userId = parseInt(document.getElementById('batchUserSelect').value);
+            const scope = document.querySelector('input[name="clearScope"]:checked').value;
+            const lunarYear = scope === 'year' ? parseInt(document.getElementById('batchYearSelect').value) : null;
+
+            try {
+                const response = await fetch('/api/admin/mingpi/batch', {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ userId, lunarYear })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert(`已删除 ${data.deleted} 条命批`);
+                    closeModal('clearModal');
+                    loadMingpiList();
+                    if (selectedUserId) loadUserMingpi(selectedUserId);
+                } else {
+                    showAlert(data.error || '清空失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // ============ 单条编辑（原有功能） ============
+
         async function loadUserMingpi(userId) {
             try {
                 const response = await fetch(`/api/admin/mingpi/user/${userId}`, {
@@ -384,7 +1030,6 @@
             }
         }
 
-        // 更新月份按钮
         function updateMonthButtons() {
             const container = document.getElementById('lunarMonths');
             const year = parseInt(document.getElementById('yearSelect').value);
@@ -400,7 +1045,6 @@
             }).join('');
         }
 
-        // 选择月份
         function selectMonth(month) {
             selectedMonth = month;
             selectedYear = parseInt(document.getElementById('yearSelect').value);
@@ -416,7 +1060,6 @@
             document.getElementById('contentInput').value = existing ? existing.content : '';
         }
 
-        // 保存命批
         async function saveMingpi() {
             if (!selectedUserId || !selectedYear || !selectedMonth) {
                 showAlert('请先选择用户和月份', 'error');
@@ -458,7 +1101,6 @@
             }
         }
 
-        // 删除命批
         async function deleteMingpi() {
             const key = `${selectedYear}-${selectedMonth}`;
             const existing = userMingpiMap[key];
@@ -490,7 +1132,6 @@
             }
         }
 
-        // 加载命批列表
         async function loadMingpiList() {
             try {
                 const response = await fetch('/api/admin/mingpi', {
