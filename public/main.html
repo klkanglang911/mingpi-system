@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>年批 · 灵庐书院</title>
-    <!-- 使用国内 CDN 镜像加速字体加载 -->
+    <!-- 异步加载字体，不阻塞渲染 -->
     <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
-    <link href="https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+    <link rel="preload" href="https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap"></noscript>
     <style>
         :root {
             --ink-black: #1a1a1a;
