@@ -263,9 +263,12 @@
         // 检查是否已登录
         const token = localStorage.getItem('token');
         if (token) {
-            // 验证 token 是否有效
-            fetch('/api/auth/me', {
-                headers: { 'Authorization': 'Bearer ' + token }
+            // 验证 token 是否有效（添加时间戳防止缓存）
+            fetch('/api/auth/me?_t=' + Date.now(), {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Cache-Control': 'no-cache'
+                }
             })
             .then(res => {
                 if (res.ok) {
