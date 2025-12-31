@@ -41,8 +41,8 @@ docker-compose up -d
 
 4. 访问系统
 
-- 用户端: http://localhost
-- 管理后台: http://localhost/admin/
+- 用户端: http://localhost:666
+- 管理后台: http://localhost:666/admin/
 
 默认管理员账号: `admin` / `admin123`（首次登录需修改密码）
 
