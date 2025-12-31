@@ -459,8 +459,8 @@
             <h3>
                 批量导入
                 <div class="panel-actions">
-                    <a href="/api/admin/mingpi/template" class="btn btn-sm btn-secondary">下载CSV模板</a>
-                    <a href="/api/admin/mingpi/export" class="btn btn-sm btn-secondary">导出全部</a>
+                    <button class="btn btn-sm btn-secondary" onclick="downloadTemplate()">下载CSV模板</button>
+                    <button class="btn btn-sm btn-secondary" onclick="exportAll()">导出全部</button>
                 </div>
             </h3>
 
@@ -701,6 +701,54 @@
                 });
             } catch (error) {
                 showAlert('加载用户失败', 'error');
+            }
+        }
+
+        // ============ 下载功能 ============
+        async function downloadTemplate() {
+            try {
+                const response = await fetch('/api/admin/mingpi/template', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!response.ok) {
+                    showAlert('下载失败', 'error');
+                    return;
+                }
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mingpi_template.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                showAlert('下载失败', 'error');
+            }
+        }
+
+        async function exportAll() {
+            try {
+                const response = await fetch('/api/admin/mingpi/export', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!response.ok) {
+                    showAlert('导出失败', 'error');
+                    return;
+                }
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'mingpi_export.csv';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                showAlert('导出成功');
+            } catch (error) {
+                showAlert('导出失败', 'error');
             }
         }
 
