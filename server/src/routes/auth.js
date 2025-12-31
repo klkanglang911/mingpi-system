@@ -9,6 +9,7 @@ const { queryOne, run } = require('../config/database');
 const { verifyPassword, hashPassword, validatePasswordStrength } = require('../utils/password');
 const { generateToken } = require('../middleware/auth');
 const authMiddleware = require('../middleware/auth');
+const { logFromRequest, ActionTypes } = require('../utils/accessLog');
 
 /**
  * POST /api/auth/login
@@ -43,6 +44,10 @@ router.post('/login', async (req, res) => {
 
         // 更新最后登录时间（使用北京时间）
         run('UPDATE users SET last_login_at = datetime("now", "+8 hours") WHERE id = ?', [user.id]);
+
+        // 记录登录日志
+        const action = user.is_admin === 1 ? ActionTypes.ADMIN_LOGIN : ActionTypes.LOGIN;
+        logFromRequest(req, action, { userId: user.id, username: user.username });
 
         // 生成 token
         const token = generateToken(user, rememberMe === true);
@@ -109,6 +114,9 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 
         // 更新密码，同时清除强制修改密码标记
         run('UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?', [newHash, req.user.id]);
+
+        // 记录修改密码日志
+        logFromRequest(req, ActionTypes.CHANGE_PASSWORD);
 
         res.json({ success: true, message: '密码修改成功' });
     } catch (error) {

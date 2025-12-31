@@ -86,6 +86,25 @@ function createTables() {
     // 创建索引
     db.run(`CREATE INDEX IF NOT EXISTS idx_mingpi_user_date ON mingpi(user_id, lunar_year, lunar_month)`);
 
+    // 访问日志表
+    db.run(`
+        CREATE TABLE IF NOT EXISTS access_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            action VARCHAR(50) NOT NULL,
+            page VARCHAR(100),
+            ip_address VARCHAR(50),
+            user_agent VARCHAR(500),
+            extra_data TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // 访问日志索引
+    db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_created_at ON access_logs(created_at)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_user_id ON access_logs(user_id)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_action ON access_logs(action)`);
+
     console.log('数据表初始化完成');
 }
 

@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台</title>
+    <title>管理后台 - 统计仪表盘</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --ink-black: #1a1a1a;
@@ -14,6 +15,9 @@
             --paper-cream: #f0ebe3;
             --mist-gray: #9a9590;
             --border-light: rgba(26, 26, 26, 0.1);
+            --success: #2d8a4e;
+            --info: #3b82f6;
+            --warning: #f59e0b;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,10 +38,7 @@
             align-items: center;
         }
 
-        .header h1 {
-            font-size: 1.25rem;
-            font-weight: 500;
-        }
+        .header h1 { font-size: 1.25rem; font-weight: 500; }
 
         .header-right {
             display: flex;
@@ -77,81 +78,216 @@
             transition: all 0.2s;
         }
 
-        .nav a:hover,
-        .nav a.active {
+        .nav a:hover, .nav a.active {
             color: var(--vermilion);
             border-color: var(--vermilion);
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
-        .stats {
+        /* 概览卡片 */
+        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
         }
 
         .stat-card {
             background: var(--paper-white);
-            padding: 1.5rem;
+            padding: 1.25rem;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
 
         .stat-card h3 {
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             color: var(--mist-gray);
             font-weight: 400;
             margin-bottom: 0.5rem;
         }
 
         .stat-card .value {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 600;
             color: var(--ink-black);
         }
 
-        .quick-actions {
+        .stat-card .value.highlight { color: var(--vermilion); }
+        .stat-card .value.success { color: var(--success); }
+        .stat-card .value.info { color: var(--info); }
+
+        /* 两列布局 */
+        .dashboard-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: 2fr 1fr;
             gap: 1.5rem;
+            margin-bottom: 1.5rem;
         }
 
-        .action-card {
+        @media (max-width: 1024px) {
+            .dashboard-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 面板卡片 */
+        .panel {
             background: var(--paper-white);
-            padding: 1.5rem;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            overflow: hidden;
         }
 
-        .action-card h3 {
+        .panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
             font-size: 1rem;
-            margin-bottom: 0.5rem;
+            font-weight: 500;
         }
 
-        .action-card p {
-            color: var(--mist-gray);
-            font-size: 0.875rem;
+        .panel-body {
+            padding: 1.25rem;
+        }
+
+        /* 图表 */
+        .chart-container {
+            position: relative;
+            height: 280px;
+        }
+
+        /* 用户活跃度列表 */
+        .stat-list {
+            list-style: none;
+        }
+
+        .stat-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .stat-list li:last-child { border-bottom: none; }
+
+        .stat-list .label { color: var(--ink-light); }
+        .stat-list .value { font-weight: 600; }
+
+        /* 命批覆盖进度条 */
+        .coverage-item {
             margin-bottom: 1rem;
         }
 
-        .btn {
-            display: inline-block;
-            padding: 0.5rem 1rem;
-            background: var(--ink-black);
-            color: var(--paper-white);
-            text-decoration: none;
-            border-radius: 4px;
+        .coverage-item:last-child { margin-bottom: 0; }
+
+        .coverage-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
             font-size: 0.875rem;
-            transition: background 0.2s;
         }
 
-        .btn:hover { background: var(--ink-light); }
+        .coverage-bar {
+            height: 8px;
+            background: var(--paper-cream);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .coverage-fill {
+            height: 100%;
+            background: var(--vermilion);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        /* 活动日志表格 */
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .log-table th {
+            text-align: left;
+            padding: 0.75rem;
+            background: var(--paper-cream);
+            font-weight: 500;
+            color: var(--ink-light);
+        }
+
+        .log-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .log-table tr:last-child td { border-bottom: none; }
+
+        .action-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background: var(--paper-cream);
+        }
+
+        .action-tag.login { background: #dcfce7; color: #166534; }
+        .action-tag.admin { background: #fef3c7; color: #92400e; }
+        .action-tag.edit { background: #dbeafe; color: #1e40af; }
+        .action-tag.delete { background: #fee2e2; color: #991b1b; }
+
+        /* 最近登录用户 */
+        .recent-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .recent-user:last-child { border-bottom: none; }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--vermilion);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .user-info { flex: 1; }
+        .user-name { font-weight: 500; font-size: 0.9rem; }
+        .user-time { font-size: 0.75rem; color: var(--mist-gray); }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--mist-gray);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--mist-gray);
+            font-size: 0.875rem;
+        }
     </style>
 </head>
 <body>
@@ -172,7 +308,8 @@
     </nav>
 
     <div class="container">
-        <div class="stats">
+        <!-- 概览统计卡片 -->
+        <div class="stats-grid">
             <div class="stat-card">
                 <h3>用户总数</h3>
                 <div class="value" id="userCount">-</div>
@@ -181,18 +318,98 @@
                 <h3>命批总数</h3>
                 <div class="value" id="mingpiCount">-</div>
             </div>
+            <div class="stat-card">
+                <h3>今日访问 (PV)</h3>
+                <div class="value highlight" id="todayPV">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>今日访客 (UV)</h3>
+                <div class="value info" id="todayUV">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>本周活跃</h3>
+                <div class="value success" id="weeklyActive">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>本月活跃</h3>
+                <div class="value" id="monthlyActive">-</div>
+            </div>
         </div>
 
-        <div class="quick-actions">
-            <div class="action-card">
-                <h3>用户管理</h3>
-                <p>创建、编辑、删除用户账户，重置用户密码</p>
-                <a href="/admin/users.html" class="btn">管理用户</a>
+        <!-- 第一行：访问趋势 + 用户活跃度 -->
+        <div class="dashboard-row">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>访问趋势（最近7天）</h2>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <div class="action-card">
-                <h3>命批管理</h3>
-                <p>为用户添加、编辑每月的个性化命批内容</p>
-                <a href="/admin/mingpi.html" class="btn">管理命批</a>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>用户活跃度</h2>
+                </div>
+                <div class="panel-body">
+                    <ul class="stat-list" id="userStatList">
+                        <li><span class="label">今日登录</span><span class="value" id="todayLogin">-</span></li>
+                        <li><span class="label">本周活跃</span><span class="value" id="weekActive">-</span></li>
+                        <li><span class="label">本月活跃</span><span class="value" id="monthActive">-</span></li>
+                        <li><span class="label">从未登录</span><span class="value" id="neverLogin">-</span></li>
+                        <li><span class="label">已锁定</span><span class="value" id="lockedUsers">-</span></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第二行：命批覆盖 + 最近登录 -->
+        <div class="dashboard-row">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>命批覆盖情况</h2>
+                    <span id="currentYear" style="font-size: 0.875rem; color: var(--mist-gray);"></span>
+                </div>
+                <div class="panel-body">
+                    <div id="coverageList">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>最近登录</h2>
+                </div>
+                <div class="panel-body">
+                    <div id="recentLogins">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 第三行：活动日志 -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>最近活动</h2>
+            </div>
+            <div class="panel-body" style="padding: 0;">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 140px;">时间</th>
+                            <th style="width: 100px;">用户</th>
+                            <th style="width: 100px;">操作</th>
+                            <th>详情</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logTableBody">
+                        <tr><td colspan="4" class="loading">加载中...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -214,29 +431,283 @@
             window.location.href = '/';
         });
 
-        // 加载统计数据
-        async function loadStats() {
+        let trendChart = null;
+
+        // 加载概览统计
+        async function loadOverview() {
             try {
-                const [usersRes, mingpiRes] = await Promise.all([
-                    fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } }),
-                    fetch('/api/admin/mingpi', { headers: { 'Authorization': 'Bearer ' + token } })
-                ]);
+                const response = await fetch('/api/admin/stats/overview', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
 
-                if (usersRes.ok) {
-                    const users = await usersRes.json();
-                    document.getElementById('userCount').textContent = users.data.length;
-                }
+                if (response.ok) {
+                    const result = await response.json();
+                    const data = result.data;
 
-                if (mingpiRes.ok) {
-                    const mingpi = await mingpiRes.json();
-                    document.getElementById('mingpiCount').textContent = mingpi.data.length;
+                    document.getElementById('userCount').textContent = data.userCount;
+                    document.getElementById('mingpiCount').textContent = data.mingpiCount;
+                    document.getElementById('todayPV').textContent = data.todayPV;
+                    document.getElementById('todayUV').textContent = data.todayUV;
+                    document.getElementById('weeklyActive').textContent = data.weeklyActive;
+                    document.getElementById('monthlyActive').textContent = data.monthlyActive;
                 }
             } catch (error) {
-                console.error('加载统计失败:', error);
+                console.error('加载概览统计失败:', error);
             }
         }
 
-        loadStats();
+        // 加载访问趋势
+        async function loadTrend() {
+            try {
+                const response = await fetch('/api/admin/stats/trend?days=7', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const data = result.data;
+
+                    const ctx = document.getElementById('trendChart').getContext('2d');
+
+                    if (trendChart) {
+                        trendChart.destroy();
+                    }
+
+                    trendChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: data.map(d => d.label),
+                            datasets: [
+                                {
+                                    label: '访问量 (PV)',
+                                    data: data.map(d => d.pv),
+                                    borderColor: '#c23a2b',
+                                    backgroundColor: 'rgba(194, 58, 43, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                },
+                                {
+                                    label: '访客数 (UV)',
+                                    data: data.map(d => d.uv),
+                                    borderColor: '#3b82f6',
+                                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                    fill: true,
+                                    tension: 0.3
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('加载访问趋势失败:', error);
+            }
+        }
+
+        // 加载用户活跃度
+        async function loadUserStats() {
+            try {
+                const response = await fetch('/api/admin/stats/users', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const data = result.data;
+
+                    document.getElementById('todayLogin').textContent = data.todayLogin;
+                    document.getElementById('weekActive').textContent = data.weeklyActive;
+                    document.getElementById('monthActive').textContent = data.monthlyActive;
+                    document.getElementById('neverLogin').textContent = data.neverLogin;
+                    document.getElementById('lockedUsers').textContent = data.lockedUsers;
+
+                    // 最近登录用户
+                    const recentContainer = document.getElementById('recentLogins');
+                    if (data.recentLogins.length === 0) {
+                        recentContainer.innerHTML = '<div class="empty-state">暂无登录记录</div>';
+                    } else {
+                        recentContainer.innerHTML = data.recentLogins.map(u => `
+                            <div class="recent-user">
+                                <div class="user-avatar">${u.displayName.charAt(0)}</div>
+                                <div class="user-info">
+                                    <div class="user-name">${escapeHtml(u.displayName)}</div>
+                                    <div class="user-time">${formatTime(u.lastLoginAt)}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('加载用户活跃度失败:', error);
+            }
+        }
+
+        // 加载命批覆盖
+        async function loadMingpiStats() {
+            try {
+                const response = await fetch('/api/admin/stats/mingpi', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const data = result.data;
+
+                    document.getElementById('currentYear').textContent = `${data.currentYear}年`;
+
+                    const container = document.getElementById('coverageList');
+
+                    if (data.userCoverage.length === 0) {
+                        container.innerHTML = '<div class="empty-state">暂无命批数据</div>';
+                        return;
+                    }
+
+                    let html = '';
+
+                    // 显示用户覆盖情况（前5个）
+                    data.userCoverage.slice(0, 5).forEach(u => {
+                        html += `
+                            <div class="coverage-item">
+                                <div class="coverage-header">
+                                    <span>${escapeHtml(u.displayName)}</span>
+                                    <span>${u.monthCount}/12 月 (${u.percentage}%)</span>
+                                </div>
+                                <div class="coverage-bar">
+                                    <div class="coverage-fill" style="width: ${u.percentage}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    // 显示统计摘要
+                    html += `
+                        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-light); font-size: 0.875rem; color: var(--mist-gray);">
+                            <p>已配置用户: ${data.usersWithMingpi}/${data.totalUsers} 人</p>
+                            <p>平均覆盖: ${data.avgMonthsPerUser} 月/用户</p>
+                        </div>
+                    `;
+
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.error('加载命批覆盖失败:', error);
+            }
+        }
+
+        // 加载活动日志
+        async function loadLogs() {
+            try {
+                const response = await fetch('/api/admin/stats/logs?limit=15', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const logs = result.data;
+
+                    const tbody = document.getElementById('logTableBody');
+
+                    if (logs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="empty-state">暂无活动记录</td></tr>';
+                        return;
+                    }
+
+                    tbody.innerHTML = logs.map(log => {
+                        const tagClass = getActionTagClass(log.action);
+                        const detail = formatLogDetail(log);
+
+                        return `
+                            <tr>
+                                <td>${formatTime(log.createdAt)}</td>
+                                <td>${escapeHtml(log.userDisplayName)}</td>
+                                <td><span class="action-tag ${tagClass}">${log.actionName}</span></td>
+                                <td>${detail}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('加载活动日志失败:', error);
+            }
+        }
+
+        // 获取操作标签样式
+        function getActionTagClass(action) {
+            if (action.includes('login')) return 'login';
+            if (action.includes('admin')) return 'admin';
+            if (action.includes('delete')) return 'delete';
+            if (action.includes('edit') || action.includes('create')) return 'edit';
+            return '';
+        }
+
+        // 格式化日志详情
+        function formatLogDetail(log) {
+            if (!log.extraData) return log.ipAddress || '-';
+
+            const extra = log.extraData;
+            let details = [];
+
+            if (extra.username) details.push(`用户: ${extra.username}`);
+            if (extra.displayName) details.push(`名称: ${extra.displayName}`);
+            if (extra.targetUserId) details.push(`目标ID: ${extra.targetUserId}`);
+            if (extra.lunarYear && extra.lunarMonth) details.push(`${extra.lunarYear}年${extra.lunarMonth}月`);
+            if (extra.created !== undefined) details.push(`创建: ${extra.created}`);
+            if (extra.updated !== undefined) details.push(`更新: ${extra.updated}`);
+            if (extra.deleted !== undefined) details.push(`删除: ${extra.deleted}`);
+            if (extra.locked !== undefined) details.push(extra.locked ? '锁定' : '解锁');
+
+            return details.length > 0 ? details.join(', ') : (log.ipAddress || '-');
+        }
+
+        // 格式化时间
+        function formatTime(timeStr) {
+            if (!timeStr) return '-';
+            const date = new Date(timeStr);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${month}/${day} ${hours}:${minutes}`;
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 初始化加载
+        Promise.all([
+            loadOverview(),
+            loadTrend(),
+            loadUserStats(),
+            loadMingpiStats(),
+            loadLogs()
+        ]);
+
+        // 每60秒自动刷新
+        setInterval(() => {
+            loadOverview();
+            loadTrend();
+            loadLogs();
+        }, 60000);
     </script>
 </body>
 </html>

@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { query, queryOne, run } = require('../config/database');
 const { generatePassword, hashPassword } = require('../utils/password');
+const { logFromRequest, ActionTypes } = require('../utils/accessLog');
 
 // ============ 用户管理 ============
 
@@ -90,6 +91,9 @@ router.post('/users', async (req, res) => {
                 generatedPassword: password // 返回生成的密码，管理员需告知用户
             }
         });
+
+        // 记录创建用户日志
+        logFromRequest(req, ActionTypes.ADMIN_CREATE_USER, { targetUserId: result.lastInsertRowid, username, displayName });
     } catch (error) {
         console.error('创建用户错误:', error);
         res.status(500).json({ error: '创建用户失败' });
@@ -126,6 +130,9 @@ router.put('/users/:id', (req, res) => {
             run('UPDATE users SET display_name = ? WHERE id = ?', [displayName, userId]);
         }
 
+        // 记录编辑用户日志
+        logFromRequest(req, ActionTypes.ADMIN_EDIT_USER, { targetUserId: userId, username, displayName });
+
         res.json({ success: true });
     } catch (error) {
         console.error('编辑用户错误:', error);
@@ -160,6 +167,9 @@ router.post('/users/:id/lock', (req, res) => {
 
         run('UPDATE users SET is_locked = ? WHERE id = ?', [locked ? 1 : 0, userId]);
 
+        // 记录锁定/解锁日志
+        logFromRequest(req, ActionTypes.ADMIN_LOCK_USER, { targetUserId: userId, locked: !!locked });
+
         res.json({ success: true, locked: !!locked });
     } catch (error) {
         console.error('锁定用户错误:', error);
@@ -189,6 +199,9 @@ router.delete('/users/:id', (req, res) => {
         // 删除用户（关联的命批会级联删除）
         run('DELETE FROM users WHERE id = ?', [userId]);
 
+        // 记录删除用户日志
+        logFromRequest(req, ActionTypes.ADMIN_DELETE_USER, { targetUserId: userId });
+
         res.json({ success: true });
     } catch (error) {
         console.error('删除用户错误:', error);
@@ -216,6 +229,9 @@ router.post('/users/:id/reset-password', async (req, res) => {
 
         // 更新密码，设置强制修改密码标记
         run('UPDATE users SET password_hash = ?, must_change_password = 1 WHERE id = ?', [passwordHash, userId]);
+
+        // 记录重置密码日志
+        logFromRequest(req, ActionTypes.ADMIN_RESET_PASSWORD, { targetUserId: userId });
 
         res.json({
             success: true,
@@ -349,6 +365,7 @@ router.post('/mingpi', (req, res) => {
                 'UPDATE mingpi SET content = ?, updated_at = datetime("now", "+8 hours") WHERE id = ?',
                 [content, existing.id]
             );
+            logFromRequest(req, ActionTypes.ADMIN_EDIT_MINGPI, { targetUserId: userId, lunarYear, lunarMonth });
             res.json({ success: true, action: 'updated', id: existing.id });
         } else {
             // 创建
@@ -357,6 +374,7 @@ router.post('/mingpi', (req, res) => {
                  VALUES (?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
                 [userId, lunarYear, lunarMonth, content]
             );
+            logFromRequest(req, ActionTypes.ADMIN_CREATE_MINGPI, { targetUserId: userId, lunarYear, lunarMonth });
             res.json({ success: true, action: 'created', id: result.lastInsertRowid });
         }
     } catch (error) {
@@ -380,6 +398,9 @@ router.delete('/mingpi/:id', (req, res) => {
         }
 
         run('DELETE FROM mingpi WHERE id = ?', [mingpiId]);
+
+        // 记录删除命批日志
+        logFromRequest(req, ActionTypes.ADMIN_DELETE_MINGPI, { mingpiId });
 
         res.json({ success: true });
     } catch (error) {
@@ -499,6 +520,13 @@ router.post('/mingpi/batch', (req, res) => {
             return res.status(400).json({ error: '无效的导入数据格式' });
         }
 
+        // 记录批量导入日志
+        logFromRequest(req, ActionTypes.ADMIN_BATCH_IMPORT, {
+            created: results.created,
+            updated: results.updated,
+            skipped: results.skipped
+        });
+
         res.json({ success: true, results });
     } catch (error) {
         console.error('批量导入命批错误:', error);
@@ -592,6 +620,13 @@ router.delete('/mingpi/batch', (req, res) => {
 
         const result = run(sql, params);
 
+        // 记录批量删除日志
+        logFromRequest(req, ActionTypes.ADMIN_BATCH_DELETE, {
+            targetUserId: userId,
+            lunarYear: lunarYear || 'all',
+            deleted: result.changes
+        });
+
         res.json({
             success: true,
             deleted: result.changes,
@@ -675,6 +710,339 @@ lisi,2025,1,正月命批内容示例...`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename=mingpi_template.csv');
     res.send('\uFEFF' + template);
+});
+
+// ============ 统计仪表盘 ============
+
+/**
+ * GET /api/admin/stats/overview
+ * 获取概览统计数据
+ */
+router.get('/stats/overview', (req, res) => {
+    try {
+        // 用户总数
+        const userCount = queryOne('SELECT COUNT(*) as count FROM users WHERE is_admin = 0');
+
+        // 命批总数
+        const mingpiCount = queryOne('SELECT COUNT(*) as count FROM mingpi');
+
+        // 今日访问量（PV）
+        const todayPV = queryOne(`
+            SELECT COUNT(*) as count FROM access_logs
+            WHERE date(created_at) = date(datetime("now", "+8 hours"))
+        `);
+
+        // 今日独立访客（UV）
+        const todayUV = queryOne(`
+            SELECT COUNT(DISTINCT user_id) as count FROM access_logs
+            WHERE date(created_at) = date(datetime("now", "+8 hours"))
+            AND user_id IS NOT NULL
+        `);
+
+        // 本周活跃用户
+        const weeklyActive = queryOne(`
+            SELECT COUNT(*) as count FROM users
+            WHERE last_login_at >= datetime("now", "+8 hours", "-7 days")
+            AND is_admin = 0
+        `);
+
+        // 本月活跃用户
+        const monthlyActive = queryOne(`
+            SELECT COUNT(*) as count FROM users
+            WHERE last_login_at >= datetime("now", "+8 hours", "-30 days")
+            AND is_admin = 0
+        `);
+
+        res.json({
+            success: true,
+            data: {
+                userCount: userCount?.count || 0,
+                mingpiCount: mingpiCount?.count || 0,
+                todayPV: todayPV?.count || 0,
+                todayUV: todayUV?.count || 0,
+                weeklyActive: weeklyActive?.count || 0,
+                monthlyActive: monthlyActive?.count || 0
+            }
+        });
+    } catch (error) {
+        console.error('获取概览统计错误:', error);
+        res.status(500).json({ error: '获取统计数据失败' });
+    }
+});
+
+/**
+ * GET /api/admin/stats/trend
+ * 获取访问趋势数据（最近7天或30天）
+ */
+router.get('/stats/trend', (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 7;
+        const validDays = Math.min(Math.max(days, 7), 30);
+
+        // 生成日期列表
+        const dates = [];
+        for (let i = validDays - 1; i >= 0; i--) {
+            dates.push({
+                offset: i,
+                date: null,
+                pv: 0,
+                uv: 0
+            });
+        }
+
+        // 获取每日PV
+        const pvData = query(`
+            SELECT date(created_at) as date, COUNT(*) as count
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+            GROUP BY date(created_at)
+            ORDER BY date
+        `);
+
+        // 获取每日UV
+        const uvData = query(`
+            SELECT date(created_at) as date, COUNT(DISTINCT user_id) as count
+            FROM access_logs
+            WHERE created_at >= datetime("now", "+8 hours", "-${validDays} days")
+            AND user_id IS NOT NULL
+            GROUP BY date(created_at)
+            ORDER BY date
+        `);
+
+        // 构建PV/UV映射
+        const pvMap = {};
+        const uvMap = {};
+        pvData.forEach(row => { pvMap[row.date] = row.count; });
+        uvData.forEach(row => { uvMap[row.date] = row.count; });
+
+        // 填充日期数据
+        const result = dates.map((d, index) => {
+            // 计算实际日期（北京时间）
+            const dateObj = new Date();
+            dateObj.setTime(dateObj.getTime() + 8 * 60 * 60 * 1000); // 转北京时间
+            dateObj.setDate(dateObj.getDate() - d.offset);
+            const dateStr = dateObj.toISOString().split('T')[0];
+
+            return {
+                date: dateStr,
+                label: `${dateObj.getMonth() + 1}/${dateObj.getDate()}`,
+                pv: pvMap[dateStr] || 0,
+                uv: uvMap[dateStr] || 0
+            };
+        });
+
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (error) {
+        console.error('获取访问趋势错误:', error);
+        res.status(500).json({ error: '获取趋势数据失败' });
+    }
+});
+
+/**
+ * GET /api/admin/stats/users
+ * 获取用户活跃度统计
+ */
+router.get('/stats/users', (req, res) => {
+    try {
+        // 今日登录
+        const todayLogin = queryOne(`
+            SELECT COUNT(*) as count FROM users
+            WHERE date(last_login_at) = date(datetime("now", "+8 hours"))
+            AND is_admin = 0
+        `);
+
+        // 本周活跃
+        const weeklyActive = queryOne(`
+            SELECT COUNT(*) as count FROM users
+            WHERE last_login_at >= datetime("now", "+8 hours", "-7 days")
+            AND is_admin = 0
+        `);
+
+        // 本月活跃
+        const monthlyActive = queryOne(`
+            SELECT COUNT(*) as count FROM users
+            WHERE last_login_at >= datetime("now", "+8 hours", "-30 days")
+            AND is_admin = 0
+        `);
+
+        // 从未登录
+        const neverLogin = queryOne(`
+            SELECT COUNT(*) as count FROM users
+            WHERE last_login_at IS NULL
+            AND is_admin = 0
+        `);
+
+        // 已锁定用户
+        const lockedUsers = queryOne(`
+            SELECT COUNT(*) as count FROM users
+            WHERE is_locked = 1
+            AND is_admin = 0
+        `);
+
+        // 最近登录的用户（前5个）
+        const recentLogins = query(`
+            SELECT id, display_name, last_login_at
+            FROM users
+            WHERE last_login_at IS NOT NULL AND is_admin = 0
+            ORDER BY last_login_at DESC
+            LIMIT 5
+        `);
+
+        res.json({
+            success: true,
+            data: {
+                todayLogin: todayLogin?.count || 0,
+                weeklyActive: weeklyActive?.count || 0,
+                monthlyActive: monthlyActive?.count || 0,
+                neverLogin: neverLogin?.count || 0,
+                lockedUsers: lockedUsers?.count || 0,
+                recentLogins: recentLogins.map(u => ({
+                    id: u.id,
+                    displayName: u.display_name,
+                    lastLoginAt: u.last_login_at
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('获取用户活跃度统计错误:', error);
+        res.status(500).json({ error: '获取统计数据失败' });
+    }
+});
+
+/**
+ * GET /api/admin/stats/mingpi
+ * 获取命批覆盖统计
+ */
+router.get('/stats/mingpi', (req, res) => {
+    try {
+        // 获取当前农历年（简化处理，使用公历年）
+        const now = new Date();
+        now.setTime(now.getTime() + 8 * 60 * 60 * 1000);
+        const currentYear = now.getFullYear();
+
+        // 各年份命批数量
+        const yearStats = query(`
+            SELECT lunar_year as year, COUNT(*) as count
+            FROM mingpi
+            WHERE lunar_year >= ? AND lunar_year <= ?
+            GROUP BY lunar_year
+            ORDER BY lunar_year DESC
+        `, [currentYear - 2, currentYear + 1]);
+
+        // 用户总数（非管理员）
+        const totalUsers = queryOne('SELECT COUNT(*) as count FROM users WHERE is_admin = 0');
+
+        // 有命批的用户数（当年）
+        const usersWithMingpi = queryOne(`
+            SELECT COUNT(DISTINCT user_id) as count
+            FROM mingpi
+            WHERE lunar_year = ?
+        `, [currentYear]);
+
+        // 各用户的命批覆盖月份数
+        const userCoverage = query(`
+            SELECT u.id, u.display_name, COUNT(m.id) as month_count
+            FROM users u
+            LEFT JOIN mingpi m ON u.id = m.user_id AND m.lunar_year = ?
+            WHERE u.is_admin = 0
+            GROUP BY u.id
+            ORDER BY month_count DESC
+            LIMIT 10
+        `, [currentYear]);
+
+        // 计算平均覆盖率
+        const avgCoverage = queryOne(`
+            SELECT AVG(month_count) as avg FROM (
+                SELECT user_id, COUNT(*) as month_count
+                FROM mingpi
+                WHERE lunar_year = ?
+                GROUP BY user_id
+            )
+        `, [currentYear]);
+
+        res.json({
+            success: true,
+            data: {
+                currentYear,
+                yearStats: yearStats.map(y => ({
+                    year: y.year,
+                    count: y.count,
+                    coverage: Math.round((y.count / (12 * (totalUsers?.count || 1))) * 100)
+                })),
+                totalUsers: totalUsers?.count || 0,
+                usersWithMingpi: usersWithMingpi?.count || 0,
+                avgMonthsPerUser: Math.round((avgCoverage?.avg || 0) * 10) / 10,
+                userCoverage: userCoverage.map(u => ({
+                    id: u.id,
+                    displayName: u.display_name,
+                    monthCount: u.month_count,
+                    percentage: Math.round((u.month_count / 12) * 100)
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('获取命批覆盖统计错误:', error);
+        res.status(500).json({ error: '获取统计数据失败' });
+    }
+});
+
+/**
+ * GET /api/admin/stats/logs
+ * 获取最近活动日志
+ */
+router.get('/stats/logs', (req, res) => {
+    try {
+        const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+
+        const logs = query(`
+            SELECT l.*, u.display_name as user_display_name
+            FROM access_logs l
+            LEFT JOIN users u ON l.user_id = u.id
+            ORDER BY l.created_at DESC
+            LIMIT ?
+        `, [limit]);
+
+        // 操作类型的中文映射
+        const actionNames = {
+            'login': '用户登录',
+            'logout': '用户登出',
+            'view_calendar': '查看日历',
+            'view_mingpi': '查看命批',
+            'change_password': '修改密码',
+            'admin_login': '管理员登录',
+            'admin_create_user': '创建用户',
+            'admin_edit_user': '编辑用户',
+            'admin_delete_user': '删除用户',
+            'admin_lock_user': '锁定用户',
+            'admin_reset_password': '重置密码',
+            'admin_create_mingpi': '创建命批',
+            'admin_edit_mingpi': '编辑命批',
+            'admin_delete_mingpi': '删除命批',
+            'admin_batch_import': '批量导入',
+            'admin_batch_delete': '批量删除'
+        };
+
+        res.json({
+            success: true,
+            data: logs.map(log => ({
+                id: log.id,
+                userId: log.user_id,
+                userDisplayName: log.user_display_name || '未知用户',
+                action: log.action,
+                actionName: actionNames[log.action] || log.action,
+                page: log.page,
+                ipAddress: log.ip_address,
+                extraData: log.extra_data ? JSON.parse(log.extra_data) : null,
+                createdAt: log.created_at
+            }))
+        });
+    } catch (error) {
+        console.error('获取活动日志错误:', error);
+        res.status(500).json({ error: '获取日志失败' });
+    }
 });
 
 module.exports = router;
