@@ -276,6 +276,46 @@
             border: 2px dashed var(--gold-accent);
         }
 
+        .user-info-display {
+            background: var(--paper-cream);
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            border: 2px dashed var(--gold-accent);
+        }
+
+        .user-info-display .info-line {
+            display: flex;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .user-info-display .info-line:last-of-type {
+            border-bottom: none;
+        }
+
+        .user-info-display .info-label {
+            color: var(--ink-light);
+            min-width: 100px;
+        }
+
+        .user-info-display .info-line span:last-child {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--vermilion);
+        }
+
+        .user-info-display .info-note {
+            font-size: 0.8rem;
+            color: var(--mist-gray);
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .copy-success {
+            background: var(--success) !important;
+        }
+
         .status-row {
             display: flex;
             align-items: center;
@@ -388,12 +428,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="passwordModalTitle">用户创建成功</h3>
-                <button class="modal-close" onclick="closeModal('passwordModal')">&times;</button>
+                <button class="modal-close" onclick="closePasswordModal()">&times;</button>
             </div>
-            <p>请将以下密码告知用户，用户首次登录后需修改密码：</p>
-            <div class="password-display" id="generatedPassword"></div>
+            <div id="passwordModalBody">
+                <p>请将以下信息发送给用户：</p>
+                <div class="user-info-display" id="userInfoDisplay">
+                    <div class="info-line"><span class="info-label">访问地址：</span><span id="infoSiteUrl">https://np.derhe.com</span></div>
+                    <div class="info-line"><span class="info-label">登录用户名：</span><span id="infoUsername"></span></div>
+                    <div class="info-line"><span class="info-label">初始密码：</span><span id="infoPassword"></span></div>
+                    <div class="info-note">（登录后可修改密码）</div>
+                </div>
+            </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" onclick="closeModal('passwordModal')">确定</button>
+                <button class="btn btn-secondary" onclick="closePasswordModal()">关闭</button>
+                <button class="btn btn-primary" id="copyInfoBtn" onclick="copyUserInfo()">📋 复制信息</button>
             </div>
         </div>
     </div>
@@ -431,6 +479,13 @@
         }
 
         document.getElementById('adminName').textContent = user.displayName || '管理员';
+
+        // 当前创建/重置的用户信息（用于复制）
+        let currentUserInfo = {
+            username: '',
+            password: '',
+            isCreate: true  // true=创建用户, false=重置密码
+        };
 
         document.getElementById('logoutBtn').addEventListener('click', (e) => {
             e.preventDefault();
@@ -622,6 +677,8 @@
         document.getElementById('createForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
+            const username = formData.get('username');
+            const displayName = formData.get('displayName');
 
             try {
                 const response = await fetch('/api/admin/users', {
@@ -630,10 +687,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': 'Bearer ' + token
                     },
-                    body: JSON.stringify({
-                        username: formData.get('username'),
-                        displayName: formData.get('displayName')
-                    })
+                    body: JSON.stringify({ username, displayName })
                 });
 
                 const data = await response.json();
@@ -641,9 +695,16 @@
                 if (response.ok) {
                     closeModal('createModal');
                     e.target.reset();
-                    document.getElementById('passwordModalTitle').textContent = '用户创建成功';
-                    document.getElementById('generatedPassword').textContent = data.data.generatedPassword;
-                    document.getElementById('passwordModal').classList.add('show');
+
+                    // 保存用户信息用于复制
+                    currentUserInfo = {
+                        username: data.data.username,
+                        password: data.data.generatedPassword,
+                        isCreate: true
+                    };
+
+                    // 显示用户信息模态框
+                    showUserInfoModal('用户创建成功', data.data.username, data.data.generatedPassword);
                     loadUsers();
                 } else {
                     showAlert(data.error || '创建失败', 'error');
@@ -655,6 +716,9 @@
 
         async function resetPassword(userId) {
             try {
+                // 获取当前编辑的用户名
+                const username = document.getElementById('editUsername').value;
+
                 const response = await fetch(`/api/admin/users/${userId}/reset-password`, {
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + token }
@@ -664,14 +728,82 @@
 
                 if (response.ok) {
                     closeModal('editModal');
-                    document.getElementById('passwordModalTitle').textContent = '密码重置成功';
-                    document.getElementById('generatedPassword').textContent = data.data.generatedPassword;
-                    document.getElementById('passwordModal').classList.add('show');
+
+                    // 保存用户信息用于复制
+                    currentUserInfo = {
+                        username: username,
+                        password: data.data.generatedPassword,
+                        isCreate: false
+                    };
+
+                    // 显示用户信息模态框
+                    showUserInfoModal('密码重置成功', username, data.data.generatedPassword);
                 } else {
                     showAlert(data.error || '重置失败', 'error');
                 }
             } catch (error) {
                 showAlert('网络错误', 'error');
+            }
+        }
+
+        // 显示用户信息模态框
+        function showUserInfoModal(title, username, password) {
+            document.getElementById('passwordModalTitle').textContent = title;
+            document.getElementById('infoUsername').textContent = username;
+            document.getElementById('infoPassword').textContent = password;
+
+            // 重置复制按钮状态
+            const copyBtn = document.getElementById('copyInfoBtn');
+            copyBtn.textContent = '📋 复制信息';
+            copyBtn.classList.remove('copy-success');
+
+            document.getElementById('passwordModal').classList.add('show');
+        }
+
+        // 关闭密码模态框
+        function closePasswordModal() {
+            document.getElementById('passwordModal').classList.remove('show');
+        }
+
+        // 复制用户信息到剪切板
+        async function copyUserInfo() {
+            const siteUrl = 'https://np.derhe.com';
+            const copyText = `您的年批访问地址：${siteUrl}
+您的登录用户名：${currentUserInfo.username}
+您的初始登录密码：${currentUserInfo.password}（登录后可修改）`;
+
+            try {
+                await navigator.clipboard.writeText(copyText);
+
+                // 更新按钮状态
+                const copyBtn = document.getElementById('copyInfoBtn');
+                copyBtn.textContent = '✓ 已复制';
+                copyBtn.classList.add('copy-success');
+
+                // 2秒后恢复按钮状态
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 复制信息';
+                    copyBtn.classList.remove('copy-success');
+                }, 2000);
+            } catch (error) {
+                // 降级方案：使用旧的 execCommand
+                const textarea = document.createElement('textarea');
+                textarea.value = copyText;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                const copyBtn = document.getElementById('copyInfoBtn');
+                copyBtn.textContent = '✓ 已复制';
+                copyBtn.classList.add('copy-success');
+
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 复制信息';
+                    copyBtn.classList.remove('copy-success');
+                }, 2000);
             }
         }
 
