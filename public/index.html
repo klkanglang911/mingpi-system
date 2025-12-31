@@ -254,39 +254,60 @@
 
         .loading-brand {
             text-align: center;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
 
+        /* 使用纯 CSS 的旋转印章动画，不依赖外部字体 */
         .loading-seal {
-            width: 80px;
-            height: 80px;
+            width: 72px;
+            height: 72px;
             border: 3px solid var(--vermilion);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 1.5rem;
+            position: relative;
             animation: seal-pulse 2s ease-in-out infinite;
         }
 
-        .loading-seal-text {
-            font-family: 'Ma Shan Zheng', cursive;
-            font-size: 2.5rem;
-            color: var(--vermilion);
+        /* 印章内的装饰线条 */
+        .loading-seal::before,
+        .loading-seal::after {
+            content: '';
+            position: absolute;
+            background: var(--vermilion);
+        }
+        .loading-seal::before {
+            width: 40px;
+            height: 2px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .loading-seal::after {
+            width: 2px;
+            height: 40px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
+        /* 使用系统字体显示加载文字 */
         .loading-title {
-            font-family: 'Ma Shan Zheng', cursive;
-            font-size: 2rem;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
             color: var(--ink-black);
-            letter-spacing: 0.3em;
+            letter-spacing: 0.2em;
             margin-bottom: 0.5rem;
         }
 
         .loading-subtitle {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
             font-size: 0.85rem;
             color: var(--mist-gray);
-            letter-spacing: 0.2em;
+            letter-spacing: 0.15em;
         }
 
         .loading-progress {
@@ -313,6 +334,7 @@
 
         .progress-text {
             margin-top: 1rem;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
             font-size: 0.75rem;
             color: var(--mist-gray);
             letter-spacing: 0.1em;
@@ -352,9 +374,7 @@
     <!-- 加载页面 -->
     <div class="loading-screen" id="loadingScreen">
         <div class="loading-brand">
-            <div class="loading-seal">
-                <span class="loading-seal-text">灵庐</span>
-            </div>
+            <div class="loading-seal"></div>
             <h1 class="loading-title">灵庐书院</h1>
             <p class="loading-subtitle">年批月令</p>
         </div>
