@@ -623,41 +623,47 @@
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const mainContainer = document.getElementById('mainContainer');
-        let progress = 0;
 
-        // 模拟进度增长
+        // 资源加载状态
+        let fontsLoaded = false;
+        let dataLoaded = false;
+
+        // 更新进度条
         function updateProgress(value, text) {
-            progress = Math.min(value, 100);
-            progressFill.style.width = progress + '%';
+            progressFill.style.width = Math.min(value, 100) + '%';
             if (text) progressText.textContent = text;
         }
 
-        // 隐藏加载页面并显示主内容
-        function hideLoadingScreen() {
-            updateProgress(100, '加载完成');
-            setTimeout(() => {
-                loadingScreen.classList.add('fade-out');
-                mainContainer.classList.add('show');
-                // 完全隐藏后移除元素
+        // 检查是否所有资源都加载完成
+        function checkAllLoaded() {
+            if (fontsLoaded && dataLoaded) {
+                updateProgress(100, '加载完成');
                 setTimeout(() => {
-                    loadingScreen.style.display = 'none';
-                }, 500);
-            }, 200);
-        }
-
-        // 初始进度动画
-        updateProgress(10, '正在加载...');
-        setTimeout(() => updateProgress(30, '加载字体资源...'), 100);
-
-        // 监听字体加载
-        if (document.fonts) {
-            document.fonts.ready.then(() => {
-                updateProgress(70, '字体加载完成...');
-                setTimeout(() => {
-                    updateProgress(90, '准备就绪...');
+                    loadingScreen.classList.add('fade-out');
+                    mainContainer.classList.add('show');
+                    setTimeout(() => {
+                        loadingScreen.style.display = 'none';
+                    }, 500);
                 }, 100);
-            });
+            }
         }
+
+        // 标记字体加载完成
+        function markFontsLoaded() {
+            fontsLoaded = true;
+            updateProgress(dataLoaded ? 90 : 50, dataLoaded ? '准备就绪...' : '加载数据中...');
+            checkAllLoaded();
+        }
+
+        // 标记数据加载完成
+        function markDataLoaded() {
+            dataLoaded = true;
+            updateProgress(fontsLoaded ? 90 : 70, fontsLoaded ? '准备就绪...' : '加载字体中...');
+            checkAllLoaded();
+        }
+
+        // ========== 初始化 ==========
+        updateProgress(10, '正在加载...');
 
         // ========== 认证检查 ==========
         const token = localStorage.getItem('token');
@@ -676,6 +682,12 @@
             localStorage.removeItem('user');
             window.location.href = '/';
         });
+
+        // 等待字体加载（设置超时避免无限等待）
+        updateProgress(20, '加载字体资源...');
+        const fontTimeout = new Promise(resolve => setTimeout(resolve, 5000));
+        const fontReady = document.fonts ? document.fonts.ready : Promise.resolve();
+        Promise.race([fontReady, fontTimeout]).then(markFontsLoaded);
 
         // ========== 农历计算 ==========
         const lunarInfo = [
@@ -1007,13 +1019,22 @@
         }
 
         // ========== 初始化 ==========
-        function init() {
+        async function init() {
             const todayLunar = solarToLunar(todayYear, todayMonth, todayDate);
             viewLunarYear = todayLunar.year;
             viewLunarMonth = todayLunar.month;
 
-            updateLunarView();
+            // 初次加载数据
+            updateProgress(40, '加载数据中...');
+            viewLunarMonthRange = getLunarMonthSolarRange(viewLunarYear, viewLunarMonth);
+            updateCountdown();
+            renderCalendar();
+            await loadMingpi();
 
+            // 标记数据加载完成
+            markDataLoaded();
+
+            // 绑定月份切换事件
             document.getElementById('prevLunarMonth').addEventListener('click', () => {
                 viewLunarMonth--;
                 if (viewLunarMonth < 1) {
@@ -1034,9 +1055,6 @@
         }
 
         init();
-
-        // 初始化完成后隐藏加载页面
-        hideLoadingScreen();
     </script>
 </body>
 </html>
