@@ -229,11 +229,16 @@
             animation: fadeInUp 0.6s ease-out 0.4s both;
         }
 
-        .calendar-header-simple { text-align: center; margin-bottom: 1rem; }
+        .calendar-header-simple {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+        }
 
         .month-year {
-            font-family: 'Ma Shan Zheng', cursive;
             font-size: 1.25rem;
+            font-weight: 600;
             color: var(--ink-black);
         }
 
@@ -671,54 +676,76 @@
             const range = viewLunarMonthRange;
             if (!range) return;
 
-            const startYear = range.start.year;
-            const startMonth = range.start.month;
-            const endYear = range.end.year;
-            const endMonth = range.end.month;
-
-            let monthYearText = `${startYear}年${startMonth}月`;
-            if (startYear !== endYear || startMonth !== endMonth) {
-                monthYearText = `${startYear}年${startMonth}月 - ${endMonth}月`;
+            // 计算需要显示哪些阳历月份
+            const months = [];
+            let m = range.start.month;
+            let y = range.start.year;
+            while (y < range.end.year || (y === range.end.year && m <= range.end.month)) {
+                months.push({ year: y, month: m });
+                m++;
+                if (m > 12) { m = 1; y++; }
             }
-            document.getElementById('monthYear').textContent = monthYearText;
+
+            // 更新标题
+            const titleParts = months.map(m => `${m.year}年${m.month}月`);
+            document.getElementById('monthYear').textContent = titleParts.length > 1
+                ? `${months[0].year}年${months[0].month}月 - ${months[months.length-1].month}月`
+                : titleParts[0];
 
             const daysGrid = document.getElementById('daysGrid');
             daysGrid.innerHTML = '';
 
-            const daysInMonth1 = new Date(startYear, startMonth, 0).getDate();
-            const firstDay = new Date(startYear, startMonth - 1, range.start.day).getDay();
+            // 渲染每个月
+            months.forEach((monthInfo, monthIndex) => {
+                const daysInMonth = new Date(monthInfo.year, monthInfo.month, 0).getDate();
+                const firstDay = new Date(monthInfo.year, monthInfo.month - 1, 1).getDay();
 
-            for (let i = 0; i < firstDay; i++) {
-                const emptyCell = document.createElement('div');
-                emptyCell.className = 'day-cell empty';
-                daysGrid.appendChild(emptyCell);
-            }
+                // 如果是第二个及以后的月份，需要正确处理星期位置
+                if (monthIndex > 0) {
+                    const prevMonth = months[monthIndex - 1];
+                    const prevMonthDays = new Date(prevMonth.year, prevMonth.month, 0).getDate();
+                    const prevFirstDay = new Date(prevMonth.year, prevMonth.month - 1, 1).getDay();
+                    const prevTotalCells = prevFirstDay + prevMonthDays;
+                    const prevRemainder = prevTotalCells % 7;
 
-            for (let day = range.start.day; day <= daysInMonth1; day++) {
-                const cell = createDayCell(startYear, startMonth, day);
-                daysGrid.appendChild(cell);
-            }
+                    // 先填充上一行剩余的空白（完成上一行）
+                    if (prevRemainder > 0) {
+                        for (let i = prevRemainder; i < 7; i++) {
+                            const cell = document.createElement('div');
+                            cell.className = 'day-cell empty';
+                            daysGrid.appendChild(cell);
+                        }
+                    }
 
-            if (startMonth !== endMonth || startYear !== endYear) {
-                const lastDayOfMonth1 = new Date(startYear, startMonth - 1, daysInMonth1).getDay();
-                const firstDayOfMonth2 = new Date(endYear, endMonth - 1, 1).getDay();
-
-                if (lastDayOfMonth1 !== 6) {
-                    for (let i = 0; i < firstDayOfMonth2; i++) {
-                        const emptyCell = document.createElement('div');
-                        emptyCell.className = 'day-cell empty';
-                        daysGrid.appendChild(emptyCell);
+                    // 然后为新月份1号之前添加空白格子（新的一行）
+                    for (let i = 0; i < firstDay; i++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'day-cell empty';
+                        daysGrid.appendChild(cell);
+                    }
+                } else {
+                    // 第一个月的空白格子
+                    const startDay = range.start.day;
+                    const startDayOfWeek = new Date(monthInfo.year, monthInfo.month - 1, startDay).getDay();
+                    for (let i = 0; i < startDayOfWeek; i++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'day-cell empty';
+                        daysGrid.appendChild(cell);
                     }
                 }
 
-                for (let day = 1; day <= range.end.day; day++) {
-                    const cell = createDayCell(endYear, endMonth, day);
+                // 日期格子
+                const startDay = monthIndex === 0 ? range.start.day : 1;
+                const endDay = monthIndex === months.length - 1 ? range.end.day : daysInMonth;
+
+                for (let day = startDay; day <= endDay; day++) {
+                    const cell = createDayCell(monthInfo.year, monthInfo.month, day, months.length > 1 && day === 1 && monthIndex > 0);
                     daysGrid.appendChild(cell);
                 }
-            }
+            });
         }
 
-        function createDayCell(year, month, day) {
+        function createDayCell(year, month, day, showMonthPrefix) {
             const cell = document.createElement('div');
             cell.className = 'day-cell';
 
@@ -740,7 +767,7 @@
 
             const solarDiv = document.createElement('div');
             solarDiv.className = 'solar-day';
-            solarDiv.textContent = month !== viewLunarMonthRange.start.month && day === 1 ? `${month}/${day}` : day;
+            solarDiv.textContent = showMonthPrefix ? `${month}/${day}` : day;
 
             const lunarDiv = document.createElement('div');
             lunarDiv.className = 'lunar-day';
