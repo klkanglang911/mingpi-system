@@ -222,10 +222,18 @@
             font-size: 1.25rem;
             color: var(--vermilion);
         }
+
+        /* 默认隐藏登录容器，防止已登录时闪烁 */
+        .login-container {
+            display: none;
+        }
+        .login-container.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <div class="login-container">
+    <div class="login-container" id="loginContainer">
         <header class="header">
             <div class="header-ornament">
                 <span class="ornament-line"></span>
@@ -263,6 +271,11 @@
     </div>
 
     <script>
+        // 显示登录容器
+        function showLoginForm() {
+            document.getElementById('loginContainer').classList.add('show');
+        }
+
         // 检查是否已登录
         const token = localStorage.getItem('token');
         if (token) {
@@ -288,7 +301,12 @@
             })
             .catch(() => {
                 localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                showLoginForm();
             });
+        } else {
+            // 没有 token，直接显示登录表单
+            showLoginForm();
         }
 
         // 登录表单提交
