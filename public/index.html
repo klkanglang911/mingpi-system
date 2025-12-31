@@ -429,13 +429,21 @@
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
 
+        // 检测字体是否已缓存/加载
+        function areFontsReady() {
+            if (!document.fonts) return true;
+            // 检查主要使用的字体是否已可用
+            return document.fonts.check('1em "Ma Shan Zheng"') &&
+                   document.fonts.check('1em "Noto Serif SC"');
+        }
+
         // 更新进度条
         function updateProgress(value, text) {
             progressFill.style.width = Math.min(value, 100) + '%';
             if (text) progressText.textContent = text;
         }
 
-        // 隐藏加载页面（确保字体已加载）
+        // 隐藏加载页面
         function hideLoadingScreen() {
             updateProgress(100, '加载完成');
             setTimeout(() => {
@@ -446,15 +454,20 @@
             }, 100);
         }
 
-        // 显示登录容器（等待字体加载完成）
-        async function showLoginForm() {
+        // 直接显示登录页（字体已缓存时使用）
+        function showLoginFormImmediately() {
+            loadingScreen.style.display = 'none';
+            document.getElementById('loginContainer').classList.add('show');
+        }
+
+        // 等待字体加载后显示登录页
+        async function showLoginFormWithLoading() {
             updateProgress(50, '加载字体资源...');
 
-            // 等待字体加载，但设置超时避免无限等待
-            const fontTimeout = new Promise(resolve => setTimeout(resolve, 5000));
-            const fontReady = document.fonts ? document.fonts.ready : Promise.resolve();
-
-            await Promise.race([fontReady, fontTimeout]);
+            // 真正等待字体加载完成（不设超时）
+            if (document.fonts) {
+                await document.fonts.ready;
+            }
 
             updateProgress(90, '准备就绪...');
             document.getElementById('loginContainer').classList.add('show');
@@ -462,12 +475,20 @@
         }
 
         // ========== 初始化 ==========
-        updateProgress(10, '正在加载...');
+        // 检查字体是否已缓存
+        const fontsAlreadyCached = areFontsReady();
+
+        if (fontsAlreadyCached) {
+            // 字体已缓存，跳过加载页
+            loadingScreen.style.display = 'none';
+        } else {
+            updateProgress(10, '正在加载...');
+        }
 
         // 检查是否已登录
         const token = localStorage.getItem('token');
         if (token) {
-            updateProgress(30, '验证登录状态...');
+            if (!fontsAlreadyCached) updateProgress(30, '验证登录状态...');
             // 验证 token 是否有效
             fetch('/api/auth/me?_t=' + Date.now(), {
                 headers: {
@@ -480,7 +501,7 @@
                 throw new Error('Token invalid');
             })
             .then(data => {
-                updateProgress(80, '跳转中...');
+                if (!fontsAlreadyCached) updateProgress(80, '跳转中...');
                 if (data.user.mustChangePassword) {
                     window.location.href = '/change-password.html';
                 } else {
@@ -490,11 +511,19 @@
             .catch(() => {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                showLoginForm();
+                if (fontsAlreadyCached) {
+                    showLoginFormImmediately();
+                } else {
+                    showLoginFormWithLoading();
+                }
             });
         } else {
-            // 没有 token，等待字体后显示登录表单
-            showLoginForm();
+            // 没有 token
+            if (fontsAlreadyCached) {
+                showLoginFormImmediately();
+            } else {
+                showLoginFormWithLoading();
+            }
         }
 
         // 登录表单提交

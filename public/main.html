@@ -624,18 +624,35 @@
         const progressText = document.getElementById('progressText');
         const mainContainer = document.getElementById('mainContainer');
 
+        // 检测字体是否已缓存/加载
+        function areFontsReady() {
+            if (!document.fonts) return true;
+            return document.fonts.check('1em "Ma Shan Zheng"') &&
+                   document.fonts.check('1em "Noto Serif SC"');
+        }
+
         // 资源加载状态
         let fontsLoaded = false;
         let dataLoaded = false;
+        const fontsAlreadyCached = areFontsReady();
+
+        // 如果字体已缓存，跳过加载页
+        if (fontsAlreadyCached) {
+            loadingScreen.style.display = 'none';
+            mainContainer.classList.add('show');
+            fontsLoaded = true;
+        }
 
         // 更新进度条
         function updateProgress(value, text) {
+            if (fontsAlreadyCached) return; // 已跳过加载页，不更新
             progressFill.style.width = Math.min(value, 100) + '%';
             if (text) progressText.textContent = text;
         }
 
         // 检查是否所有资源都加载完成
         function checkAllLoaded() {
+            if (fontsAlreadyCached) return; // 已跳过加载页
             if (fontsLoaded && dataLoaded) {
                 updateProgress(100, '加载完成');
                 setTimeout(() => {
@@ -663,7 +680,9 @@
         }
 
         // ========== 初始化 ==========
-        updateProgress(10, '正在加载...');
+        if (!fontsAlreadyCached) {
+            updateProgress(10, '正在加载...');
+        }
 
         // ========== 认证检查 ==========
         const token = localStorage.getItem('token');
@@ -683,11 +702,15 @@
             window.location.href = '/';
         });
 
-        // 等待字体加载（设置超时避免无限等待）
-        updateProgress(20, '加载字体资源...');
-        const fontTimeout = new Promise(resolve => setTimeout(resolve, 5000));
-        const fontReady = document.fonts ? document.fonts.ready : Promise.resolve();
-        Promise.race([fontReady, fontTimeout]).then(markFontsLoaded);
+        // 等待字体加载（如果尚未缓存）
+        if (!fontsAlreadyCached) {
+            updateProgress(20, '加载字体资源...');
+            if (document.fonts) {
+                document.fonts.ready.then(markFontsLoaded);
+            } else {
+                markFontsLoaded();
+            }
+        }
 
         // ========== 农历计算 ==========
         const lunarInfo = [
