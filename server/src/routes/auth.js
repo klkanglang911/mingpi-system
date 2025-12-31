@@ -130,6 +130,12 @@ router.post('/change-password', authMiddleware, async (req, res) => {
  * 获取当前用户信息
  */
 router.get('/me', authMiddleware, (req, res) => {
+    // 禁止缓存，确保每次获取最新状态
+    res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    });
     res.json({
         success: true,
         user: req.user
