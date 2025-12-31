@@ -21,7 +21,10 @@ app.use(cors());
 app.use(express.json());
 
 // 静态文件服务
-app.use(express.static(path.join(__dirname, '../../public')));
+const publicPath = process.env.NODE_ENV === 'production'
+    ? path.join(__dirname, '../public')
+    : path.join(__dirname, '../../public');
+app.use(express.static(publicPath));
 
 // API 路由
 app.use('/api/auth', authRoutes);
@@ -39,7 +42,7 @@ app.get('*', (req, res) => {
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: '接口不存在' });
     }
-    res.sendFile(path.join(__dirname, '../../public/index.html'));
+    res.sendFile(path.join(publicPath, 'index.html'));
 });
 
 // 错误处理中间件
