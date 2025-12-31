@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 · 命批系统</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #4a4a4a;
+            --vermilion: #c23a2b;
+            --gold-accent: #b8860b;
+            --paper-white: #f8f5f0;
+            --paper-cream: #f0ebe3;
+            --mist-gray: #9a9590;
+            --border-light: rgba(26, 26, 26, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--ink-black);
+            color: var(--paper-white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-right span { font-size: 0.875rem; }
+
+        .header-right a {
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+
+        .header-right a:hover { color: var(--paper-white); }
+
+        .nav {
+            background: var(--paper-white);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 2rem;
+        }
+
+        .nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav a {
+            display: block;
+            padding: 1rem 0;
+            color: var(--ink-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav a:hover,
+        .nav a.active {
+            color: var(--vermilion);
+            border-color: var(--vermilion);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--paper-white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .stat-card h3 {
+            font-size: 0.875rem;
+            color: var(--mist-gray);
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--ink-black);
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .action-card {
+            background: var(--paper-white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .action-card h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .action-card p {
+            color: var(--mist-gray);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--ink-black);
+            color: var(--paper-white);
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background: var(--ink-light); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>命批系统 - 管理后台</h1>
+        <div class="header-right">
+            <span id="adminName">管理员</span>
+            <a href="/" id="logoutBtn">退出</a>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <ul>
+            <li><a href="/admin/" class="active">首页</a></li>
+            <li><a href="/admin/users.html">用户管理</a></li>
+            <li><a href="/admin/mingpi.html">命批管理</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="stats">
+            <div class="stat-card">
+                <h3>用户总数</h3>
+                <div class="value" id="userCount">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>命批总数</h3>
+                <div class="value" id="mingpiCount">-</div>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+            <div class="action-card">
+                <h3>用户管理</h3>
+                <p>创建、编辑、删除用户账户，重置用户密码</p>
+                <a href="/admin/users.html" class="btn">管理用户</a>
+            </div>
+            <div class="action-card">
+                <h3>命批管理</h3>
+                <p>为用户添加、编辑每月的个性化命批内容</p>
+                <a href="/admin/mingpi.html" class="btn">管理命批</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || !user.isAdmin) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('adminName').textContent = user.displayName || '管理员';
+
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        });
+
+        // 加载统计数据
+        async function loadStats() {
+            try {
+                const [usersRes, mingpiRes] = await Promise.all([
+                    fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + token } }),
+                    fetch('/api/admin/mingpi', { headers: { 'Authorization': 'Bearer ' + token } })
+                ]);
+
+                if (usersRes.ok) {
+                    const users = await usersRes.json();
+                    document.getElementById('userCount').textContent = users.data.length;
+                }
+
+                if (mingpiRes.ok) {
+                    const mingpi = await mingpiRes.json();
+                    document.getElementById('mingpiCount').textContent = mingpi.data.length;
+                }
+            } catch (error) {
+                console.error('加载统计失败:', error);
+            }
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

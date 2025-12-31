@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>命批 · 农历日历</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #3d3d3d;
+            --paper-white: #f8f5f0;
+            --paper-cream: #efe9e0;
+            --vermilion: #c23a2b;
+            --vermilion-light: #e85a4b;
+            --gold-accent: #b8860b;
+            --mist-gray: #9a9590;
+            --shadow-ink: rgba(26, 26, 26, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background: var(--paper-white);
+            color: var(--ink-black);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 10%, rgba(200, 195, 185, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(180, 175, 165, 0.3) 0%, transparent 40%),
+                radial-gradient(ellipse at 60% 40%, rgba(190, 185, 175, 0.2) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 2rem;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header-ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ornament-line {
+            width: 3rem;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--ink-light), transparent);
+        }
+
+        .ornament-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--vermilion);
+            border-radius: 50%;
+        }
+
+        .title {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2.5rem;
+            letter-spacing: 0.3rem;
+            color: var(--ink-black);
+            text-shadow: 2px 2px 4px var(--shadow-ink);
+        }
+
+        .user-greeting {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            margin-top: 0.25rem;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.25rem;
+            background: none;
+            border: 1px solid var(--border-light, rgba(26,26,26,0.1));
+            color: var(--mist-gray);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            color: var(--vermilion);
+            border-color: var(--vermilion);
+        }
+
+        .tips-section {
+            background: linear-gradient(135deg, var(--paper-cream) 0%, var(--paper-white) 100%);
+            border-left: 3px solid var(--vermilion);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 12px var(--shadow-ink);
+            animation: fadeInLeft 0.6s ease-out 0.2s both;
+        }
+
+        .tips-label {
+            font-size: 0.65rem;
+            color: var(--vermilion);
+            letter-spacing: 0.2rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .tips-content {
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--ink-light);
+        }
+
+        .lunar-countdown {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+            background: var(--ink-black);
+            color: var(--paper-white);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.6s ease-out 0.3s both;
+        }
+
+        .lunar-countdown::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(circle at 10% 20%, rgba(194, 58, 43, 0.15) 0%, transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(184, 134, 11, 0.1) 0%, transparent 25%);
+            pointer-events: none;
+        }
+
+        .lunar-nav-btn {
+            width: 36px;
+            height: 36px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: var(--paper-white);
+            position: relative;
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .lunar-nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .lunar-content {
+            flex: 1;
+            text-align: center;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .lunar-month-name {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.75rem;
+            color: var(--gold-accent);
+            margin-bottom: 0.25rem;
+            position: relative;
+        }
+
+        .countdown-text {
+            font-size: 0.85rem;
+            color: rgba(248, 245, 240, 0.8);
+            position: relative;
+        }
+
+        .countdown-number {
+            display: inline-block;
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 2rem;
+            color: var(--vermilion-light);
+            margin: 0 0.2rem;
+            line-height: 1;
+            vertical-align: middle;
+            text-shadow: 0 0 20px rgba(232, 90, 75, 0.5);
+        }
+
+        .lunar-year-info {
+            font-size: 0.75rem;
+            color: rgba(248, 245, 240, 0.6);
+            margin-top: 0.25rem;
+            position: relative;
+        }
+
+        .calendar-section {
+            background: var(--paper-white);
+            border-radius: 16px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 20px var(--shadow-ink);
+            animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+
+        .calendar-header-simple { text-align: center; margin-bottom: 1rem; }
+
+        .month-year {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.25rem;
+            color: var(--ink-black);
+        }
+
+        .weekday-row {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            margin-bottom: 0.75rem;
+        }
+
+        .weekday {
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            padding: 0.5rem 0;
+            font-weight: 600;
+        }
+
+        .weekday.weekend { color: var(--vermilion); }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            padding: 2px;
+        }
+
+        .day-cell:hover { background: var(--paper-cream); }
+
+        .day-cell.empty { cursor: default; }
+        .day-cell.empty:hover { background: transparent; }
+
+        .day-cell.today {
+            background: var(--vermilion);
+            color: var(--paper-white);
+            box-shadow: 0 2px 8px rgba(194, 58, 43, 0.4);
+        }
+
+        .day-cell.today:hover { background: var(--vermilion-light); }
+        .day-cell.today .solar-day { color: var(--paper-white); }
+        .day-cell.today .lunar-day { color: rgba(255, 255, 255, 0.8); }
+
+        .day-cell.lunar-month-belong {
+            background: rgba(184, 134, 11, 0.08);
+        }
+
+        .day-cell.past {
+            background: rgba(154, 149, 144, 0.15);
+        }
+
+        .day-cell.past .solar-day,
+        .day-cell.past .lunar-day {
+            color: rgba(154, 149, 144, 0.7);
+        }
+
+        .solar-day {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            line-height: 1.2;
+        }
+
+        .day-cell.weekend .solar-day { color: var(--vermilion); }
+
+        .lunar-day {
+            font-size: 0.55rem;
+            color: var(--mist-gray);
+            margin-top: 1px;
+            line-height: 1;
+            white-space: nowrap;
+        }
+
+        .lunar-day.festival {
+            color: var(--vermilion);
+            font-weight: 600;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            animation: fadeInUp 0.6s ease-out 0.6s both;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.15rem;
+        }
+
+        .seal {
+            margin-top: 1rem;
+            display: inline-flex;
+            width: 48px;
+            height: 48px;
+            border: 2px solid var(--vermilion);
+            border-radius: 4px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .seal-text {
+            font-family: 'Ma Shan Zheng', cursive;
+            font-size: 1.5rem;
+            color: var(--vermilion);
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 360px) {
+            html { font-size: 14px; }
+            .container { padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="logout-btn" id="logoutBtn">退出</button>
+
+        <header class="header">
+            <div class="header-ornament">
+                <span class="ornament-line"></span>
+                <span class="ornament-dot"></span>
+                <span class="ornament-line"></span>
+            </div>
+            <h1 class="title" id="userName">用户</h1>
+            <p class="user-greeting">愿您今日安好</p>
+        </header>
+
+        <section class="tips-section">
+            <div class="tips-label">· 本月命批 ·</div>
+            <p class="tips-content" id="tips">加载中...</p>
+        </section>
+
+        <section class="lunar-countdown">
+            <button class="lunar-nav-btn" id="prevLunarMonth" aria-label="上个农历月">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div class="lunar-content">
+                <div class="lunar-month-name" id="lunarMonthName">腊月</div>
+                <div class="countdown-text" id="countdownText">
+                    距本月结束还剩 <span class="countdown-number" id="daysRemaining">0</span> 天
+                </div>
+                <div class="lunar-year-info" id="lunarYearInfo">甲辰年</div>
+            </div>
+            <button class="lunar-nav-btn" id="nextLunarMonth" aria-label="下个农历月">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </section>
+
+        <section class="calendar-section">
+            <div class="calendar-header-simple">
+                <div class="month-year" id="monthYear">2024年12月</div>
+            </div>
+            <div class="weekday-row">
+                <div class="weekday weekend">日</div>
+                <div class="weekday">一</div>
+                <div class="weekday">二</div>
+                <div class="weekday">三</div>
+                <div class="weekday">四</div>
+                <div class="weekday">五</div>
+                <div class="weekday weekend">六</div>
+            </div>
+            <div class="days-grid" id="daysGrid"></div>
+        </section>
+
+        <footer class="footer">
+            <p class="footer-text">人间有清醒 欢迎来灵庐</p>
+            <div class="seal">
+                <span class="seal-text">灵庐</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // ========== 认证检查 ==========
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // 设置用户名
+        document.getElementById('userName').textContent = user.displayName || '用户';
+
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        });
+
+        // ========== 农历计算 ==========
+        const lunarInfo = [
+            0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
+            0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
+            0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
+            0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950,
+            0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557,
+            0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5b0, 0x14573, 0x052b0, 0x0a9a8, 0x0e950, 0x06aa0,
+            0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0,
+            0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6,
+            0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570,
+            0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x055c0, 0x0ab60, 0x096d5, 0x092e0,
+            0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5,
+            0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930,
+            0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530,
+            0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45,
+            0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0,
+            0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06b20, 0x1a6c4, 0x0aae0,
+            0x0a2e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4,
+            0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0,
+            0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160,
+            0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252,
+            0x0d520
+        ];
+
+        const Gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const Zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        const lunarMonths = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
+        const lunarDays = ['初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
+            '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
+            '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'];
+
+        const solarTerms = ['小寒', '大寒', '立春', '雨水', '惊蛰', '春分', '清明', '谷雨',
+            '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑',
+            '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至'];
+        const sTermInfo = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921,
+            173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033,
+            353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758];
+
+        const lunarFestivals = {
+            '1-1': '春节', '1-15': '元宵', '5-5': '端午', '7-7': '七夕',
+            '7-15': '中元', '8-15': '中秋', '9-9': '重阳', '12-8': '腊八',
+            '12-23': '小年', '12-30': '除夕'
+        };
+        const solarFestivals = {
+            '1-1': '元旦', '2-14': '情人节', '3-8': '妇女节', '4-1': '愚人节',
+            '5-1': '劳动节', '5-4': '青年节', '6-1': '儿童节', '10-1': '国庆节',
+            '12-25': '圣诞节'
+        };
+
+        function lYearDays(y) {
+            let sum = 348;
+            for (let i = 0x8000; i > 0x8; i >>= 1) {
+                sum += (lunarInfo[y - 1900] & i) ? 1 : 0;
+            }
+            return sum + leapDays(y);
+        }
+
+        function leapMonth(y) { return lunarInfo[y - 1900] & 0xf; }
+        function leapDays(y) {
+            if (leapMonth(y)) return (lunarInfo[y - 1900] & 0x10000) ? 30 : 29;
+            return 0;
+        }
+        function monthDays(y, m) { return (lunarInfo[y - 1900] & (0x10000 >> m)) ? 30 : 29; }
+
+        function solarToLunar(y, m, d) {
+            if (y < 1900 || y > 2100) return null;
+            let offset = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(1900, 0, 31)) / 86400000);
+            let year = 1900, temp = 0;
+            for (; year < 2101 && offset > 0; year++) {
+                temp = lYearDays(year);
+                offset -= temp;
+            }
+            if (offset < 0) { offset += temp; year--; }
+
+            let isLeap = false, leap = leapMonth(year), month = 1;
+            for (; month < 13 && offset > 0; month++) {
+                if (leap > 0 && month === (leap + 1) && !isLeap) {
+                    --month; isLeap = true; temp = leapDays(year);
+                } else { temp = monthDays(year, month); }
+                if (isLeap && month === (leap + 1)) isLeap = false;
+                offset -= temp;
+            }
+            if (offset === 0 && leap > 0 && month === leap + 1) {
+                if (isLeap) isLeap = false;
+                else { isLeap = true; --month; }
+            }
+            if (offset < 0) { offset += temp; --month; }
+
+            const day = offset + 1;
+            return {
+                year, month, day, isLeap, monthDays: temp,
+                yearGan: Gan[(year - 4) % 10],
+                yearZhi: Zhi[(year - 4) % 12],
+                monthName: lunarMonths[month - 1] + '月',
+                dayName: lunarDays[day - 1]
+            };
+        }
+
+        function getSolarTerm(y, m, d) {
+            const solarPeriod = (y, n) => {
+                const julianDay = 2415021.324 + (y - 1900) * 365.2422 + sTermInfo[n] / 1440;
+                const date = new Date((julianDay - 2440587.5) * 86400000);
+                return date.getUTCDate();
+            };
+            const termIndex1 = (m - 1) * 2;
+            const termIndex2 = termIndex1 + 1;
+            if (d === solarPeriod(y, termIndex1)) return solarTerms[termIndex1];
+            if (d === solarPeriod(y, termIndex2)) return solarTerms[termIndex2];
+            return null;
+        }
+
+        function getFestival(y, m, d, lunar) {
+            const solarKey = `${m}-${d}`;
+            if (solarFestivals[solarKey]) return solarFestivals[solarKey];
+            const lunarKey = `${lunar.month}-${lunar.day}`;
+            if (lunarFestivals[lunarKey]) return lunarFestivals[lunarKey];
+            if (lunar.month === 12 && lunar.day === lunar.monthDays) return '除夕';
+            return null;
+        }
+
+        function getLunarMonthSolarRange(lunarYear, lunarMonth) {
+            if (lunarYear < 1900 || lunarYear > 2100 || lunarMonth < 1 || lunarMonth > 12) return null;
+            let daysFromBase = 0;
+            for (let y = 1900; y < lunarYear; y++) daysFromBase += lYearDays(y);
+            const leap = leapMonth(lunarYear);
+            for (let m = 1; m < lunarMonth; m++) {
+                daysFromBase += monthDays(lunarYear, m);
+                if (leap > 0 && m === leap) daysFromBase += leapDays(lunarYear);
+            }
+            const baseTime = Date.UTC(1900, 0, 31);
+            const startTime = baseTime + daysFromBase * 86400000;
+            const startDate = new Date(startTime);
+            const days = monthDays(lunarYear, lunarMonth);
+            const endTime = startTime + (days - 1) * 86400000;
+            const endDate = new Date(endTime);
+            return {
+                start: { year: startDate.getUTCFullYear(), month: startDate.getUTCMonth() + 1, day: startDate.getUTCDate() },
+                end: { year: endDate.getUTCFullYear(), month: endDate.getUTCMonth() + 1, day: endDate.getUTCDate() },
+                days
+            };
+        }
+
+        // ========== 状态 ==========
+        const today = new Date();
+        const todayYear = today.getFullYear();
+        const todayMonth = today.getMonth() + 1;
+        const todayDate = today.getDate();
+        let viewLunarYear, viewLunarMonth;
+        let viewLunarMonthRange = { start: null, end: null };
+
+        function isInViewLunarMonth(year, month, day) {
+            if (!viewLunarMonthRange.start || !viewLunarMonthRange.end) return false;
+            const date = new Date(year, month - 1, day);
+            const startDate = new Date(viewLunarMonthRange.start.year, viewLunarMonthRange.start.month - 1, viewLunarMonthRange.start.day);
+            const endDate = new Date(viewLunarMonthRange.end.year, viewLunarMonthRange.end.month - 1, viewLunarMonthRange.end.day);
+            return date >= startDate && date <= endDate;
+        }
+
+        function isPastDate(year, month, day) {
+            const date = new Date(year, month - 1, day);
+            const todayDate2 = new Date(todayYear, todayMonth - 1, todayDate);
+            return date < todayDate2;
+        }
+
+        // ========== 命批加载 ==========
+        async function loadMingpi() {
+            try {
+                const response = await fetch(`/api/mingpi/${viewLunarYear}/${viewLunarMonth}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('tips').textContent = data.data.content;
+                }
+            } catch (error) {
+                console.error('加载命批失败:', error);
+            }
+        }
+
+        // ========== UI 更新 ==========
+        function updateLunarView() {
+            viewLunarMonthRange = getLunarMonthSolarRange(viewLunarYear, viewLunarMonth);
+            updateCountdown();
+            renderCalendar();
+            loadMingpi();
+        }
+
+        function updateCountdown() {
+            const range = viewLunarMonthRange;
+            if (!range) return;
+
+            document.getElementById('lunarMonthName').textContent = lunarMonths[viewLunarMonth - 1] + '月';
+            document.getElementById('lunarYearInfo').textContent =
+                Gan[(viewLunarYear - 4) % 10] + Zhi[(viewLunarYear - 4) % 12] + '年';
+
+            const endDate = new Date(range.end.year, range.end.month - 1, range.end.day);
+            const todayTime = new Date(todayYear, todayMonth - 1, todayDate);
+            const daysRemaining = Math.ceil((endDate - todayTime) / 86400000);
+
+            const countdownEl = document.getElementById('countdownText');
+            if (daysRemaining > 0) {
+                countdownEl.innerHTML = `距本月结束还剩 <span class="countdown-number">${daysRemaining}</span> 天`;
+            } else if (daysRemaining === 0) {
+                countdownEl.innerHTML = `<span class="countdown-number">今日</span> 是本月最后一天`;
+            } else {
+                countdownEl.innerHTML = `${range.start.year}年${range.start.month}月${range.start.day}日 - ${range.end.month}月${range.end.day}日`;
+            }
+        }
+
+        function renderCalendar() {
+            const range = viewLunarMonthRange;
+            if (!range) return;
+
+            const startYear = range.start.year;
+            const startMonth = range.start.month;
+            const endYear = range.end.year;
+            const endMonth = range.end.month;
+
+            let monthYearText = `${startYear}年${startMonth}月`;
+            if (startYear !== endYear || startMonth !== endMonth) {
+                monthYearText = `${startYear}年${startMonth}月 - ${endMonth}月`;
+            }
+            document.getElementById('monthYear').textContent = monthYearText;
+
+            const daysGrid = document.getElementById('daysGrid');
+            daysGrid.innerHTML = '';
+
+            const daysInMonth1 = new Date(startYear, startMonth, 0).getDate();
+            const firstDay = new Date(startYear, startMonth - 1, range.start.day).getDay();
+
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'day-cell empty';
+                daysGrid.appendChild(emptyCell);
+            }
+
+            for (let day = range.start.day; day <= daysInMonth1; day++) {
+                const cell = createDayCell(startYear, startMonth, day);
+                daysGrid.appendChild(cell);
+            }
+
+            if (startMonth !== endMonth || startYear !== endYear) {
+                const lastDayOfMonth1 = new Date(startYear, startMonth - 1, daysInMonth1).getDay();
+                const firstDayOfMonth2 = new Date(endYear, endMonth - 1, 1).getDay();
+
+                if (lastDayOfMonth1 !== 6) {
+                    for (let i = 0; i < firstDayOfMonth2; i++) {
+                        const emptyCell = document.createElement('div');
+                        emptyCell.className = 'day-cell empty';
+                        daysGrid.appendChild(emptyCell);
+                    }
+                }
+
+                for (let day = 1; day <= range.end.day; day++) {
+                    const cell = createDayCell(endYear, endMonth, day);
+                    daysGrid.appendChild(cell);
+                }
+            }
+        }
+
+        function createDayCell(year, month, day) {
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+
+            const isToday = year === todayYear && month === todayMonth && day === todayDate;
+            const isWeekend = new Date(year, month - 1, day).getDay() % 6 === 0;
+
+            if (isToday) cell.classList.add('today');
+            if (isWeekend) cell.classList.add('weekend');
+
+            const inLunarMonth = isInViewLunarMonth(year, month, day);
+            if (inLunarMonth && !isToday) cell.classList.add('lunar-month-belong');
+
+            const past = isPastDate(year, month, day);
+            if (past && !isToday) cell.classList.add('past');
+
+            const lunar = solarToLunar(year, month, day);
+            const solarTerm = getSolarTerm(year, month, day);
+            const festival = getFestival(year, month, day, lunar);
+
+            const solarDiv = document.createElement('div');
+            solarDiv.className = 'solar-day';
+            solarDiv.textContent = month !== viewLunarMonthRange.start.month && day === 1 ? `${month}/${day}` : day;
+
+            const lunarDiv = document.createElement('div');
+            lunarDiv.className = 'lunar-day';
+
+            if (festival) {
+                lunarDiv.textContent = festival;
+                lunarDiv.classList.add('festival');
+            } else if (solarTerm) {
+                lunarDiv.textContent = solarTerm;
+                lunarDiv.classList.add('festival');
+            } else if (lunar.day === 1) {
+                lunarDiv.textContent = lunar.monthName;
+            } else {
+                lunarDiv.textContent = lunar.dayName;
+            }
+
+            cell.appendChild(solarDiv);
+            cell.appendChild(lunarDiv);
+            return cell;
+        }
+
+        // ========== 初始化 ==========
+        function init() {
+            const todayLunar = solarToLunar(todayYear, todayMonth, todayDate);
+            viewLunarYear = todayLunar.year;
+            viewLunarMonth = todayLunar.month;
+
+            updateLunarView();
+
+            document.getElementById('prevLunarMonth').addEventListener('click', () => {
+                viewLunarMonth--;
+                if (viewLunarMonth < 1) {
+                    viewLunarMonth = 12;
+                    viewLunarYear--;
+                }
+                updateLunarView();
+            });
+
+            document.getElementById('nextLunarMonth').addEventListener('click', () => {
+                viewLunarMonth++;
+                if (viewLunarMonth > 12) {
+                    viewLunarMonth = 1;
+                    viewLunarYear++;
+                }
+                updateLunarView();
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

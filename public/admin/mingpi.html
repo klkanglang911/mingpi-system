@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>命批管理 · 命批系统</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #4a4a4a;
+            --vermilion: #c23a2b;
+            --gold-accent: #b8860b;
+            --paper-white: #f8f5f0;
+            --paper-cream: #f0ebe3;
+            --mist-gray: #9a9590;
+            --border-light: rgba(26, 26, 26, 0.1);
+            --success: #2e7d32;
+            --danger: #c62828;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--ink-black);
+            color: var(--paper-white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 1.25rem; font-weight: 500; }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-right span { font-size: 0.875rem; }
+        .header-right a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.875rem; }
+        .header-right a:hover { color: var(--paper-white); }
+
+        .nav {
+            background: var(--paper-white);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 2rem;
+        }
+
+        .nav ul { list-style: none; display: flex; gap: 2rem; }
+
+        .nav a {
+            display: block;
+            padding: 1rem 0;
+            color: var(--ink-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav a:hover, .nav a.active {
+            color: var(--vermilion);
+            border-color: var(--vermilion);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .panel {
+            background: var(--paper-white);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .panel h3 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            color: var(--ink-light);
+        }
+
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+        }
+
+        .form-group textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--ink-black);
+            color: var(--paper-white);
+        }
+
+        .btn-primary:hover { background: var(--ink-light); }
+
+        .btn-secondary {
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            border: 1px solid var(--border-light);
+        }
+
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { opacity: 0.9; }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-success { background: rgba(46, 125, 50, 0.1); color: var(--success); }
+        .alert-error { background: rgba(198, 40, 40, 0.1); color: var(--danger); }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        th {
+            background: var(--paper-cream);
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--ink-light);
+        }
+
+        td { font-size: 0.875rem; }
+
+        .content-preview {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .lunar-months {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .lunar-month-btn {
+            padding: 0.5rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            background: var(--paper-white);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .lunar-month-btn:hover {
+            border-color: var(--gold-accent);
+        }
+
+        .lunar-month-btn.has-content {
+            background: rgba(46, 125, 50, 0.1);
+            border-color: var(--success);
+        }
+
+        .lunar-month-btn.active {
+            background: var(--gold-accent);
+            color: white;
+            border-color: var(--gold-accent);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>命批系统 - 管理后台</h1>
+        <div class="header-right">
+            <span id="adminName">管理员</span>
+            <a href="/" id="logoutBtn">退出</a>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <ul>
+            <li><a href="/admin/">首页</a></li>
+            <li><a href="/admin/users.html">用户管理</a></li>
+            <li><a href="/admin/mingpi.html" class="active">命批管理</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div id="alertBox"></div>
+
+        <div class="panel">
+            <h3>编辑命批</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>选择用户</label>
+                    <select id="userSelect">
+                        <option value="">-- 请选择用户 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>农历年份</label>
+                    <select id="yearSelect"></select>
+                </div>
+            </div>
+
+            <div id="monthSelector" style="display: none;">
+                <label style="font-size: 0.875rem; color: var(--ink-light);">选择月份（绿色表示已有内容）</label>
+                <div class="lunar-months" id="lunarMonths"></div>
+            </div>
+
+            <div id="contentEditor" style="display: none; margin-top: 1.5rem;">
+                <div class="form-group">
+                    <label>命批内容 - <span id="selectedMonthLabel"></span></label>
+                    <textarea id="contentInput" placeholder="请输入命批内容..."></textarea>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="saveMingpi()">保存</button>
+                    <button class="btn btn-danger" onclick="deleteMingpi()">删除</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>命批列表</h3>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>用户</th>
+                            <th>年份</th>
+                            <th>月份</th>
+                            <th>内容预览</th>
+                            <th>更新时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mingpiTable"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || !user.isAdmin) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('adminName').textContent = user.displayName || '管理员';
+
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        });
+
+        const lunarMonthNames = ['正月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '冬月', '腊月'];
+
+        let selectedUserId = null;
+        let selectedYear = null;
+        let selectedMonth = null;
+        let userMingpiMap = {};
+
+        function showAlert(message, type = 'success') {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => { alertBox.innerHTML = ''; }, 3000);
+        }
+
+        // 初始化年份选择器
+        function initYearSelect() {
+            const select = document.getElementById('yearSelect');
+            const currentYear = new Date().getFullYear();
+            for (let y = currentYear + 1; y >= currentYear - 5; y--) {
+                const option = document.createElement('option');
+                option.value = y;
+                option.textContent = y + '年';
+                if (y === currentYear) option.selected = true;
+                select.appendChild(option);
+            }
+        }
+
+        // 加载用户列表
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+
+                const select = document.getElementById('userSelect');
+                data.data.filter(u => !u.isAdmin).forEach(u => {
+                    const option = document.createElement('option');
+                    option.value = u.id;
+                    option.textContent = u.displayName + ' (' + u.username + ')';
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                showAlert('加载用户失败', 'error');
+            }
+        }
+
+        // 加载用户的命批数据
+        async function loadUserMingpi(userId) {
+            try {
+                const response = await fetch(`/api/admin/mingpi/user/${userId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+
+                userMingpiMap = {};
+                data.data.forEach(m => {
+                    const key = `${m.lunarYear}-${m.lunarMonth}`;
+                    userMingpiMap[key] = m;
+                });
+
+                updateMonthButtons();
+            } catch (error) {
+                console.error('加载命批失败:', error);
+            }
+        }
+
+        // 更新月份按钮
+        function updateMonthButtons() {
+            const container = document.getElementById('lunarMonths');
+            const year = parseInt(document.getElementById('yearSelect').value);
+
+            container.innerHTML = lunarMonthNames.map((name, i) => {
+                const month = i + 1;
+                const key = `${year}-${month}`;
+                const hasContent = userMingpiMap[key];
+                const isActive = selectedMonth === month && selectedYear === year;
+
+                return `<button class="lunar-month-btn ${hasContent ? 'has-content' : ''} ${isActive ? 'active' : ''}"
+                    onclick="selectMonth(${month})">${name}</button>`;
+            }).join('');
+        }
+
+        // 选择月份
+        function selectMonth(month) {
+            selectedMonth = month;
+            selectedYear = parseInt(document.getElementById('yearSelect').value);
+
+            updateMonthButtons();
+
+            document.getElementById('contentEditor').style.display = 'block';
+            document.getElementById('selectedMonthLabel').textContent =
+                `${selectedYear}年 ${lunarMonthNames[month - 1]}`;
+
+            const key = `${selectedYear}-${month}`;
+            const existing = userMingpiMap[key];
+            document.getElementById('contentInput').value = existing ? existing.content : '';
+        }
+
+        // 保存命批
+        async function saveMingpi() {
+            if (!selectedUserId || !selectedYear || !selectedMonth) {
+                showAlert('请先选择用户和月份', 'error');
+                return;
+            }
+
+            const content = document.getElementById('contentInput').value.trim();
+            if (!content) {
+                showAlert('请输入命批内容', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/mingpi', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({
+                        userId: parseInt(selectedUserId),
+                        lunarYear: selectedYear,
+                        lunarMonth: selectedMonth,
+                        content
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert(data.action === 'created' ? '命批已创建' : '命批已更新');
+                    loadUserMingpi(selectedUserId);
+                    loadMingpiList();
+                } else {
+                    showAlert(data.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // 删除命批
+        async function deleteMingpi() {
+            const key = `${selectedYear}-${selectedMonth}`;
+            const existing = userMingpiMap[key];
+
+            if (!existing) {
+                showAlert('该月份暂无命批', 'error');
+                return;
+            }
+
+            if (!confirm('确定要删除该命批吗？')) return;
+
+            try {
+                const response = await fetch(`/api/admin/mingpi/${existing.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    showAlert('命批已删除');
+                    document.getElementById('contentInput').value = '';
+                    loadUserMingpi(selectedUserId);
+                    loadMingpiList();
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || '删除失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // 加载命批列表
+        async function loadMingpiList() {
+            try {
+                const response = await fetch('/api/admin/mingpi', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+
+                const tbody = document.getElementById('mingpiTable');
+                tbody.innerHTML = data.data.map(m => `
+                    <tr>
+                        <td>${m.userDisplayName}</td>
+                        <td>${m.lunarYear}年</td>
+                        <td>${lunarMonthNames[m.lunarMonth - 1]}</td>
+                        <td class="content-preview">${m.content}</td>
+                        <td>${m.updatedAt || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="quickDelete(${m.id})">删除</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('加载列表失败:', error);
+            }
+        }
+
+        async function quickDelete(id) {
+            if (!confirm('确定要删除该命批吗？')) return;
+
+            try {
+                const response = await fetch(`/api/admin/mingpi/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    showAlert('命批已删除');
+                    loadMingpiList();
+                    if (selectedUserId) loadUserMingpi(selectedUserId);
+                }
+            } catch (error) {
+                showAlert('删除失败', 'error');
+            }
+        }
+
+        // 事件监听
+        document.getElementById('userSelect').addEventListener('change', (e) => {
+            selectedUserId = e.target.value;
+            selectedMonth = null;
+
+            if (selectedUserId) {
+                document.getElementById('monthSelector').style.display = 'block';
+                document.getElementById('contentEditor').style.display = 'none';
+                loadUserMingpi(selectedUserId);
+            } else {
+                document.getElementById('monthSelector').style.display = 'none';
+                document.getElementById('contentEditor').style.display = 'none';
+            }
+        });
+
+        document.getElementById('yearSelect').addEventListener('change', () => {
+            if (selectedUserId) {
+                selectedMonth = null;
+                document.getElementById('contentEditor').style.display = 'none';
+                updateMonthButtons();
+            }
+        });
+
+        // 初始化
+        initYearSelect();
+        loadUsers();
+        loadMingpiList();
+    </script>
+</body>
+</html>

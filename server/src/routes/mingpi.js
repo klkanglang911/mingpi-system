@@ -1,0 +1,123 @@
+/**
+ * 命批路由
+ * 处理用户获取命批内容
+ */
+
+const express = require('express');
+const router = express.Router();
+const { queryOne } = require('../config/database');
+const { getCurrentLunarYearMonth, getLunarMonthName } = require('../utils/lunar');
+
+// 默认命批内容
+const defaultTips = [
+    '岁月如流，时光荏苒，愿你珍惜当下每一天。',
+    '春有百花秋有月，夏有凉风冬有雪。若无闲事挂心头，便是人间好时节。',
+    '天行健，君子以自强不息；地势坤，君子以厚德载物。',
+    '行到水穷处，坐看云起时。',
+    '人生若只如初见，何事秋风悲画扇。',
+    '山不在高，有仙则名；水不在深，有龙则灵。',
+    '采菊东篱下，悠然见南山。',
+    '宠辱不惊，看庭前花开花落；去留无意，望天上云卷云舒。'
+];
+
+/**
+ * GET /api/mingpi/current
+ * 获取当前农历月的命批
+ */
+router.get('/current', (req, res) => {
+    try {
+        const lunar = getCurrentLunarYearMonth();
+
+        // 查询当前用户当前月的命批
+        const mingpi = queryOne(
+            'SELECT content FROM mingpi WHERE user_id = ? AND lunar_year = ? AND lunar_month = ?',
+            [req.user.id, lunar.year, lunar.month]
+        );
+
+        if (mingpi) {
+            res.json({
+                success: true,
+                data: {
+                    lunarYear: lunar.year,
+                    lunarMonth: lunar.month,
+                    lunarMonthName: lunar.monthName,
+                    yearGanZhi: lunar.yearGanZhi,
+                    content: mingpi.content,
+                    isDefault: false
+                }
+            });
+        } else {
+            // 返回默认内容
+            const randomTip = defaultTips[Math.floor(Math.random() * defaultTips.length)];
+            res.json({
+                success: true,
+                data: {
+                    lunarYear: lunar.year,
+                    lunarMonth: lunar.month,
+                    lunarMonthName: lunar.monthName,
+                    yearGanZhi: lunar.yearGanZhi,
+                    content: randomTip,
+                    isDefault: true
+                }
+            });
+        }
+    } catch (error) {
+        console.error('获取命批错误:', error);
+        res.status(500).json({ error: '获取命批失败' });
+    }
+});
+
+/**
+ * GET /api/mingpi/:year/:month
+ * 获取指定农历年月的命批
+ */
+router.get('/:year/:month', (req, res) => {
+    try {
+        const year = parseInt(req.params.year);
+        const month = parseInt(req.params.month);
+
+        // 参数验证
+        if (isNaN(year) || isNaN(month) || year < 1900 || year > 2100 || month < 1 || month > 12) {
+            return res.status(400).json({ error: '无效的年月参数' });
+        }
+
+        const monthName = getLunarMonthName(month);
+
+        // 查询命批
+        const mingpi = queryOne(
+            'SELECT content FROM mingpi WHERE user_id = ? AND lunar_year = ? AND lunar_month = ?',
+            [req.user.id, year, month]
+        );
+
+        if (mingpi) {
+            res.json({
+                success: true,
+                data: {
+                    lunarYear: year,
+                    lunarMonth: month,
+                    lunarMonthName: monthName,
+                    content: mingpi.content,
+                    isDefault: false
+                }
+            });
+        } else {
+            // 返回默认内容
+            const randomTip = defaultTips[Math.floor(Math.random() * defaultTips.length)];
+            res.json({
+                success: true,
+                data: {
+                    lunarYear: year,
+                    lunarMonth: month,
+                    lunarMonthName: monthName,
+                    content: randomTip,
+                    isDefault: true
+                }
+            });
+        }
+    } catch (error) {
+        console.error('获取命批错误:', error);
+        res.status(500).json({ error: '获取命批失败' });
+    }
+});
+
+module.exports = router;
