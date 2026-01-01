@@ -119,6 +119,164 @@
             border-radius: 0 8px 8px 0;
             box-shadow: 0 2px 12px var(--shadow-ink);
             animation: fadeInLeft 0.6s ease-out 0.2s both;
+            position: relative;
+            overflow: hidden;
+            min-height: 120px;
+        }
+
+        /* ========== 命批蒙版遮罩组件 ========== */
+        .mingpi-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
+        }
+
+        .mingpi-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .mingpi-overlay .overlay-backdrop {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(240, 235, 227, 0.92) 0%, rgba(248, 245, 240, 0.95) 50%, rgba(240, 235, 227, 0.92) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .mingpi-overlay .overlay-texture {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 20% 30%, rgba(26, 26, 26, 0.02) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(26, 26, 26, 0.03) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .mingpi-overlay .seal-frame {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            animation: gentleFloat 4s ease-in-out infinite;
+        }
+
+        @keyframes gentleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .mingpi-overlay .seal-container {
+            position: relative;
+            background: linear-gradient(145deg, rgba(194, 58, 43, 0.06) 0%, rgba(248, 245, 240, 0.9) 50%, rgba(194, 58, 43, 0.04) 100%);
+            border: 2px solid var(--vermilion);
+            padding: 0.75rem 1rem;
+            box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.2), 0 0 15px rgba(194, 58, 43, 0.08);
+            animation: sealGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes sealGlow {
+            0%, 100% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.2), 0 0 15px rgba(194, 58, 43, 0.08); }
+            50% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.4), 0 0 20px rgba(194, 58, 43, 0.15); }
+        }
+
+        .mingpi-overlay .seal-corner {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border: 1.5px solid var(--vermilion);
+            opacity: 0.6;
+        }
+
+        .mingpi-overlay .seal-corner.top-left { top: -2px; left: -2px; border-right: none; border-bottom: none; }
+        .mingpi-overlay .seal-corner.top-right { top: -2px; right: -2px; border-left: none; border-bottom: none; }
+        .mingpi-overlay .seal-corner.bottom-left { bottom: -2px; left: -2px; border-right: none; border-top: none; }
+        .mingpi-overlay .seal-corner.bottom-right { bottom: -2px; right: -2px; border-left: none; border-top: none; }
+
+        .mingpi-overlay .solar-term-icon {
+            font-size: 1.25rem;
+            color: var(--gold-accent);
+            margin-bottom: 0.25rem;
+            text-shadow: 0 1px 5px rgba(184, 134, 11, 0.3);
+            animation: iconPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        .mingpi-overlay .seal-text {
+            font-size: 0.9rem;
+            color: var(--ink-black);
+            text-align: center;
+            letter-spacing: 0.1em;
+            line-height: 1.4;
+        }
+
+        .mingpi-overlay .seal-text .highlight {
+            color: var(--vermilion);
+            font-weight: 600;
+        }
+
+        .mingpi-overlay .seal-subtext {
+            font-size: 0.65rem;
+            color: var(--ink-light);
+            margin-top: 0.35rem;
+            letter-spacing: 0.08em;
+        }
+
+        .mingpi-overlay .countdown-section {
+            position: relative;
+            z-index: 10;
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .mingpi-overlay .countdown-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+
+        .mingpi-overlay .countdown-unit {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 28px;
+        }
+
+        .mingpi-overlay .countdown-value {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--vermilion);
+        }
+
+        .mingpi-overlay .countdown-name {
+            font-size: 0.55rem;
+            color: var(--ink-light);
+        }
+
+        .mingpi-overlay .countdown-separator {
+            font-size: 0.8rem;
+            color: var(--gold-accent);
+            opacity: 0.5;
+            animation: separatorBlink 1s ease-in-out infinite;
+        }
+
+        @keyframes separatorBlink {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 0.2; }
         }
 
         .tips-label {
@@ -554,6 +712,48 @@
         <section class="tips-section">
             <div class="tips-label">· 本月命批 ·</div>
             <p class="tips-content" id="tips">加载中...</p>
+
+            <!-- 命批蒙版遮罩 -->
+            <div class="mingpi-overlay hidden" id="mingpiOverlay">
+                <div class="overlay-backdrop"></div>
+                <div class="overlay-texture"></div>
+                <div class="seal-frame">
+                    <div class="seal-container">
+                        <div class="seal-corner top-left"></div>
+                        <div class="seal-corner top-right"></div>
+                        <div class="seal-corner bottom-left"></div>
+                        <div class="seal-corner bottom-right"></div>
+                        <div class="solar-term-icon" id="overlayIcon">❄</div>
+                        <div class="seal-text" id="overlayText">
+                            <span class="highlight">小寒</span>开启<br>你的新一年命批
+                        </div>
+                        <div class="seal-subtext" id="overlaySubtext">敬请期待 · 静候天时</div>
+                    </div>
+                </div>
+                <div class="countdown-section">
+                    <div class="countdown-display">
+                        <div class="countdown-unit">
+                            <span class="countdown-value" id="overlayDays">00</span>
+                            <span class="countdown-name">天</span>
+                        </div>
+                        <span class="countdown-separator">:</span>
+                        <div class="countdown-unit">
+                            <span class="countdown-value" id="overlayHours">00</span>
+                            <span class="countdown-name">时</span>
+                        </div>
+                        <span class="countdown-separator">:</span>
+                        <div class="countdown-unit">
+                            <span class="countdown-value" id="overlayMinutes">00</span>
+                            <span class="countdown-name">分</span>
+                        </div>
+                        <span class="countdown-separator">:</span>
+                        <div class="countdown-unit">
+                            <span class="countdown-value" id="overlaySeconds">00</span>
+                            <span class="countdown-name">秒</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <section class="lunar-countdown">
@@ -994,6 +1194,9 @@
             renderCalendar();
             await loadMingpi();
 
+            // 加载蒙版配置并初始化
+            await initOverlay();
+
             // 记录用户访问（异步，不阻塞页面显示）
             fetch('/api/auth/visit', {
                 method: 'POST',
@@ -1025,6 +1228,108 @@
                 }
                 updateLunarView();
             });
+        }
+
+        // ========== 蒙版控制 ==========
+        let overlayConfig = null;
+        let overlayCountdownTimer = null;
+
+        // 初始化蒙版
+        async function initOverlay() {
+            try {
+                const response = await fetch('/api/auth/opening-config', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (!response.ok) return;
+
+                const result = await response.json();
+                overlayConfig = result.data;
+
+                if (!overlayConfig.openingTime || overlayConfig.isOpen) {
+                    // 没有设置开启时间或已开放，不显示蒙版
+                    hideOverlay();
+                    return;
+                }
+
+                // 显示蒙版
+                showOverlay();
+            } catch (error) {
+                console.error('加载蒙版配置失败:', error);
+                hideOverlay();
+            }
+        }
+
+        // 显示蒙版
+        function showOverlay() {
+            const overlay = document.getElementById('mingpiOverlay');
+            if (!overlay || !overlayConfig) return;
+
+            // 更新文案
+            const textEl = document.getElementById('overlayText');
+            const subtextEl = document.getElementById('overlaySubtext');
+
+            if (textEl && overlayConfig.openingText) {
+                // 尝试将"XX开启"格式化为高亮
+                const text = overlayConfig.openingText;
+                if (text.includes('开启')) {
+                    const parts = text.split('开启');
+                    textEl.innerHTML = '<span class="highlight">' + parts[0] + '</span>开启' + (parts[1] ? '<br>' + parts[1] : '');
+                } else {
+                    textEl.textContent = text;
+                }
+            }
+
+            if (subtextEl && overlayConfig.openingSubtext) {
+                subtextEl.textContent = overlayConfig.openingSubtext;
+            }
+
+            // 显示蒙版
+            overlay.classList.remove('hidden');
+
+            // 启动倒计时
+            updateOverlayCountdown();
+            overlayCountdownTimer = setInterval(updateOverlayCountdown, 1000);
+        }
+
+        // 隐藏蒙版
+        function hideOverlay() {
+            const overlay = document.getElementById('mingpiOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+            if (overlayCountdownTimer) {
+                clearInterval(overlayCountdownTimer);
+                overlayCountdownTimer = null;
+            }
+        }
+
+        // 更新倒计时
+        function updateOverlayCountdown() {
+            if (!overlayConfig || !overlayConfig.openingTime) return;
+
+            const target = new Date(overlayConfig.openingTime);
+            const now = new Date();
+            let diff = target - now;
+
+            if (diff <= 0) {
+                // 时间到，隐藏蒙版
+                hideOverlay();
+                return;
+            }
+
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            diff -= days * (1000 * 60 * 60 * 24);
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            diff -= hours * (1000 * 60 * 60);
+            const minutes = Math.floor(diff / (1000 * 60));
+            diff -= minutes * (1000 * 60);
+            const seconds = Math.floor(diff / 1000);
+
+            document.getElementById('overlayDays').textContent = String(days).padStart(2, '0');
+            document.getElementById('overlayHours').textContent = String(hours).padStart(2, '0');
+            document.getElementById('overlayMinutes').textContent = String(minutes).padStart(2, '0');
+            document.getElementById('overlaySeconds').textContent = String(seconds).padStart(2, '0');
         }
 
         init();

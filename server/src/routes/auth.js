@@ -269,4 +269,30 @@ router.get('/admin-path', authMiddleware, (req, res) => {
     });
 });
 
+/**
+ * GET /api/auth/opening-config
+ * 获取年批开启时间配置（公开API，需要登录）
+ */
+router.get('/opening-config', authMiddleware, (req, res) => {
+    try {
+        const openingTime = getConfig('yearly_opening_time') || '';
+        const openingText = getConfig('yearly_opening_text') || '小寒开启你的新一年命批';
+        const openingSubtext = getConfig('yearly_opening_subtext') || '敬请期待 · 静候天时';
+
+        res.json({
+            success: true,
+            data: {
+                openingTime,
+                openingText,
+                openingSubtext,
+                // 判断是否已开放
+                isOpen: !openingTime || new Date(openingTime) <= new Date()
+            }
+        });
+    } catch (error) {
+        console.error('获取开启配置错误:', error);
+        res.status(500).json({ error: '获取配置失败' });
+    }
+});
+
 module.exports = router;

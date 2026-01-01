@@ -394,6 +394,47 @@
                 <button class="btn btn-primary" onclick="saveSecuritySettings()">保存安全设置</button>
             </div>
         </div>
+
+        <!-- 年批开启时间设置 -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>年批开启时间设置</h2>
+            </div>
+            <div class="panel-body">
+                <div class="security-note" style="background: rgba(25, 118, 210, 0.1); border-left-color: var(--info);">
+                    <span class="security-note-icon">💡</span>
+                    <div class="security-note-text">
+                        <strong>功能说明：</strong>设置年批开启时间后，用户在开启时间之前将看到蒙版遮罩，无法查看命批内容。时间到达后蒙版自动消失。留空则不启用蒙版。
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>开启时间</label>
+                    <input type="datetime-local" id="openingTimeInput" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-light); border-radius: 4px; font-size: 0.9rem;">
+                    <p class="hint">设置命批内容开放的具体日期和时间，留空表示立即开放</p>
+                </div>
+
+                <div class="form-group">
+                    <label>蒙版主文案</label>
+                    <input type="text" id="openingTextInput" placeholder="小寒开启你的新一年命批">
+                    <p class="hint">显示在蒙版中央的主要提示文字，如"小寒开启你的新一年命批"</p>
+                </div>
+
+                <div class="form-group">
+                    <label>蒙版副文案</label>
+                    <input type="text" id="openingSubtextInput" placeholder="敬请期待 · 静候天时">
+                    <p class="hint">显示在主文案下方的辅助说明文字</p>
+                </div>
+
+                <div class="divider"></div>
+
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="saveOpeningSettings()">保存开启设置</button>
+                    <button class="btn btn-secondary" onclick="clearOpeningTime()">清空开启时间</button>
+                    <button class="btn btn-secondary" onclick="previewOverlay()">预览蒙版效果</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -458,6 +499,20 @@
                     // 安全设置
                     document.getElementById('maxAttemptsInput').value = data.login_max_attempts?.value || '5';
                     document.getElementById('lockMinutesInput').value = data.login_lock_minutes?.value || '15';
+
+                    // 年批开启时间设置
+                    const openingTime = data.yearly_opening_time?.value || '';
+                    if (openingTime) {
+                        // 转换为 datetime-local 格式 (YYYY-MM-DDTHH:mm)
+                        const date = new Date(openingTime);
+                        if (!isNaN(date.getTime())) {
+                            const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+                                .toISOString().slice(0, 16);
+                            document.getElementById('openingTimeInput').value = localDateTime;
+                        }
+                    }
+                    document.getElementById('openingTextInput').value = data.yearly_opening_text?.value || '';
+                    document.getElementById('openingSubtextInput').value = data.yearly_opening_subtext?.value || '';
                 }
             } catch (error) {
                 console.error('加载配置失败:', error);
@@ -607,6 +662,340 @@
             } catch (error) {
                 showAlert('保存失败', 'error');
             }
+        }
+
+        // 保存年批开启设置
+        async function saveOpeningSettings() {
+            const openingTime = document.getElementById('openingTimeInput').value;
+            const openingText = document.getElementById('openingTextInput').value.trim();
+            const openingSubtext = document.getElementById('openingSubtextInput').value.trim();
+
+            try {
+                // 保存开启时间（转换为 ISO 格式）
+                let isoTime = '';
+                if (openingTime) {
+                    isoTime = new Date(openingTime).toISOString();
+                }
+
+                await fetch('/api/admin/config/yearly_opening_time', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ value: isoTime })
+                });
+
+                // 保存主文案
+                if (openingText) {
+                    await fetch('/api/admin/config/yearly_opening_text', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({ value: openingText })
+                    });
+                }
+
+                // 保存副文案
+                if (openingSubtext) {
+                    await fetch('/api/admin/config/yearly_opening_subtext', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token
+                        },
+                        body: JSON.stringify({ value: openingSubtext })
+                    });
+                }
+
+                showAlert('年批开启设置已保存');
+            } catch (error) {
+                showAlert('保存失败', 'error');
+            }
+        }
+
+        // 清空开启时间
+        async function clearOpeningTime() {
+            if (!confirm('确定要清空开启时间吗？清空后蒙版将不再显示。')) {
+                return;
+            }
+
+            try {
+                await fetch('/api/admin/config/yearly_opening_time', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ value: '' })
+                });
+
+                document.getElementById('openingTimeInput').value = '';
+                showAlert('开启时间已清空');
+            } catch (error) {
+                showAlert('清空失败', 'error');
+            }
+        }
+
+        // 预览蒙版效果
+        function previewOverlay() {
+            const openingTime = document.getElementById('openingTimeInput').value;
+            const openingText = document.getElementById('openingTextInput').value.trim() || '小寒开启你的新一年命批';
+            const openingSubtext = document.getElementById('openingSubtextInput').value.trim() || '敬请期待 · 静候天时';
+
+            // 计算倒计时
+            let countdown = { days: 0, hours: 0, minutes: 0, seconds: 0 };
+            if (openingTime) {
+                const target = new Date(openingTime);
+                const now = new Date();
+                let diff = Math.max(0, target - now);
+
+                countdown.days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                diff -= countdown.days * (1000 * 60 * 60 * 24);
+                countdown.hours = Math.floor(diff / (1000 * 60 * 60));
+                diff -= countdown.hours * (1000 * 60 * 60);
+                countdown.minutes = Math.floor(diff / (1000 * 60));
+                diff -= countdown.minutes * (1000 * 60);
+                countdown.seconds = Math.floor(diff / 1000);
+            }
+
+            // 格式化开启时间显示
+            let openTimeDisplay = '';
+            if (openingTime) {
+                const date = new Date(openingTime);
+                openTimeDisplay = date.toLocaleString('zh-CN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+
+            // 创建预览窗口
+            const previewWindow = window.open('', '_blank', 'width=600,height=500');
+            previewWindow.document.write(`
+                <!DOCTYPE html>
+                <html lang="zh-CN">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>蒙版预览</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
+                        :root {
+                            --vermilion: #c23a2b;
+                            --vermilion-dark: #8a1f1f;
+                            --gold-accent: #b8860b;
+                            --gold-glow: rgba(184, 134, 11, 0.4);
+                            --ink-black: #1a1a1a;
+                            --ink-fade: #3a3a3a;
+                            --paper-cream: #f0ebe3;
+                            --paper-white: #f8f5f0;
+                            --mist: rgba(240, 235, 227, 0.15);
+                        }
+                        * { margin: 0; padding: 0; box-sizing: border-box; }
+                        body {
+                            font-family: 'Noto Serif SC', serif;
+                            background: var(--paper-cream);
+                            min-height: 100vh;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .overlay {
+                            position: relative;
+                            width: 100%;
+                            height: 100vh;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            overflow: hidden;
+                        }
+                        .overlay-backdrop {
+                            position: absolute;
+                            inset: 0;
+                            background: linear-gradient(135deg, rgba(240, 235, 227, 0.85) 0%, rgba(248, 245, 240, 0.9) 50%, rgba(240, 235, 227, 0.85) 100%);
+                            backdrop-filter: blur(12px);
+                        }
+                        .overlay-texture {
+                            position: absolute;
+                            inset: 0;
+                            background:
+                                radial-gradient(ellipse at 20% 30%, rgba(26, 26, 26, 0.03) 0%, transparent 50%),
+                                radial-gradient(ellipse at 80% 70%, rgba(26, 26, 26, 0.04) 0%, transparent 40%);
+                            pointer-events: none;
+                        }
+                        .seal-frame {
+                            position: relative;
+                            z-index: 10;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            padding: 2.5rem 2rem;
+                            animation: gentleFloat 4s ease-in-out infinite;
+                        }
+                        @keyframes gentleFloat {
+                            0%, 100% { transform: translateY(0); }
+                            50% { transform: translateY(-6px); }
+                        }
+                        .seal-container {
+                            position: relative;
+                            background: linear-gradient(145deg, rgba(194, 58, 43, 0.08) 0%, rgba(248, 245, 240, 0.95) 50%, rgba(194, 58, 43, 0.05) 100%);
+                            border: 3px solid var(--vermilion);
+                            padding: 1.5rem 2rem;
+                            box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.3), 0 0 30px rgba(194, 58, 43, 0.1);
+                            animation: sealGlow 3s ease-in-out infinite;
+                        }
+                        @keyframes sealGlow {
+                            0%, 100% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.3), 0 0 30px rgba(194, 58, 43, 0.1); }
+                            50% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.5), 0 0 40px rgba(194, 58, 43, 0.2); }
+                        }
+                        .seal-corner {
+                            position: absolute;
+                            width: 20px;
+                            height: 20px;
+                            border: 2px solid var(--vermilion);
+                            opacity: 0.7;
+                        }
+                        .seal-corner.top-left { top: -3px; left: -3px; border-right: none; border-bottom: none; }
+                        .seal-corner.top-right { top: -3px; right: -3px; border-left: none; border-bottom: none; }
+                        .seal-corner.bottom-left { bottom: -3px; left: -3px; border-right: none; border-top: none; }
+                        .seal-corner.bottom-right { bottom: -3px; right: -3px; border-left: none; border-top: none; }
+                        .solar-term-icon {
+                            font-size: 2.5rem;
+                            color: var(--gold-accent);
+                            margin-bottom: 0.75rem;
+                            text-shadow: 0 2px 10px var(--gold-glow);
+                            animation: iconPulse 2s ease-in-out infinite;
+                        }
+                        @keyframes iconPulse {
+                            0%, 100% { opacity: 0.8; transform: scale(1); }
+                            50% { opacity: 1; transform: scale(1.05); }
+                        }
+                        .seal-text {
+                            font-family: 'Ma Shan Zheng', cursive;
+                            font-size: 1.75rem;
+                            color: var(--ink-black);
+                            text-align: center;
+                            letter-spacing: 0.15em;
+                            line-height: 1.6;
+                        }
+                        .seal-text .highlight { color: var(--vermilion); }
+                        .seal-subtext {
+                            font-size: 0.9rem;
+                            color: var(--ink-fade);
+                            margin-top: 0.75rem;
+                            letter-spacing: 0.1em;
+                        }
+                        .countdown-section {
+                            position: relative;
+                            z-index: 10;
+                            margin-top: 2rem;
+                            text-align: center;
+                        }
+                        .countdown-label {
+                            font-size: 0.85rem;
+                            color: var(--ink-fade);
+                            letter-spacing: 0.2em;
+                            margin-bottom: 0.75rem;
+                        }
+                        .countdown-display {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 0.5rem;
+                        }
+                        .countdown-unit {
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            min-width: 50px;
+                        }
+                        .countdown-value {
+                            font-family: 'Noto Serif SC', serif;
+                            font-size: 1.75rem;
+                            font-weight: 700;
+                            color: var(--vermilion);
+                            background: linear-gradient(180deg, var(--vermilion) 0%, var(--vermilion-dark) 100%);
+                            -webkit-background-clip: text;
+                            -webkit-text-fill-color: transparent;
+                        }
+                        .countdown-name {
+                            font-size: 0.75rem;
+                            color: var(--ink-fade);
+                            margin-top: 0.25rem;
+                        }
+                        .countdown-separator {
+                            font-size: 1.5rem;
+                            color: var(--gold-accent);
+                            opacity: 0.6;
+                        }
+                        .open-time {
+                            margin-top: 1rem;
+                            font-size: 0.8rem;
+                            color: var(--ink-fade);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 0.5rem;
+                        }
+                        .open-time::before, .open-time::after {
+                            content: '';
+                            width: 20px;
+                            height: 1px;
+                            background: linear-gradient(90deg, transparent, var(--gold-accent), transparent);
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="overlay">
+                        <div class="overlay-backdrop"></div>
+                        <div class="overlay-texture"></div>
+                        <div class="seal-frame">
+                            <div class="seal-container">
+                                <div class="seal-corner top-left"></div>
+                                <div class="seal-corner top-right"></div>
+                                <div class="seal-corner bottom-left"></div>
+                                <div class="seal-corner bottom-right"></div>
+                                <div class="solar-term-icon">❄</div>
+                                <div class="seal-text">
+                                    <span class="highlight">${openingText.split('开启')[0] || openingText}</span>${openingText.includes('开启') ? '开启' + openingText.split('开启')[1] : ''}
+                                </div>
+                                <div class="seal-subtext">${openingSubtext}</div>
+                            </div>
+                        </div>
+                        <div class="countdown-section">
+                            <div class="countdown-label">— 距离开启还有 —</div>
+                            <div class="countdown-display">
+                                <div class="countdown-unit">
+                                    <span class="countdown-value">${String(countdown.days).padStart(2, '0')}</span>
+                                    <span class="countdown-name">天</span>
+                                </div>
+                                <span class="countdown-separator">:</span>
+                                <div class="countdown-unit">
+                                    <span class="countdown-value">${String(countdown.hours).padStart(2, '0')}</span>
+                                    <span class="countdown-name">时</span>
+                                </div>
+                                <span class="countdown-separator">:</span>
+                                <div class="countdown-unit">
+                                    <span class="countdown-value">${String(countdown.minutes).padStart(2, '0')}</span>
+                                    <span class="countdown-name">分</span>
+                                </div>
+                                <span class="countdown-separator">:</span>
+                                <div class="countdown-unit">
+                                    <span class="countdown-value">${String(countdown.seconds).padStart(2, '0')}</span>
+                                    <span class="countdown-name">秒</span>
+                                </div>
+                            </div>
+                            <div class="open-time">${openTimeDisplay || '未设置开启时间'}</div>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `);
         }
 
         // 初始化

@@ -170,7 +170,10 @@ function initDefaultConfig() {
     const defaultConfigs = [
         { key: 'admin_path', value: generateRandomPath(), description: '后台管理路径' },
         { key: 'login_max_attempts', value: '5', description: '最大登录失败次数' },
-        { key: 'login_lock_minutes', value: '15', description: '登录锁定时间(分钟)' }
+        { key: 'login_lock_minutes', value: '15', description: '登录锁定时间(分钟)' },
+        { key: 'yearly_opening_time', value: '', description: '年批开启时间(ISO格式)' },
+        { key: 'yearly_opening_text', value: '小寒开启你的新一年命批', description: '年批开启提示文案' },
+        { key: 'yearly_opening_subtext', value: '敬请期待 · 静候天时', description: '年批开启副文案' }
     ];
 
     defaultConfigs.forEach(config => {
