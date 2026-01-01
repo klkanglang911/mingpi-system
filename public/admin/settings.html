@@ -182,16 +182,33 @@
         .btn-danger:hover, .btn-success:hover, .btn-warning:hover { opacity: 0.9; }
 
         .alert {
-            padding: 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-size: 0.875rem;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: toastSlideIn 0.3s ease-out;
         }
 
-        .alert-success { background: rgba(46, 125, 50, 0.1); color: var(--success); border: 1px solid var(--success); }
-        .alert-error { background: rgba(198, 40, 40, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-        .alert-warning { background: rgba(245, 158, 11, 0.1); color: #92400e; border: 1px solid var(--warning); }
-        .alert-info { background: rgba(25, 118, 210, 0.1); color: var(--info); border: 1px solid var(--info); }
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .alert-success { background: #2e7d32; color: white; }
+        .alert-error { background: #c62828; color: white; }
+        .alert-warning { background: #f59e0b; color: white; }
+        .alert-info { background: #1976d2; color: white; }
 
         .current-path {
             display: flex;
@@ -1000,7 +1017,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="overlay-footer">灵庐书院 · 年批月令</div>
+                        <div class="overlay-footer">灵庐书院 · 流星赶月</div>
                     </div>
                 </body>
                 </html>

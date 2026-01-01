@@ -256,14 +256,31 @@
         }
 
         .alert {
-            padding: 0.75rem 1rem;
-            border-radius: 4px;
-            margin-bottom: 1rem;
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-size: 0.875rem;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: toastSlideIn 0.3s ease-out;
         }
 
-        .alert-success { background: rgba(46, 125, 50, 0.1); color: var(--success); }
-        .alert-error { background: rgba(198, 40, 40, 0.1); color: var(--danger); }
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .alert-success { background: #2e7d32; color: white; }
+        .alert-error { background: #c62828; color: white; }
 
         .password-display {
             background: var(--paper-cream);
