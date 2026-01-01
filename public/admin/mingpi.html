@@ -512,6 +512,47 @@
         .searchable-select-option.create-new:hover {
             background: rgba(184, 134, 11, 0.1);
         }
+
+        /* 用户信息显示（创建成功后） */
+        .user-info-display {
+            background: var(--paper-cream);
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            border: 2px dashed var(--gold-accent);
+        }
+
+        .user-info-display .info-line {
+            display: flex;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .user-info-display .info-line:last-of-type {
+            border-bottom: none;
+        }
+
+        .user-info-display .info-label {
+            color: var(--ink-light);
+            min-width: 100px;
+        }
+
+        .user-info-display .info-line span:last-child {
+            font-family: monospace;
+            font-weight: 600;
+            color: var(--vermilion);
+        }
+
+        .user-info-display .info-note {
+            font-size: 0.8rem;
+            color: var(--mist-gray);
+            margin-top: 0.5rem;
+            text-align: center;
+        }
+
+        .copy-success {
+            background: var(--success) !important;
+        }
     </style>
 </head>
 <body>
@@ -740,15 +781,17 @@
                 <button class="modal-close" onclick="closePasswordModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 1rem;">请保存以下登录信息：</p>
-                <div style="background: var(--paper-cream); padding: 1rem; border-radius: 4px; font-family: monospace;">
-                    <p>用户名：<strong id="createdUsername"></strong></p>
-                    <p style="margin-top: 0.5rem;">初始密码：<strong id="createdPassword"></strong></p>
+                <p>请将以下信息发送给用户：</p>
+                <div class="user-info-display">
+                    <div class="info-line"><span class="info-label">访问地址：</span><span>https://np.derhe.com</span></div>
+                    <div class="info-line"><span class="info-label">登录用户名：</span><span id="createdUsername"></span></div>
+                    <div class="info-line"><span class="info-label">初始密码：</span><span id="createdPassword"></span></div>
+                    <div class="info-note">（登录后可修改密码）</div>
                 </div>
-                <p class="input-hint" style="margin-top: 1rem;">用户首次登录需要修改密码</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closePasswordModal()">关闭</button>
+                <button class="btn btn-primary" id="copyInfoBtn" onclick="copyUserInfo()">📋 复制信息</button>
             </div>
         </div>
     </div>
@@ -778,6 +821,7 @@
         let userMingpiMap = {};
         let pendingImportData = null;
         let allUsers = []; // 存储所有用户数据
+        let currentUserInfo = { username: '', password: '' }; // 当前创建的用户信息（用于复制）
 
         function showAlert(message, type = 'success') {
             const alertBox = document.getElementById('alertBox');
@@ -1487,6 +1531,52 @@
 
         function closePasswordModal() {
             closeModal('passwordModal');
+            // 重置复制按钮状态
+            const copyBtn = document.getElementById('copyInfoBtn');
+            copyBtn.textContent = '📋 复制信息';
+            copyBtn.classList.remove('copy-success');
+        }
+
+        // 复制用户信息到剪切板
+        async function copyUserInfo() {
+            const siteUrl = 'https://np.derhe.com';
+            const copyText = `您的年批访问地址：${siteUrl}
+您的登录用户名：${currentUserInfo.username}
+您的初始登录密码：${currentUserInfo.password}（登录后可修改）`;
+
+            try {
+                await navigator.clipboard.writeText(copyText);
+
+                // 更新按钮状态
+                const copyBtn = document.getElementById('copyInfoBtn');
+                copyBtn.textContent = '✓ 已复制';
+                copyBtn.classList.add('copy-success');
+
+                // 2秒后恢复按钮状态
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 复制信息';
+                    copyBtn.classList.remove('copy-success');
+                }, 2000);
+            } catch (error) {
+                // 降级方案：使用旧的 execCommand
+                const textarea = document.createElement('textarea');
+                textarea.value = copyText;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                const copyBtn = document.getElementById('copyInfoBtn');
+                copyBtn.textContent = '✓ 已复制';
+                copyBtn.classList.add('copy-success');
+
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 复制信息';
+                    copyBtn.classList.remove('copy-success');
+                }, 2000);
+            }
         }
 
         // 创建用户表单提交
@@ -1516,6 +1606,12 @@
                 if (response.ok) {
                     // 关闭创建用户模态框
                     closeModal('createUserModal');
+
+                    // 保存用户信息用于复制
+                    currentUserInfo = {
+                        username: username,
+                        password: data.data.generatedPassword
+                    };
 
                     // 显示密码
                     document.getElementById('createdUsername').textContent = username;
