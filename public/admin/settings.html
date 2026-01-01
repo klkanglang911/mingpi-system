@@ -774,40 +774,33 @@
                 });
             }
 
-            // 创建预览窗口
-            const previewWindow = window.open('', '_blank', 'width=600,height=500');
+            // 创建预览窗口（模拟手机竖屏）
+            const previewWindow = window.open('', '_blank', 'width=390,height=700');
             previewWindow.document.write(`
                 <!DOCTYPE html>
                 <html lang="zh-CN">
                 <head>
                     <meta charset="UTF-8">
-                    <title>蒙版预览</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>蒙版预览 - 手机竖屏效果</title>
                     <style>
-                        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap');
                         :root {
                             --vermilion: #c23a2b;
-                            --vermilion-dark: #8a1f1f;
                             --gold-accent: #b8860b;
-                            --gold-glow: rgba(184, 134, 11, 0.4);
                             --ink-black: #1a1a1a;
-                            --ink-fade: #3a3a3a;
-                            --paper-cream: #f0ebe3;
+                            --mist-gray: #9a9590;
+                            --paper-cream: #efe9e0;
                             --paper-white: #f8f5f0;
-                            --mist: rgba(240, 235, 227, 0.15);
                         }
                         * { margin: 0; padding: 0; box-sizing: border-box; }
                         body {
-                            font-family: 'Noto Serif SC', serif;
+                            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
                             background: var(--paper-cream);
                             min-height: 100vh;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
                         }
                         .overlay {
-                            position: relative;
-                            width: 100%;
-                            height: 100vh;
+                            position: fixed;
+                            top: 0; left: 0; right: 0; bottom: 0;
                             display: flex;
                             flex-direction: column;
                             align-items: center;
@@ -817,15 +810,16 @@
                         .overlay-backdrop {
                             position: absolute;
                             inset: 0;
-                            background: linear-gradient(135deg, rgba(240, 235, 227, 0.85) 0%, rgba(248, 245, 240, 0.9) 50%, rgba(240, 235, 227, 0.85) 100%);
+                            background: rgba(248, 245, 240, 0.75);
                             backdrop-filter: blur(12px);
+                            -webkit-backdrop-filter: blur(12px);
                         }
                         .overlay-texture {
                             position: absolute;
                             inset: 0;
                             background:
-                                radial-gradient(ellipse at 20% 30%, rgba(26, 26, 26, 0.03) 0%, transparent 50%),
-                                radial-gradient(ellipse at 80% 70%, rgba(26, 26, 26, 0.04) 0%, transparent 40%);
+                                radial-gradient(ellipse at 20% 20%, rgba(194, 58, 43, 0.03) 0%, transparent 50%),
+                                radial-gradient(ellipse at 80% 80%, rgba(184, 134, 11, 0.03) 0%, transparent 40%);
                             pointer-events: none;
                         }
                         .seal-frame {
@@ -834,29 +828,47 @@
                             display: flex;
                             flex-direction: column;
                             align-items: center;
+                            width: 85%;
+                            max-width: 320px;
                             padding: 2.5rem 2rem;
-                            animation: gentleFloat 4s ease-in-out infinite;
+                            background: var(--paper-white);
+                            border-radius: 4px;
+                            box-shadow:
+                                0 20px 60px rgba(26, 26, 26, 0.15),
+                                0 8px 25px rgba(26, 26, 26, 0.1),
+                                0 0 0 1px rgba(194, 58, 43, 0.1);
+                            animation: cardFloat 4s ease-in-out infinite;
                         }
-                        @keyframes gentleFloat {
+                        @keyframes cardFloat {
                             0%, 100% { transform: translateY(0); }
-                            50% { transform: translateY(-6px); }
+                            50% { transform: translateY(-8px); }
+                        }
+                        .seal-frame::before {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 50%;
+                            transform: translateX(-50%);
+                            width: 60px;
+                            height: 3px;
+                            background: linear-gradient(90deg, transparent, var(--vermilion), transparent);
+                            border-radius: 0 0 2px 2px;
                         }
                         .seal-container {
                             position: relative;
-                            background: linear-gradient(145deg, rgba(194, 58, 43, 0.08) 0%, rgba(248, 245, 240, 0.95) 50%, rgba(194, 58, 43, 0.05) 100%);
-                            border: 3px solid var(--vermilion);
-                            padding: 1.5rem 2rem;
-                            box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.3), 0 0 30px rgba(194, 58, 43, 0.1);
+                            border: 2px solid var(--vermilion);
+                            padding: 1.5rem 1.75rem;
+                            margin-bottom: 1.5rem;
                             animation: sealGlow 3s ease-in-out infinite;
                         }
                         @keyframes sealGlow {
-                            0%, 100% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.3), 0 0 30px rgba(194, 58, 43, 0.1); }
-                            50% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.5), 0 0 40px rgba(194, 58, 43, 0.2); }
+                            0%, 100% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.15), 0 0 20px rgba(194, 58, 43, 0.05); }
+                            50% { box-shadow: 0 0 0 1px rgba(194, 58, 43, 0.3), 0 0 30px rgba(194, 58, 43, 0.1); }
                         }
                         .seal-corner {
                             position: absolute;
-                            width: 20px;
-                            height: 20px;
+                            width: 14px;
+                            height: 14px;
                             border: 2px solid var(--vermilion);
                             opacity: 0.7;
                         }
@@ -865,42 +877,43 @@
                         .seal-corner.bottom-left { bottom: -3px; left: -3px; border-right: none; border-top: none; }
                         .seal-corner.bottom-right { bottom: -3px; right: -3px; border-left: none; border-top: none; }
                         .solar-term-icon {
-                            font-size: 2.5rem;
+                            font-size: 2rem;
                             color: var(--gold-accent);
                             margin-bottom: 0.75rem;
-                            text-shadow: 0 2px 10px var(--gold-glow);
+                            text-shadow: 0 2px 8px rgba(184, 134, 11, 0.3);
                             animation: iconPulse 2s ease-in-out infinite;
                         }
                         @keyframes iconPulse {
                             0%, 100% { opacity: 0.8; transform: scale(1); }
-                            50% { opacity: 1; transform: scale(1.05); }
+                            50% { opacity: 1; transform: scale(1.08); }
                         }
                         .seal-text {
-                            font-family: 'Ma Shan Zheng', cursive;
-                            font-size: 1.75rem;
+                            font-size: 1.25rem;
+                            font-weight: 500;
                             color: var(--ink-black);
                             text-align: center;
                             letter-spacing: 0.15em;
                             line-height: 1.6;
                         }
-                        .seal-text .highlight { color: var(--vermilion); }
+                        .seal-text .highlight {
+                            color: var(--vermilion);
+                            font-weight: 600;
+                        }
                         .seal-subtext {
-                            font-size: 0.9rem;
-                            color: var(--ink-fade);
+                            font-size: 0.8rem;
+                            color: var(--mist-gray);
                             margin-top: 0.75rem;
                             letter-spacing: 0.1em;
                         }
                         .countdown-section {
-                            position: relative;
-                            z-index: 10;
-                            margin-top: 2rem;
+                            width: 100%;
                             text-align: center;
                         }
                         .countdown-label {
-                            font-size: 0.85rem;
-                            color: var(--ink-fade);
-                            letter-spacing: 0.2em;
-                            margin-bottom: 0.75rem;
+                            font-size: 0.75rem;
+                            color: var(--mist-gray);
+                            letter-spacing: 0.15em;
+                            margin-bottom: 1rem;
                         }
                         .countdown-display {
                             display: flex;
@@ -912,41 +925,37 @@
                             display: flex;
                             flex-direction: column;
                             align-items: center;
-                            min-width: 50px;
+                            min-width: 42px;
+                            padding: 0.5rem 0.25rem;
+                            background: var(--paper-cream);
+                            border-radius: 4px;
                         }
                         .countdown-value {
-                            font-family: 'Noto Serif SC', serif;
-                            font-size: 1.75rem;
+                            font-size: 1.5rem;
                             font-weight: 700;
                             color: var(--vermilion);
-                            background: linear-gradient(180deg, var(--vermilion) 0%, var(--vermilion-dark) 100%);
-                            -webkit-background-clip: text;
-                            -webkit-text-fill-color: transparent;
+                            line-height: 1;
                         }
                         .countdown-name {
-                            font-size: 0.75rem;
-                            color: var(--ink-fade);
+                            font-size: 0.65rem;
+                            color: var(--mist-gray);
                             margin-top: 0.25rem;
                         }
                         .countdown-separator {
-                            font-size: 1.5rem;
+                            font-size: 1.25rem;
                             color: var(--gold-accent);
                             opacity: 0.6;
                         }
-                        .open-time {
-                            margin-top: 1rem;
-                            font-size: 0.8rem;
-                            color: var(--ink-fade);
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 0.5rem;
-                        }
-                        .open-time::before, .open-time::after {
-                            content: '';
-                            width: 20px;
-                            height: 1px;
-                            background: linear-gradient(90deg, transparent, var(--gold-accent), transparent);
+                        .overlay-footer {
+                            position: absolute;
+                            bottom: 2rem;
+                            left: 0;
+                            right: 0;
+                            text-align: center;
+                            font-size: 0.7rem;
+                            color: var(--mist-gray);
+                            letter-spacing: 0.2em;
+                            opacity: 0.6;
                         }
                     </style>
                 </head>
@@ -962,36 +971,36 @@
                                 <div class="seal-corner bottom-right"></div>
                                 <div class="solar-term-icon">❄</div>
                                 <div class="seal-text">
-                                    <span class="highlight">${openingText.split('开启')[0] || openingText}</span>${openingText.includes('开启') ? '开启' + openingText.split('开启')[1] : ''}
+                                    <span class="highlight">${openingText.split('开启')[0] || openingText}</span>${openingText.includes('开启') ? '开启<br>' + openingText.split('开启')[1] : ''}
                                 </div>
                                 <div class="seal-subtext">${openingSubtext}</div>
                             </div>
-                        </div>
-                        <div class="countdown-section">
-                            <div class="countdown-label">— 距离开启还有 —</div>
-                            <div class="countdown-display">
-                                <div class="countdown-unit">
-                                    <span class="countdown-value">${String(countdown.days).padStart(2, '0')}</span>
-                                    <span class="countdown-name">天</span>
-                                </div>
-                                <span class="countdown-separator">:</span>
-                                <div class="countdown-unit">
-                                    <span class="countdown-value">${String(countdown.hours).padStart(2, '0')}</span>
-                                    <span class="countdown-name">时</span>
-                                </div>
-                                <span class="countdown-separator">:</span>
-                                <div class="countdown-unit">
-                                    <span class="countdown-value">${String(countdown.minutes).padStart(2, '0')}</span>
-                                    <span class="countdown-name">分</span>
-                                </div>
-                                <span class="countdown-separator">:</span>
-                                <div class="countdown-unit">
-                                    <span class="countdown-value">${String(countdown.seconds).padStart(2, '0')}</span>
-                                    <span class="countdown-name">秒</span>
+                            <div class="countdown-section">
+                                <div class="countdown-label">— 距离开启还有 —</div>
+                                <div class="countdown-display">
+                                    <div class="countdown-unit">
+                                        <span class="countdown-value">${String(countdown.days).padStart(2, '0')}</span>
+                                        <span class="countdown-name">天</span>
+                                    </div>
+                                    <span class="countdown-separator">:</span>
+                                    <div class="countdown-unit">
+                                        <span class="countdown-value">${String(countdown.hours).padStart(2, '0')}</span>
+                                        <span class="countdown-name">时</span>
+                                    </div>
+                                    <span class="countdown-separator">:</span>
+                                    <div class="countdown-unit">
+                                        <span class="countdown-value">${String(countdown.minutes).padStart(2, '0')}</span>
+                                        <span class="countdown-name">分</span>
+                                    </div>
+                                    <span class="countdown-separator">:</span>
+                                    <div class="countdown-unit">
+                                        <span class="countdown-value">${String(countdown.seconds).padStart(2, '0')}</span>
+                                        <span class="countdown-name">秒</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="open-time">${openTimeDisplay || '未设置开启时间'}</div>
                         </div>
+                        <div class="overlay-footer">灵庐书院 · 年批月令</div>
                     </div>
                 </body>
                 </html>
