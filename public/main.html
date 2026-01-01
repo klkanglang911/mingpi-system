@@ -994,6 +994,16 @@
             renderCalendar();
             await loadMingpi();
 
+            // 记录用户访问（异步，不阻塞页面显示）
+            fetch('/api/auth/visit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ page: 'calendar' })
+            }).catch(() => {}); // 忽略错误，不影响用户体验
+
             // 标记数据加载完成
             markDataLoaded();
 

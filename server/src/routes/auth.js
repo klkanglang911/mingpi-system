@@ -136,6 +136,25 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 });
 
 /**
+ * POST /api/auth/visit
+ * 记录用户访问页面（前端在页面加载时调用）
+ */
+router.post('/visit', authMiddleware, (req, res) => {
+    const { page } = req.body;
+
+    // 根据页面类型记录不同的操作
+    let action = ActionTypes.VIEW_CALENDAR;
+    if (page === 'mingpi') {
+        action = ActionTypes.VIEW_MINGPI;
+    }
+
+    // 异步记录访问日志，不阻塞响应
+    logFromRequest(req, action, { page });
+
+    res.json({ success: true });
+});
+
+/**
  * GET /api/auth/me
  * 获取当前用户信息
  */
