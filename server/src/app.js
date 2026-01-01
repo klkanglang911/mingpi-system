@@ -34,6 +34,10 @@ const dynamicAdminMiddleware = (req, res, next) => {
 
     // 如果访问的是配置的后台路径
     if (adminPath && req.path.startsWith('/' + adminPath)) {
+        // 如果访问的是目录但没有尾斜杠，手动添加
+        if (req.path === '/' + adminPath) {
+            return res.redirect('/' + adminPath + '/');
+        }
         // 将路径重写为 /admin
         const newPath = req.path.replace('/' + adminPath, '/admin');
         req.url = newPath + (req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '');
