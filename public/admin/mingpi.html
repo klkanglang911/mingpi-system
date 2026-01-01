@@ -432,6 +432,76 @@
             color: var(--mist-gray);
             margin-bottom: 1rem;
         }
+
+        /* 可搜索下拉框 */
+        .searchable-select {
+            position: relative;
+        }
+
+        .searchable-select-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            background: var(--paper-white);
+        }
+
+        .searchable-select-input:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+        }
+
+        .searchable-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--paper-white);
+            border: 1px solid var(--border-light);
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .searchable-select-dropdown.show {
+            display: block;
+        }
+
+        .searchable-select-option {
+            padding: 0.6rem 0.75rem;
+            cursor: pointer;
+            font-size: 0.875rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .searchable-select-option:last-child {
+            border-bottom: none;
+        }
+
+        .searchable-select-option:hover {
+            background: var(--paper-cream);
+        }
+
+        .searchable-select-option.selected {
+            background: rgba(184, 134, 11, 0.1);
+            color: var(--gold-accent);
+        }
+
+        .searchable-select-option.no-result {
+            color: var(--mist-gray);
+            cursor: default;
+        }
+
+        .searchable-select-option.no-result:hover {
+            background: transparent;
+        }
     </style>
 </head>
 <body>
@@ -474,9 +544,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>选择用户</label>
-                        <select id="batchUserSelect">
-                            <option value="">-- 请选择用户 --</option>
-                        </select>
+                        <div class="searchable-select" id="batchUserSelectWrapper">
+                            <input type="text" class="searchable-select-input" id="batchUserSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
+                            <input type="hidden" id="batchUserSelect">
+                            <div class="searchable-select-dropdown" id="batchUserSelectDropdown"></div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>农历年份</label>
@@ -523,9 +595,11 @@
             <div class="form-row">
                 <div class="form-group">
                     <label>选择用户</label>
-                    <select id="userSelect">
-                        <option value="">-- 请选择用户 --</option>
-                    </select>
+                    <div class="searchable-select" id="userSelectWrapper">
+                        <input type="text" class="searchable-select-input" id="userSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
+                        <input type="hidden" id="userSelect">
+                        <div class="searchable-select-dropdown" id="userSelectDropdown"></div>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>农历年份</label>
@@ -645,6 +719,7 @@
         let selectedMonth = null;
         let userMingpiMap = {};
         let pendingImportData = null;
+        let allUsers = []; // 存储所有用户数据
 
         function showAlert(message, type = 'success') {
             const alertBox = document.getElementById('alertBox');
@@ -658,6 +733,70 @@
 
         function closeModal(id) {
             document.getElementById(id).classList.remove('show');
+        }
+
+        // ============ 可搜索下拉框 ============
+        function initSearchableSelect(inputId, hiddenId, dropdownId, onSelect) {
+            const input = document.getElementById(inputId);
+            const hidden = document.getElementById(hiddenId);
+            const dropdown = document.getElementById(dropdownId);
+
+            // 点击输入框显示下拉
+            input.addEventListener('focus', () => {
+                renderUserOptions(dropdown, input.value, hidden.value);
+                dropdown.classList.add('show');
+            });
+
+            // 输入搜索
+            input.addEventListener('input', () => {
+                renderUserOptions(dropdown, input.value, hidden.value);
+                dropdown.classList.add('show');
+            });
+
+            // 点击外部关闭
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#' + inputId) && !e.target.closest('#' + dropdownId)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+
+            // 选择用户
+            dropdown.addEventListener('click', (e) => {
+                const option = e.target.closest('.searchable-select-option');
+                if (option && !option.classList.contains('no-result')) {
+                    const userId = option.dataset.value;
+                    const userName = option.dataset.name;
+                    hidden.value = userId;
+                    input.value = userName;
+                    dropdown.classList.remove('show');
+                    if (onSelect) onSelect(userId);
+                }
+            });
+        }
+
+        function renderUserOptions(dropdown, searchText, selectedValue) {
+            const search = (searchText || '').toLowerCase().trim();
+            let filtered = allUsers;
+
+            if (search) {
+                filtered = allUsers.filter(u =>
+                    u.displayName.toLowerCase().includes(search) ||
+                    u.username.toLowerCase().includes(search)
+                );
+            }
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="searchable-select-option no-result">无匹配用户</div>';
+                return;
+            }
+
+            dropdown.innerHTML = filtered.map(u => {
+                const isSelected = u.id == selectedValue;
+                const displayText = u.displayName + ' (' + u.username + ')';
+                return `<div class="searchable-select-option ${isSelected ? 'selected' : ''}"
+                             data-value="${u.id}"
+                             data-name="${displayText}">${displayText}</div>`;
+            }).join('');
         }
 
         // 初始化年份选择器
@@ -684,20 +823,21 @@
                 });
                 const data = await response.json();
 
-                const users = data.data.filter(u => !u.isAdmin);
+                allUsers = data.data.filter(u => !u.isAdmin);
 
-                ['userSelect', 'batchUserSelect'].forEach(selectId => {
-                    const select = document.getElementById(selectId);
-                    const firstOption = select.querySelector('option');
-                    select.innerHTML = '';
-                    select.appendChild(firstOption);
-
-                    users.forEach(u => {
-                        const option = document.createElement('option');
-                        option.value = u.id;
-                        option.textContent = u.displayName + ' (' + u.username + ')';
-                        select.appendChild(option);
-                    });
+                // 初始化可搜索下拉框
+                initSearchableSelect('batchUserSelectInput', 'batchUserSelect', 'batchUserSelectDropdown', null);
+                initSearchableSelect('userSelectInput', 'userSelect', 'userSelectDropdown', (userId) => {
+                    selectedUserId = userId;
+                    selectedMonth = null;
+                    if (userId) {
+                        document.getElementById('monthSelector').style.display = 'block';
+                        document.getElementById('contentEditor').style.display = 'none';
+                        loadUserMingpi(userId);
+                    } else {
+                        document.getElementById('monthSelector').style.display = 'none';
+                        document.getElementById('contentEditor').style.display = 'none';
+                    }
                 });
             } catch (error) {
                 showAlert('加载用户失败', 'error');
@@ -1225,20 +1365,6 @@
         }
 
         // 事件监听
-        document.getElementById('userSelect').addEventListener('change', (e) => {
-            selectedUserId = e.target.value;
-            selectedMonth = null;
-
-            if (selectedUserId) {
-                document.getElementById('monthSelector').style.display = 'block';
-                document.getElementById('contentEditor').style.display = 'none';
-                loadUserMingpi(selectedUserId);
-            } else {
-                document.getElementById('monthSelector').style.display = 'none';
-                document.getElementById('contentEditor').style.display = 'none';
-            }
-        });
-
         document.getElementById('yearSelect').addEventListener('change', () => {
             if (selectedUserId) {
                 selectedMonth = null;
@@ -1258,18 +1384,18 @@
 
                     // 等待用户列表加载完成后选中
                     setTimeout(() => {
-                        // 选中单条编辑的用户下拉框
-                        const userSelect = document.getElementById('userSelect');
-                        const batchUserSelect = document.getElementById('batchUserSelect');
+                        const displayText = userData.displayName + ' (' + userData.username + ')';
 
-                        if (userSelect) {
-                            userSelect.value = userData.id;
-                            userSelect.dispatchEvent(new Event('change'));
-                        }
+                        // 设置单条编辑的用户选择
+                        document.getElementById('userSelect').value = userData.id;
+                        document.getElementById('userSelectInput').value = displayText;
+                        selectedUserId = userData.id;
+                        document.getElementById('monthSelector').style.display = 'block';
+                        loadUserMingpi(userData.id);
 
-                        if (batchUserSelect) {
-                            batchUserSelect.value = userData.id;
-                        }
+                        // 设置批量导入的用户选择
+                        document.getElementById('batchUserSelect').value = userData.id;
+                        document.getElementById('batchUserSelectInput').value = displayText;
                     }, 500);
                 } catch (e) {
                     console.error('解析预选用户信息失败:', e);
