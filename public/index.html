@@ -236,40 +236,20 @@
             margin-bottom: 2rem;
         }
 
-        /* 使用纯 CSS 的旋转印章动画，不依赖外部字体 */
+        /* Logo图片容器 */
         .loading-seal {
             width: 72px;
             height: 72px;
-            border: 3px solid var(--vermilion);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             margin: 0 auto 1.5rem;
             position: relative;
             animation: seal-pulse 2s ease-in-out infinite;
         }
 
-        /* 印章内的装饰线条 */
-        .loading-seal::before,
-        .loading-seal::after {
-            content: '';
-            position: absolute;
-            background: var(--vermilion);
-        }
-        .loading-seal::before {
-            width: 40px;
-            height: 2px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-        .loading-seal::after {
-            width: 2px;
-            height: 40px;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        .loading-seal img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
         }
 
         /* 使用系统字体显示加载文字 */
@@ -353,7 +333,9 @@
     <!-- 加载页面 -->
     <div class="loading-screen" id="loadingScreen">
         <div class="loading-brand">
-            <div class="loading-seal"></div>
+            <div class="loading-seal">
+                <img src="/images/Logo.png" alt="灵庐书院">
+            </div>
             <h1 class="loading-title">灵庐书院</h1>
             <p class="loading-subtitle">年批月令</p>
         </div>
