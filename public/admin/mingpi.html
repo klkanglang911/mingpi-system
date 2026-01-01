@@ -502,6 +502,16 @@
         .searchable-select-option.no-result:hover {
             background: transparent;
         }
+
+        .searchable-select-option.create-new {
+            color: var(--gold-accent);
+            font-weight: 500;
+            border-bottom: 1px solid var(--gold-accent);
+        }
+
+        .searchable-select-option.create-new:hover {
+            background: rgba(184, 134, 11, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -695,6 +705,54 @@
         </div>
     </div>
 
+    <!-- 创建用户模态框 -->
+    <div class="modal" id="createUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>创建新用户</h4>
+                <button class="modal-close" onclick="closeModal('createUserModal')">&times;</button>
+            </div>
+            <form id="createUserForm">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label>用户名（登录账号）</label>
+                        <input type="text" id="newUsername" required pattern="[a-zA-Z0-9_]+" title="只能包含字母、数字和下划线">
+                    </div>
+                    <div class="form-group">
+                        <label>显示名称</label>
+                        <input type="text" id="newDisplayName" required>
+                    </div>
+                    <p class="input-hint">密码将自动生成，创建成功后显示</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createUserModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 密码显示模态框 -->
+    <div class="modal" id="passwordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4>用户创建成功</h4>
+                <button class="modal-close" onclick="closePasswordModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem;">请保存以下登录信息：</p>
+                <div style="background: var(--paper-cream); padding: 1rem; border-radius: 4px; font-family: monospace;">
+                    <p>用户名：<strong id="createdUsername"></strong></p>
+                    <p style="margin-top: 0.5rem;">初始密码：<strong id="createdPassword"></strong></p>
+                </div>
+                <p class="input-hint" style="margin-top: 1rem;">用户首次登录需要修改密码</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closePasswordModal()">关闭</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const token = localStorage.getItem('token');
         const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -736,20 +794,20 @@
         }
 
         // ============ 可搜索下拉框 ============
-        function initSearchableSelect(inputId, hiddenId, dropdownId, onSelect) {
+        function initSearchableSelect(inputId, hiddenId, dropdownId, onSelect, showCreateOption = false) {
             const input = document.getElementById(inputId);
             const hidden = document.getElementById(hiddenId);
             const dropdown = document.getElementById(dropdownId);
 
             // 点击输入框显示下拉
             input.addEventListener('focus', () => {
-                renderUserOptions(dropdown, input.value, hidden.value);
+                renderUserOptions(dropdown, input.value, hidden.value, showCreateOption);
                 dropdown.classList.add('show');
             });
 
             // 输入搜索
             input.addEventListener('input', () => {
-                renderUserOptions(dropdown, input.value, hidden.value);
+                renderUserOptions(dropdown, input.value, hidden.value, showCreateOption);
                 dropdown.classList.add('show');
             });
 
@@ -760,21 +818,29 @@
                 }
             });
 
-            // 选择用户
+            // 选择用户或创建新用户
             dropdown.addEventListener('click', (e) => {
                 const option = e.target.closest('.searchable-select-option');
-                if (option && !option.classList.contains('no-result')) {
-                    const userId = option.dataset.value;
-                    const userName = option.dataset.name;
-                    hidden.value = userId;
-                    input.value = userName;
+                if (!option || option.classList.contains('no-result')) return;
+
+                // 点击创建新用户
+                if (option.dataset.action === 'create') {
                     dropdown.classList.remove('show');
-                    if (onSelect) onSelect(userId);
+                    showCreateUserModal();
+                    return;
                 }
+
+                // 选择现有用户
+                const userId = option.dataset.value;
+                const userName = option.dataset.name;
+                hidden.value = userId;
+                input.value = userName;
+                dropdown.classList.remove('show');
+                if (onSelect) onSelect(userId);
             });
         }
 
-        function renderUserOptions(dropdown, searchText, selectedValue) {
+        function renderUserOptions(dropdown, searchText, selectedValue, showCreateOption = false) {
             const search = (searchText || '').toLowerCase().trim();
             let filtered = allUsers;
 
@@ -785,18 +851,28 @@
                 );
             }
 
+            let html = '';
+
+            // 在批量导入下拉框顶部添加"创建新用户"选项
+            if (showCreateOption) {
+                html += '<div class="searchable-select-option create-new" data-action="create">+ 创建新用户</div>';
+            }
+
             if (filtered.length === 0) {
-                dropdown.innerHTML = '<div class="searchable-select-option no-result">无匹配用户</div>';
+                html += '<div class="searchable-select-option no-result">无匹配用户</div>';
+                dropdown.innerHTML = html;
                 return;
             }
 
-            dropdown.innerHTML = filtered.map(u => {
+            html += filtered.map(u => {
                 const isSelected = u.id == selectedValue;
                 const displayText = u.displayName + ' (' + u.username + ')';
                 return `<div class="searchable-select-option ${isSelected ? 'selected' : ''}"
                              data-value="${u.id}"
                              data-name="${displayText}">${displayText}</div>`;
             }).join('');
+
+            dropdown.innerHTML = html;
         }
 
         // 初始化年份选择器
@@ -825,8 +901,8 @@
 
                 allUsers = data.data.filter(u => !u.isAdmin);
 
-                // 初始化可搜索下拉框
-                initSearchableSelect('batchUserSelectInput', 'batchUserSelect', 'batchUserSelectDropdown', null);
+                // 初始化可搜索下拉框（批量导入的下拉框启用"创建新用户"选项）
+                initSearchableSelect('batchUserSelectInput', 'batchUserSelect', 'batchUserSelectDropdown', null, true);
                 initSearchableSelect('userSelectInput', 'userSelect', 'userSelectDropdown', (userId) => {
                     selectedUserId = userId;
                     selectedMonth = null;
@@ -1402,6 +1478,67 @@
                 }
             }
         }
+
+        // ============ 创建新用户 ============
+        function showCreateUserModal() {
+            document.getElementById('createUserForm').reset();
+            openModal('createUserModal');
+        }
+
+        function closePasswordModal() {
+            closeModal('passwordModal');
+        }
+
+        // 创建用户表单提交
+        document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('newUsername').value.trim();
+            const displayName = document.getElementById('newDisplayName').value.trim();
+
+            if (!username || !displayName) {
+                showAlert('请填写完整信息', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ username, displayName })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // 关闭创建用户模态框
+                    closeModal('createUserModal');
+
+                    // 显示密码
+                    document.getElementById('createdUsername').textContent = username;
+                    document.getElementById('createdPassword').textContent = data.data.generatedPassword;
+                    openModal('passwordModal');
+
+                    // 重新加载用户列表并选中新创建的用户
+                    const newUserId = data.data.id;
+                    await loadUsers();
+
+                    // 自动选中新创建的用户
+                    const newDisplayText = displayName + ' (' + username + ')';
+                    document.getElementById('batchUserSelect').value = newUserId;
+                    document.getElementById('batchUserSelectInput').value = newDisplayText;
+
+                    showAlert('用户创建成功');
+                } else {
+                    showAlert(data.error || '创建失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        });
 
         // 初始化
         initYearSelect();
