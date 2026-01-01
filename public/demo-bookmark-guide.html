@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>微信收藏引导 - 设计预览</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #3d3d3d;
+            --paper-white: #f8f5f0;
+            --paper-cream: #efe9e0;
+            --vermilion: #c23a2b;
+            --vermilion-light: #e85a4b;
+            --gold-accent: #b8860b;
+            --gold-light: #d4a84b;
+            --mist-gray: #9a9590;
+            --shadow-ink: rgba(26, 26, 26, 0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--paper-white);
+            color: var(--ink-black);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 模拟背景页面内容 */
+        .mock-page {
+            padding: 2rem 1.5rem;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .mock-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .mock-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            letter-spacing: 0.2em;
+        }
+
+        .mock-subtitle {
+            font-size: 0.85rem;
+            color: var(--mist-gray);
+            margin-top: 0.5rem;
+        }
+
+        .mock-card {
+            background: var(--paper-cream);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .mock-card-title {
+            font-size: 0.9rem;
+            color: var(--vermilion);
+            margin-bottom: 0.5rem;
+        }
+
+        .mock-card-text {
+            font-size: 0.85rem;
+            color: var(--ink-light);
+            line-height: 1.6;
+        }
+
+        /* ========== 收藏引导蒙版 ========== */
+        .bookmark-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 0;
+            cursor: pointer;
+            transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+        }
+
+        .bookmark-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* 半透明蒙版背景 - 水墨晕染效果 */
+        .bookmark-overlay-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 100% 0%, rgba(26, 26, 26, 0.3) 0%, transparent 50%),
+                rgba(26, 26, 26, 0.55);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+
+        /* 主容器 - 御笺风格 */
+        .bookmark-guide {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+            animation: guideEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes guideEnter {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* 箭头图片 */
+        .bookmark-arrow {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 50px;
+            height: 50px;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .bookmark-arrow img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        /* 御笺卡片 - 书卷风格 */
+        .bookmark-card {
+            position: relative;
+            background: linear-gradient(135deg, var(--paper-white) 0%, var(--paper-cream) 100%);
+            border-radius: 4px;
+            padding: 0;
+            margin-top: 45px;
+            cursor: default;
+            box-shadow:
+                0 8px 32px rgba(26, 26, 26, 0.2),
+                0 2px 8px rgba(26, 26, 26, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            overflow: hidden;
+            animation: cardBreath 4s ease-in-out infinite;
+            max-width: 180px;
+        }
+
+        @keyframes cardBreath {
+            0%, 100% {
+                box-shadow:
+                    0 8px 32px rgba(26, 26, 26, 0.2),
+                    0 2px 8px rgba(26, 26, 26, 0.1),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            }
+            50% {
+                box-shadow:
+                    0 12px 40px rgba(26, 26, 26, 0.25),
+                    0 4px 12px rgba(26, 26, 26, 0.15),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+                    0 0 0 1px rgba(184, 134, 11, 0.15);
+            }
+        }
+
+        /* 顶部装饰条 - 朱红印章风格 */
+        .card-header {
+            background: linear-gradient(90deg, var(--vermilion) 0%, var(--vermilion-light) 50%, var(--vermilion) 100%);
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        /* 装饰纹理 */
+        .card-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 8px,
+                    rgba(255, 255, 255, 0.05) 8px,
+                    rgba(255, 255, 255, 0.05) 16px
+                );
+        }
+
+        .header-text {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.95);
+            letter-spacing: 0.3em;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        /* 卡片主体内容 */
+        .card-body {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        /* 水墨纹理背景 */
+        .card-body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 30% 70%, rgba(184, 134, 11, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(194, 58, 43, 0.02) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        /* 收藏图标容器 - 印章风格 */
+        .bookmark-icon {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--paper-cream);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid rgba(184, 134, 11, 0.2);
+            box-shadow:
+                inset 0 1px 3px rgba(26, 26, 26, 0.05),
+                0 2px 4px rgba(26, 26, 26, 0.08);
+        }
+
+        .bookmark-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 默认图标样式 */
+        .bookmark-icon-default {
+            font-size: 1.4rem;
+            color: var(--gold-accent);
+            text-shadow: 0 1px 2px rgba(184, 134, 11, 0.3);
+        }
+
+        /* 文字区域 */
+        .bookmark-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .bookmark-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            letter-spacing: 0.08em;
+            line-height: 1.2;
+        }
+
+        .bookmark-hint {
+            font-size: 0.7rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.05em;
+        }
+
+        /* 底部金色装饰线 */
+        .card-footer {
+            height: 3px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--gold-accent) 20%,
+                var(--gold-light) 50%,
+                var(--gold-accent) 80%,
+                transparent 100%
+            );
+            opacity: 0.6;
+        }
+
+        /* 点击关闭提示 */
+        .bookmark-close-hint {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.15em;
+            animation: hintPulse 2.5s ease-in-out infinite;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes hintPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* 演示控制按钮 */
+        .demo-controls {
+            position: fixed;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+        }
+
+        .demo-btn {
+            background: var(--ink-black);
+            color: var(--paper-white);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.1em;
+        }
+
+        .demo-btn:hover {
+            background: var(--ink-light);
+        }
+
+        /* 响应式适配 */
+        @media (max-width: 360px) {
+            .bookmark-card {
+                max-width: 160px;
+            }
+
+            .card-body {
+                padding: 12px 14px;
+                gap: 10px;
+            }
+
+            .bookmark-icon {
+                width: 38px;
+                height: 38px;
+            }
+
+            .bookmark-title {
+                font-size: 0.875rem;
+            }
+
+            .header-text {
+                font-size: 0.65rem;
+            }
+        }
+
+        /* 大屏适配 */
+        @media (min-width: 500px) {
+            .bookmark-guide {
+                top: 12px;
+                right: 12px;
+            }
+
+            .bookmark-card {
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 模拟背景页面 -->
+    <div class="mock-page">
+        <header class="mock-header">
+            <h1 class="mock-title">灵庐书院</h1>
+            <p class="mock-subtitle">年批月令</p>
+        </header>
+
+        <div class="mock-card">
+            <div class="mock-card-title">· 本月命批 ·</div>
+            <p class="mock-card-text">春风化雨，万物复苏。此月宜静心养性，勿急于求成。行事低调，贵人自现。财运平稳，宜守不宜攻。</p>
+        </div>
+
+        <div class="mock-card">
+            <div class="mock-card-title">· 温馨提示 ·</div>
+            <p class="mock-card-text">这是一个模拟的背景页面，用于展示收藏引导蒙版的效果。点击蒙版外部区域可以关闭引导。</p>
+        </div>
+    </div>
+
+    <!-- 收藏引导蒙版 -->
+    <div class="bookmark-overlay" id="bookmarkOverlay" onclick="handleOverlayClick(event)">
+        <div class="bookmark-overlay-bg"></div>
+
+        <div class="bookmark-guide" onclick="event.stopPropagation()">
+            <!-- 指向右上角的箭头 -->
+            <div class="bookmark-arrow">
+                <img src="images/arrow.png" alt="箭头">
+            </div>
+
+            <!-- 御笺卡片 -->
+            <div class="bookmark-card">
+                <!-- 顶部朱红装饰条 -->
+                <div class="card-header">
+                    <span class="header-text">收藏提示</span>
+                </div>
+
+                <!-- 主体内容 -->
+                <div class="card-body">
+                    <div class="bookmark-icon">
+                        <img src="images/collect.png" alt="收藏">
+                    </div>
+                    <div class="bookmark-text">
+                        <span class="bookmark-title">点这里收藏</span>
+                        <span class="bookmark-hint">添加微信收藏</span>
+                    </div>
+                </div>
+
+                <!-- 底部金色装饰线 -->
+                <div class="card-footer"></div>
+            </div>
+        </div>
+
+        <span class="bookmark-close-hint">点击任意处关闭</span>
+    </div>
+
+    <!-- 演示控制 -->
+    <div class="demo-controls" id="demoControls" style="display: none;">
+        <button class="demo-btn" onclick="showOverlay()">显示引导蒙版</button>
+    </div>
+
+    <script>
+        const overlay = document.getElementById('bookmarkOverlay');
+        const demoControls = document.getElementById('demoControls');
+
+        function handleOverlayClick(event) {
+            // 点击蒙版背景区域关闭
+            if (event.target === overlay || event.target.classList.contains('bookmark-overlay-bg')) {
+                hideOverlay();
+            }
+        }
+
+        function hideOverlay() {
+            overlay.classList.add('hidden');
+            demoControls.style.display = 'block';
+        }
+
+        function showOverlay() {
+            overlay.classList.remove('hidden');
+            demoControls.style.display = 'none';
+        }
+
+        // ESC 键关闭
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !overlay.classList.contains('hidden')) {
+                hideOverlay();
+            }
+        });
+    </script>
+</body>
+</html>

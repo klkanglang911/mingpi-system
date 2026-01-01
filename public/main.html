@@ -336,6 +336,266 @@
             opacity: 0.6;
         }
 
+        /* ========== 收藏引导蒙版 ========== */
+        .bookmark-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10000;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 0;
+            cursor: pointer;
+            transition: opacity 0.4s ease-out, visibility 0.4s ease-out;
+        }
+
+        .bookmark-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .bookmark-overlay-bg {
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 100% 0%, rgba(26, 26, 26, 0.3) 0%, transparent 50%),
+                rgba(26, 26, 26, 0.55);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+
+        .bookmark-guide {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+            animation: guideEnter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes guideEnter {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .bookmark-arrow {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 50px;
+            height: 50px;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .bookmark-arrow img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        .bookmark-card {
+            position: relative;
+            background: linear-gradient(135deg, var(--paper-white) 0%, var(--paper-cream) 100%);
+            border-radius: 4px;
+            padding: 0;
+            margin-top: 45px;
+            cursor: default;
+            box-shadow:
+                0 8px 32px rgba(26, 26, 26, 0.2),
+                0 2px 8px rgba(26, 26, 26, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            overflow: hidden;
+            animation: cardBreath 4s ease-in-out infinite;
+            max-width: 180px;
+        }
+
+        @keyframes cardBreath {
+            0%, 100% {
+                box-shadow:
+                    0 8px 32px rgba(26, 26, 26, 0.2),
+                    0 2px 8px rgba(26, 26, 26, 0.1),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            }
+            50% {
+                box-shadow:
+                    0 12px 40px rgba(26, 26, 26, 0.25),
+                    0 4px 12px rgba(26, 26, 26, 0.15),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+                    0 0 0 1px rgba(184, 134, 11, 0.15);
+            }
+        }
+
+        .bookmark-card .card-header {
+            background: linear-gradient(90deg, var(--vermilion) 0%, var(--vermilion-light) 50%, var(--vermilion) 100%);
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        .bookmark-card .card-header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 8px,
+                    rgba(255, 255, 255, 0.05) 8px,
+                    rgba(255, 255, 255, 0.05) 16px
+                );
+        }
+
+        .bookmark-card .header-text {
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.95);
+            letter-spacing: 0.3em;
+            font-weight: 500;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .bookmark-card .card-body {
+            padding: 14px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+
+        .bookmark-card .card-body::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse at 30% 70%, rgba(184, 134, 11, 0.03) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(194, 58, 43, 0.02) 0%, transparent 40%);
+            pointer-events: none;
+        }
+
+        .bookmark-icon {
+            width: 44px;
+            height: 44px;
+            flex-shrink: 0;
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--paper-cream);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            border: 1px solid rgba(184, 134, 11, 0.2);
+            box-shadow:
+                inset 0 1px 3px rgba(26, 26, 26, 0.05),
+                0 2px 4px rgba(26, 26, 26, 0.08);
+        }
+
+        .bookmark-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .bookmark-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+        }
+
+        .bookmark-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            letter-spacing: 0.08em;
+            line-height: 1.2;
+        }
+
+        .bookmark-hint {
+            font-size: 0.7rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.05em;
+        }
+
+        .bookmark-card .card-footer {
+            height: 3px;
+            background: linear-gradient(90deg,
+                transparent 0%,
+                var(--gold-accent) 20%,
+                var(--gold-light, #d4a84b) 50%,
+                var(--gold-accent) 80%,
+                transparent 100%
+            );
+            opacity: 0.6;
+        }
+
+        .bookmark-close-hint {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            letter-spacing: 0.15em;
+            animation: hintPulse 2.5s ease-in-out infinite;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes hintPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        @media (max-width: 360px) {
+            .bookmark-card {
+                max-width: 160px;
+            }
+
+            .bookmark-card .card-body {
+                padding: 12px 14px;
+                gap: 10px;
+            }
+
+            .bookmark-icon {
+                width: 38px;
+                height: 38px;
+            }
+
+            .bookmark-title {
+                font-size: 0.875rem;
+            }
+
+            .bookmark-card .header-text {
+                font-size: 0.65rem;
+            }
+        }
+
+        @media (min-width: 500px) {
+            .bookmark-guide {
+                top: 12px;
+                right: 12px;
+            }
+
+            .bookmark-card {
+                max-width: 200px;
+            }
+        }
+
         .tips-label {
             font-size: 0.65rem;
             color: var(--vermilion);
@@ -836,6 +1096,42 @@
             </div>
         </div>
         <div class="overlay-footer">灵庐书院 · 年批月令</div>
+    </div>
+
+    <!-- 收藏引导蒙版 -->
+    <div class="bookmark-overlay hidden" id="bookmarkOverlay" onclick="handleBookmarkOverlayClick(event)">
+        <div class="bookmark-overlay-bg"></div>
+
+        <div class="bookmark-guide" onclick="event.stopPropagation()">
+            <!-- 指向右上角的箭头 -->
+            <div class="bookmark-arrow">
+                <img src="/images/arrow.png" alt="箭头">
+            </div>
+
+            <!-- 御笺卡片 -->
+            <div class="bookmark-card">
+                <!-- 顶部朱红装饰条 -->
+                <div class="card-header">
+                    <span class="header-text">收藏提示</span>
+                </div>
+
+                <!-- 主体内容 -->
+                <div class="card-body">
+                    <div class="bookmark-icon">
+                        <img src="/images/collect.png" alt="收藏">
+                    </div>
+                    <div class="bookmark-text">
+                        <span class="bookmark-title">点这里收藏</span>
+                        <span class="bookmark-hint">添加微信收藏</span>
+                    </div>
+                </div>
+
+                <!-- 底部金色装饰线 -->
+                <div class="card-footer"></div>
+            </div>
+        </div>
+
+        <span class="bookmark-close-hint">点击任意处关闭</span>
     </div>
 
     <script>
@@ -1375,7 +1671,65 @@
             document.getElementById('overlaySeconds').textContent = String(seconds).padStart(2, '0');
         }
 
+        // ========== 收藏引导蒙版控制 ==========
+        const BOOKMARK_SHOWN_KEY = 'bookmarkGuideShown';
+
+        // 点击蒙版背景关闭
+        function handleBookmarkOverlayClick(event) {
+            if (event.target.id === 'bookmarkOverlay' || event.target.classList.contains('bookmark-overlay-bg')) {
+                hideBookmarkOverlay();
+            }
+        }
+
+        // 显示收藏引导蒙版
+        function showBookmarkOverlay() {
+            const overlay = document.getElementById('bookmarkOverlay');
+            if (overlay) {
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        // 隐藏收藏引导蒙版
+        function hideBookmarkOverlay() {
+            const overlay = document.getElementById('bookmarkOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+            // 记录已显示过，避免每次都弹出
+            localStorage.setItem(BOOKMARK_SHOWN_KEY, 'true');
+        }
+
+        // 检查是否需要显示收藏引导
+        function checkBookmarkGuide() {
+            // 检查是否是微信浏览器
+            const ua = navigator.userAgent.toLowerCase();
+            const isWeChat = ua.includes('micromessenger');
+
+            // 如果不是微信环境，不显示
+            if (!isWeChat) return;
+
+            // 检查是否已显示过
+            const hasShown = localStorage.getItem(BOOKMARK_SHOWN_KEY);
+            if (hasShown) return;
+
+            // 显示收藏引导蒙版
+            showBookmarkOverlay();
+        }
+
+        // ESC 键关闭收藏引导
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const bookmarkOverlay = document.getElementById('bookmarkOverlay');
+                if (bookmarkOverlay && !bookmarkOverlay.classList.contains('hidden')) {
+                    hideBookmarkOverlay();
+                }
+            }
+        });
+
         init();
+
+        // 页面加载完成后检查是否显示收藏引导
+        setTimeout(checkBookmarkGuide, 500);
     </script>
 </body>
 </html>
