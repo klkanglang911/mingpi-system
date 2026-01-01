@@ -614,6 +614,11 @@
             color: var(--ink-light);
         }
 
+        .tips-content.loading {
+            color: var(--mist-gray);
+            font-style: italic;
+        }
+
         .lunar-countdown {
             display: flex;
             align-items: center;
@@ -1014,7 +1019,7 @@
 
         <section class="tips-section">
             <div class="tips-label">· 本月命批 ·</div>
-            <p class="tips-content" id="tips">加载中...</p>
+            <p class="tips-content loading" id="tips">数据加载中...</p>
         </section>
 
         <section class="lunar-countdown">
@@ -1360,16 +1365,28 @@
 
         // ========== 命批加载 ==========
         async function loadMingpi() {
+            const tipsEl = document.getElementById('tips');
+
+            // 显示加载状态
+            tipsEl.textContent = '数据加载中...';
+            tipsEl.classList.add('loading');
+
             try {
                 const response = await fetch(`/api/mingpi/${viewLunarYear}/${viewLunarMonth}`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    document.getElementById('tips').textContent = data.data.content;
+                    tipsEl.textContent = data.data.content || '暂无命批内容';
+                    tipsEl.classList.remove('loading');
+                } else {
+                    tipsEl.textContent = '暂无命批内容';
+                    tipsEl.classList.remove('loading');
                 }
             } catch (error) {
                 console.error('加载命批失败:', error);
+                tipsEl.textContent = '加载失败，请刷新重试';
+                tipsEl.classList.add('loading');
             }
         }
 
