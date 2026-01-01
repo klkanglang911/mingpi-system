@@ -1251,10 +1251,12 @@
             viewLunarMonthRange = getLunarMonthSolarRange(viewLunarYear, viewLunarMonth);
             updateCountdown();
             renderCalendar();
-            await loadMingpi();
 
-            // 加载蒙版配置并初始化
-            await initOverlay();
+            // 并行加载命批和蒙版配置，提升加载速度
+            await Promise.all([
+                loadMingpi(),
+                initOverlay()
+            ]);
 
             // 记录用户访问（异步，不阻塞页面显示）
             fetch('/api/auth/visit', {
