@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>年批 · 灵庐书院</title>
-    <!-- 预连接加速 -->
-    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
-    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
     <style>
         :root {
             --ink-black: #1a1a1a;
@@ -24,7 +21,7 @@
         html { font-size: 16px; }
 
         body {
-            font-family: 'Noto Serif SC', serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
             background: var(--paper-white);
             color: var(--ink-black);
             min-height: 100vh;
@@ -81,7 +78,8 @@
         }
 
         .title {
-            font-family: 'Ma Shan Zheng', cursive;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-weight: 600;
             font-size: 2.5rem;
             letter-spacing: 0.3rem;
             color: var(--ink-black);
@@ -190,7 +188,8 @@
         }
 
         .lunar-month-name {
-            font-family: 'Ma Shan Zheng', cursive;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-weight: 600;
             font-size: 1.75rem;
             color: var(--gold-accent);
             margin-bottom: 0.25rem;
@@ -205,7 +204,8 @@
 
         .countdown-number {
             display: inline-block;
-            font-family: 'Ma Shan Zheng', cursive;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-weight: 600;
             font-size: 2rem;
             color: var(--vermilion-light);
             margin: 0 0.2rem;
@@ -338,23 +338,6 @@
             font-size: 0.75rem;
             color: var(--mist-gray);
             letter-spacing: 0.15rem;
-        }
-
-        .seal {
-            margin-top: 1rem;
-            display: inline-flex;
-            width: 48px;
-            height: 48px;
-            border: 2px solid var(--vermilion);
-            border-radius: 4px;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .seal-text {
-            font-family: 'Ma Shan Zheng', cursive;
-            font-size: 1.5rem;
-            color: var(--vermilion);
         }
 
         @keyframes fadeInDown {
@@ -611,35 +594,17 @@
 
         <footer class="footer">
             <p class="footer-text">人间有清醒 欢迎来灵庐</p>
-            <div class="seal">
-                <span class="seal-text">灵庐</span>
-            </div>
         </footer>
     </div>
 
     <script>
-        // ========== 异步加载字体 ==========
-        (function() {
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = '/fonts/fonts.css';
-            link.onerror = function() {
-                this.href = 'https://fonts.googleapis.cn/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap';
-                this.onerror = function() {
-                    this.href = 'https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@300;400;600&display=swap';
-                };
-            };
-            document.head.appendChild(link);
-        })();
-
         // ========== 加载页面控制 ==========
         const loadingScreen = document.getElementById('loadingScreen');
         const progressFill = document.getElementById('progressFill');
         const progressText = document.getElementById('progressText');
         const mainContainer = document.getElementById('mainContainer');
 
-        // 资源加载状态
-        let fontsLoaded = false;
+        // 数据加载状态
         let dataLoaded = false;
 
         // 更新进度条
@@ -648,32 +613,22 @@
             if (text) progressText.textContent = text;
         }
 
-        // 检查是否所有资源都加载完成
-        function checkAllLoaded() {
-            if (fontsLoaded && dataLoaded) {
-                updateProgress(100, '加载完成');
+        // 显示主内容
+        function showMainContent() {
+            updateProgress(100, '加载完成');
+            setTimeout(() => {
+                loadingScreen.classList.add('fade-out');
+                mainContainer.classList.add('show');
                 setTimeout(() => {
-                    loadingScreen.classList.add('fade-out');
-                    mainContainer.classList.add('show');
-                    setTimeout(() => {
-                        loadingScreen.style.display = 'none';
-                    }, 500);
-                }, 100);
-            }
-        }
-
-        // 标记字体加载完成
-        function markFontsLoaded() {
-            fontsLoaded = true;
-            updateProgress(dataLoaded ? 90 : 50, dataLoaded ? '准备就绪...' : '加载数据中...');
-            checkAllLoaded();
+                    loadingScreen.style.display = 'none';
+                }, 500);
+            }, 100);
         }
 
         // 标记数据加载完成
         function markDataLoaded() {
             dataLoaded = true;
-            updateProgress(fontsLoaded ? 90 : 70, fontsLoaded ? '准备就绪...' : '加载字体中...');
-            checkAllLoaded();
+            showMainContent();
         }
 
         // ========== 初始化 ==========
@@ -696,14 +651,6 @@
             localStorage.removeItem('user');
             window.location.href = '/';
         });
-
-        // 等待字体加载
-        updateProgress(20, '加载字体资源...');
-        if (document.fonts) {
-            document.fonts.ready.then(markFontsLoaded);
-        } else {
-            markFontsLoaded();
-        }
 
         // ========== 农历计算 ==========
         const lunarInfo = [

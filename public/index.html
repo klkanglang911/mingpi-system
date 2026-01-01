@@ -7,9 +7,6 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>登录 · 灵庐书院年批月令</title>
-    <!-- 预连接加速 -->
-    <link rel="preconnect" href="https://fonts.loli.net" crossorigin>
-    <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
     <style>
         :root {
             --ink-black: #1a1a1a;
@@ -30,7 +27,7 @@
         }
 
         body {
-            font-family: 'Noto Serif SC', serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, var(--paper-white) 0%, var(--paper-cream) 100%);
             min-height: 100vh;
             display: flex;
@@ -91,7 +88,8 @@
         }
 
         .title {
-            font-family: 'Ma Shan Zheng', cursive;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-weight: 600;
             font-size: 2.5rem;
             color: var(--ink-black);
             margin-bottom: 0.25rem;
@@ -202,25 +200,6 @@
             font-size: 0.75rem;
             color: var(--mist-gray);
             letter-spacing: 0.1em;
-        }
-
-        .seal {
-            margin-top: 1rem;
-            display: inline-block;
-            width: 48px;
-            height: 48px;
-            border: 2px solid var(--vermilion);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 1rem auto 0;
-        }
-
-        .seal-text {
-            font-family: 'Ma Shan Zheng', cursive;
-            font-size: 1.25rem;
-            color: var(--vermilion);
         }
 
         /* 默认隐藏登录容器，防止已登录时闪烁 */
@@ -417,32 +396,10 @@
 
         <footer class="footer">
             <p class="footer-text">人间有清醒 欢迎来灵庐</p>
-            <div class="seal">
-                <span class="seal-text">灵庐</span>
-            </div>
         </footer>
     </div>
 
     <script>
-        // ========== 异步加载字体 ==========
-        (function() {
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            // 尝试使用本地字体，如果没有则使用 CDN
-            // 本地字体路径: /fonts/fonts.css
-            // CDN 备选: fonts.googleapis.cn (Google中国), fonts.loli.net
-            link.href = '/fonts/fonts.css';
-            link.onerror = function() {
-                // 本地字体加载失败，使用 CDN 备选
-                this.href = 'https://fonts.googleapis.cn/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap';
-                this.onerror = function() {
-                    // Google 中国镜像也失败，使用 loli.net
-                    this.href = 'https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap';
-                };
-            };
-            document.head.appendChild(link);
-        })();
-
         // ========== 加载页面控制 ==========
         const loadingScreen = document.getElementById('loadingScreen');
         const progressFill = document.getElementById('progressFill');
@@ -465,16 +422,8 @@
             }, 100);
         }
 
-        // 显示登录页（等待字体加载完成）
-        async function showLoginForm() {
-            updateProgress(50, '加载字体资源...');
-
-            // 等待字体加载完成
-            if (document.fonts) {
-                await document.fonts.ready;
-            }
-
-            updateProgress(90, '准备就绪...');
+        // 显示登录页
+        function showLoginForm() {
             document.getElementById('loginContainer').classList.add('show');
             hideLoadingScreen();
         }
@@ -486,7 +435,6 @@
         const token = localStorage.getItem('token');
         if (token) {
             updateProgress(30, '验证登录状态...');
-            // 验证 token 是否有效
             fetch('/api/auth/me?_t=' + Date.now(), {
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -511,7 +459,6 @@
                 showLoginForm();
             });
         } else {
-            // 没有 token，等待字体后显示登录表单
             showLoginForm();
         }
 
