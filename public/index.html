@@ -424,11 +424,22 @@
     </div>
 
     <script>
-        // ========== 异步加载字体（不阻塞渲染）==========
+        // ========== 异步加载字体 ==========
         (function() {
             var link = document.createElement('link');
             link.rel = 'stylesheet';
-            link.href = 'https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap';
+            // 尝试使用本地字体，如果没有则使用 CDN
+            // 本地字体路径: /fonts/fonts.css
+            // CDN 备选: fonts.googleapis.cn (Google中国), fonts.loli.net
+            link.href = '/fonts/fonts.css';
+            link.onerror = function() {
+                // 本地字体加载失败，使用 CDN 备选
+                this.href = 'https://fonts.googleapis.cn/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap';
+                this.onerror = function() {
+                    // Google 中国镜像也失败，使用 loli.net
+                    this.href = 'https://fonts.loli.net/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600&display=swap';
+                };
+            };
             document.head.appendChild(link);
         })();
 

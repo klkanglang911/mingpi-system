@@ -1,0 +1,42 @@
+/*
+ * 自托管字体 CSS
+ * 使用多个 CDN 源作为备选
+ */
+
+/* Ma Shan Zheng - 书法字体 */
+@font-face {
+    font-family: 'Ma Shan Zheng';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Ma Shan Zheng'),
+         url('MaShanZheng-Regular.woff2') format('woff2');
+}
+
+/* Noto Serif SC - 正文字体 */
+@font-face {
+    font-family: 'Noto Serif SC';
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+    src: local('Noto Serif SC Light'),
+         url('NotoSerifSC-Light.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Noto Serif SC';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: local('Noto Serif SC Regular'),
+         url('NotoSerifSC-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Noto Serif SC';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: local('Noto Serif SC SemiBold'),
+         url('NotoSerifSC-SemiBold.woff2') format('woff2');
+}
