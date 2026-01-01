@@ -16,6 +16,9 @@ const adminMiddleware = require('./middleware/admin');
 
 const app = express();
 
+// 信任反向代理（Nginx），以获取真实客户端 IP
+app.set('trust proxy', true);
+
 // 中间件
 app.use(cors());
 app.use(express.json());

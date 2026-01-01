@@ -218,11 +218,19 @@ function logAccess(options) {
  */
 async function logFromRequest(req, action, extraData = null) {
     const userId = req.user ? req.user.id : null;
-    let ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection?.remoteAddress;
+
+    // 优先使用代理头部获取真实客户端 IP
+    // X-Forwarded-For 格式: "client, proxy1, proxy2"，取第一个
+    // X-Real-IP 是 Nginx 常用的头部
+    let ipAddress = req.headers['x-forwarded-for'] ||
+                    req.headers['x-real-ip'] ||
+                    req.ip ||
+                    req.connection?.remoteAddress;
+
     const userAgent = req.headers['user-agent'];
     const page = req.originalUrl || req.url;
 
-    // 处理多个IP的情况（代理）
+    // 处理多个IP的情况（代理链）
     if (ipAddress && ipAddress.includes(',')) {
         ipAddress = ipAddress.split(',')[0].trim();
     }
