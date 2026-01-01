@@ -5,11 +5,64 @@
 
 const express = require('express');
 const router = express.Router();
-const { queryOne, run } = require('../config/database');
+const { queryOne, run, getConfig } = require('../config/database');
 const { verifyPassword, hashPassword, validatePasswordStrength } = require('../utils/password');
 const { generateToken } = require('../middleware/auth');
 const authMiddleware = require('../middleware/auth');
 const { logFromRequest, ActionTypes } = require('../utils/accessLog');
+
+/**
+ * 检查用户是否被登录锁定
+ */
+function isLoginLocked(user) {
+    if (!user.login_locked_until) return false;
+    const lockUntil = new Date(user.login_locked_until + ' UTC');
+    return lockUntil > new Date();
+}
+
+/**
+ * 获取锁定剩余时间（分钟）
+ */
+function getLockRemainingMinutes(user) {
+    if (!user.login_locked_until) return 0;
+    const lockUntil = new Date(user.login_locked_until + ' UTC');
+    const remaining = Math.ceil((lockUntil - new Date()) / 60000);
+    return Math.max(0, remaining);
+}
+
+/**
+ * 记录登录失败
+ */
+function recordLoginFailure(userId) {
+    const maxAttempts = parseInt(getConfig('login_max_attempts') || '5');
+    const lockMinutes = parseInt(getConfig('login_lock_minutes') || '15');
+
+    // 获取当前失败次数
+    const user = queryOne('SELECT login_fail_count FROM users WHERE id = ?', [userId]);
+    const newCount = (user?.login_fail_count || 0) + 1;
+
+    if (newCount >= maxAttempts) {
+        // 达到最大次数，锁定账户
+        run(`
+            UPDATE users
+            SET login_fail_count = ?,
+                login_locked_until = datetime('now', '+${lockMinutes} minutes')
+            WHERE id = ?
+        `, [newCount, userId]);
+    } else {
+        // 增加失败计数
+        run('UPDATE users SET login_fail_count = ? WHERE id = ?', [newCount, userId]);
+    }
+
+    return { count: newCount, maxAttempts, lockMinutes };
+}
+
+/**
+ * 重置登录失败计数
+ */
+function resetLoginFailure(userId) {
+    run('UPDATE users SET login_fail_count = 0, login_locked_until = NULL WHERE id = ?', [userId]);
+}
 
 /**
  * POST /api/auth/login
@@ -30,7 +83,17 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ error: '用户名或密码错误' });
         }
 
-        // 检查用户是否被锁定
+        // 检查登录是否被锁定（因多次失败）
+        if (isLoginLocked(user)) {
+            const remaining = getLockRemainingMinutes(user);
+            return res.status(403).json({
+                error: `登录失败次数过多，请 ${remaining} 分钟后重试`,
+                locked: true,
+                remainingMinutes: remaining
+            });
+        }
+
+        // 检查用户是否被锁定（管理员锁定）
         if (user.is_locked === 1) {
             return res.status(403).json({ error: '该账户已被锁定，请联系管理员' });
         }
@@ -39,8 +102,26 @@ router.post('/login', async (req, res) => {
         const isValid = await verifyPassword(password, user.password_hash);
 
         if (!isValid) {
-            return res.status(401).json({ error: '用户名或密码错误' });
+            // 记录登录失败
+            const failInfo = recordLoginFailure(user.id);
+            const remaining = failInfo.maxAttempts - failInfo.count;
+
+            if (remaining <= 0) {
+                return res.status(403).json({
+                    error: `密码错误次数过多，账户已锁定 ${failInfo.lockMinutes} 分钟`,
+                    locked: true,
+                    remainingMinutes: failInfo.lockMinutes
+                });
+            }
+
+            return res.status(401).json({
+                error: `用户名或密码错误，还剩 ${remaining} 次尝试机会`,
+                remainingAttempts: remaining
+            });
         }
+
+        // 登录成功，重置失败计数
+        resetLoginFailure(user.id);
 
         // 更新最后登录时间（使用北京时间）
         run('UPDATE users SET last_login_at = datetime("now", "+8 hours") WHERE id = ?', [user.id]);
@@ -168,6 +249,23 @@ router.get('/me', authMiddleware, (req, res) => {
     res.json({
         success: true,
         user: req.user
+    });
+});
+
+/**
+ * GET /api/auth/admin-path
+ * 获取后台路径（需要管理员权限）
+ */
+router.get('/admin-path', authMiddleware, (req, res) => {
+    // 只有管理员可以获取后台路径
+    if (!req.user.isAdmin) {
+        return res.status(403).json({ error: '无权访问' });
+    }
+
+    const adminPath = getConfig('admin_path');
+    res.json({
+        success: true,
+        adminPath: adminPath || 'admin'
     });
 });
 

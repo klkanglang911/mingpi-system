@@ -474,10 +474,11 @@
     </header>
 
     <nav class="nav">
-        <ul>
+        <ul id="navMenu">
             <li><a href="/admin/" class="active">首页</a></li>
             <li><a href="/admin/users.html">用户管理</a></li>
             <li><a href="/admin/mingpi.html">命批管理</a></li>
+            <li><a href="/admin/settings.html">系统设置</a></li>
         </ul>
     </nav>
 
@@ -649,6 +650,21 @@
         }
 
         document.getElementById('adminName').textContent = user.displayName || '管理员';
+
+        // 更新导航链接为当前后台路径
+        (function updateNavLinks() {
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/').filter(p => p);
+            if (pathParts.length > 0) {
+                const currentAdminPath = pathParts[0];
+                document.querySelectorAll('#navMenu a').forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href.startsWith('/admin')) {
+                        link.setAttribute('href', href.replace('/admin', '/' + currentAdminPath));
+                    }
+                });
+            }
+        })();
 
         document.getElementById('logoutBtn').addEventListener('click', (e) => {
             e.preventDefault();

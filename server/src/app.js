@@ -7,7 +7,7 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
-const { initDatabase } = require('./config/database');
+const { initDatabase, getConfig } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const mingpiRoutes = require('./routes/mingpi');
 const adminRoutes = require('./routes/admin');
@@ -27,6 +27,29 @@ app.use(express.json());
 const publicPath = process.env.NODE_ENV === 'production'
     ? path.join(__dirname, '../public')
     : path.join(__dirname, '../../public');
+
+// 动态后台路径中间件
+const dynamicAdminMiddleware = (req, res, next) => {
+    const adminPath = getConfig('admin_path');
+
+    // 如果访问的是配置的后台路径
+    if (adminPath && req.path.startsWith('/' + adminPath)) {
+        // 将路径重写为 /admin
+        const newPath = req.path.replace('/' + adminPath, '/admin');
+        req.url = newPath + (req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '');
+    }
+    // 阻止直接访问 /admin（除非是配置的路径就是 admin）
+    else if (req.path.startsWith('/admin') && adminPath !== 'admin') {
+        return res.status(404).send('页面不存在');
+    }
+
+    next();
+};
+
+// 应用动态路径中间件（在静态文件之前）
+app.use(dynamicAdminMiddleware);
+
+// 静态文件服务
 app.use(express.static(publicPath));
 
 // API 路由
@@ -61,9 +84,12 @@ async function start() {
         await initDatabase();
 
         const PORT = process.env.PORT || 3000;
+        const adminPath = getConfig('admin_path');
+
         app.listen(PORT, () => {
             console.log(`命批系统已启动: http://localhost:${PORT}`);
             console.log(`环境: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`后台路径: /${adminPath}`);
         });
     } catch (error) {
         console.error('启动失败:', error);

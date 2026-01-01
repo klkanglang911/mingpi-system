@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统设置 - 管理后台</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #4a4a4a;
+            --vermilion: #c23a2b;
+            --gold-accent: #b8860b;
+            --paper-white: #f8f5f0;
+            --paper-cream: #f0ebe3;
+            --mist-gray: #9a9590;
+            --border-light: rgba(26, 26, 26, 0.1);
+            --success: #2e7d32;
+            --danger: #c62828;
+            --info: #1976d2;
+            --warning: #f59e0b;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--ink-black);
+            color: var(--paper-white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 1.25rem; font-weight: 500; }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-right span { font-size: 0.875rem; }
+        .header-right a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.875rem; }
+        .header-right a:hover { color: var(--paper-white); }
+
+        .nav {
+            background: var(--paper-white);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 2rem;
+        }
+
+        .nav ul { list-style: none; display: flex; gap: 2rem; }
+
+        .nav a {
+            display: block;
+            padding: 1rem 0;
+            color: var(--ink-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav a:hover, .nav a.active {
+            color: var(--vermilion);
+            border-color: var(--vermilion);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .panel {
+            background: var(--paper-white);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+        }
+
+        .panel-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h2 {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--ink-black);
+        }
+
+        .form-group .hint {
+            font-size: 0.8rem;
+            color: var(--mist-gray);
+            margin-top: 0.5rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-group input {
+            flex: 1;
+        }
+
+        .btn {
+            padding: 0.75rem 1.25rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--ink-black);
+            color: var(--paper-white);
+        }
+
+        .btn-primary:hover { background: var(--ink-light); }
+
+        .btn-secondary {
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            border: 1px solid var(--border-light);
+        }
+
+        .btn-secondary:hover { background: var(--paper-white); border-color: var(--mist-gray); }
+
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-danger:hover, .btn-success:hover, .btn-warning:hover { opacity: 0.9; }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-success { background: rgba(46, 125, 50, 0.1); color: var(--success); border: 1px solid var(--success); }
+        .alert-error { background: rgba(198, 40, 40, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .alert-warning { background: rgba(245, 158, 11, 0.1); color: #92400e; border: 1px solid var(--warning); }
+        .alert-info { background: rgba(25, 118, 210, 0.1); color: var(--info); border: 1px solid var(--info); }
+
+        .current-path {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--paper-cream);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .current-path-label {
+            font-size: 0.875rem;
+            color: var(--mist-gray);
+        }
+
+        .current-path-value {
+            font-family: monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--vermilion);
+            flex: 1;
+        }
+
+        .copy-btn {
+            padding: 0.5rem;
+            background: none;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--paper-white);
+            border-color: var(--gold-accent);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .security-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: 4px;
+            border-left: 3px solid var(--warning);
+            margin-bottom: 1rem;
+        }
+
+        .security-note-icon {
+            font-size: 1.25rem;
+        }
+
+        .security-note-text {
+            font-size: 0.875rem;
+            color: var(--ink-light);
+            line-height: 1.5;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border-light);
+            margin: 1.5rem 0;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .setting-row:last-child {
+            border-bottom: none;
+        }
+
+        .setting-info h3 {
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .setting-info p {
+            font-size: 0.8rem;
+            color: var(--mist-gray);
+        }
+
+        .setting-value {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .setting-value input {
+            width: 80px;
+            padding: 0.5rem;
+            text-align: center;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .setting-value span {
+            font-size: 0.875rem;
+            color: var(--mist-gray);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>命批系统 - 管理后台</h1>
+        <div class="header-right">
+            <span id="adminName">管理员</span>
+            <a href="/" id="logoutBtn">退出</a>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <ul id="navMenu">
+            <li><a href="/admin/">首页</a></li>
+            <li><a href="/admin/users.html">用户管理</a></li>
+            <li><a href="/admin/mingpi.html">命批管理</a></li>
+            <li><a href="/admin/settings.html" class="active">系统设置</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div id="alertBox"></div>
+
+        <!-- 后台路径设置 -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>后台路径设置</h2>
+            </div>
+            <div class="panel-body">
+                <div class="security-note">
+                    <span class="security-note-icon">⚠️</span>
+                    <div class="security-note-text">
+                        <strong>安全提示：</strong>修改后台路径后，当前页面链接将失效。请务必记住新路径，或提前复制完整访问地址。
+                    </div>
+                </div>
+
+                <div class="current-path">
+                    <span class="current-path-label">当前后台地址：</span>
+                    <span class="current-path-value" id="currentFullPath">加载中...</span>
+                    <button class="copy-btn" id="copyPathBtn" onclick="copyCurrentPath()">复制</button>
+                </div>
+
+                <div class="form-group">
+                    <label>后台路径</label>
+                    <div class="input-group">
+                        <input type="text" id="adminPathInput" placeholder="输入新路径（4-32位字母数字）">
+                        <button class="btn btn-secondary" onclick="regeneratePath()">随机生成</button>
+                    </div>
+                    <p class="hint">只能包含字母、数字、下划线和中划线，长度4-32位。避免使用 admin、api 等常见名称。</p>
+                </div>
+
+                <button class="btn btn-warning" onclick="saveAdminPath()">保存并跳转到新路径</button>
+            </div>
+        </div>
+
+        <!-- 登录安全设置 -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2>登录安全设置</h2>
+            </div>
+            <div class="panel-body">
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <h3>最大登录失败次数</h3>
+                        <p>超过此次数后账户将被临时锁定</p>
+                    </div>
+                    <div class="setting-value">
+                        <input type="number" id="maxAttemptsInput" min="3" max="10" value="5">
+                        <span>次</span>
+                    </div>
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-info">
+                        <h3>锁定时间</h3>
+                        <p>账户锁定后需等待的时间</p>
+                    </div>
+                    <div class="setting-value">
+                        <input type="number" id="lockMinutesInput" min="5" max="60" value="15">
+                        <span>分钟</span>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <button class="btn btn-primary" onclick="saveSecuritySettings()">保存安全设置</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || !user.isAdmin) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('adminName').textContent = user.displayName || '管理员';
+
+        // 更新导航链接为当前后台路径（立即执行）
+        (function initNavLinks() {
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/').filter(p => p);
+            if (pathParts.length > 0) {
+                const urlAdminPath = pathParts[0];
+                document.querySelectorAll('#navMenu a').forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href.startsWith('/admin')) {
+                        link.setAttribute('href', href.replace('/admin', '/' + urlAdminPath));
+                    }
+                });
+            }
+        })();
+
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        });
+
+        let currentAdminPath = '';
+
+        function showAlert(message, type = 'success') {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            if (type !== 'error') {
+                setTimeout(() => { alertBox.innerHTML = ''; }, 5000);
+            }
+        }
+
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/admin/config', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const data = result.data;
+
+                    // 后台路径
+                    currentAdminPath = data.admin_path?.value || 'admin';
+                    document.getElementById('adminPathInput').value = currentAdminPath;
+                    document.getElementById('currentFullPath').textContent =
+                        window.location.origin + '/' + currentAdminPath;
+
+                    // 安全设置
+                    document.getElementById('maxAttemptsInput').value = data.login_max_attempts?.value || '5';
+                    document.getElementById('lockMinutesInput').value = data.login_lock_minutes?.value || '15';
+                }
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                showAlert('加载配置失败', 'error');
+            }
+        }
+
+        // 复制当前路径
+        async function copyCurrentPath() {
+            const fullPath = document.getElementById('currentFullPath').textContent;
+            try {
+                await navigator.clipboard.writeText(fullPath);
+                const btn = document.getElementById('copyPathBtn');
+                btn.textContent = '已复制';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '复制';
+                    btn.classList.remove('copied');
+                }, 2000);
+            } catch (error) {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = fullPath;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+
+                const btn = document.getElementById('copyPathBtn');
+                btn.textContent = '已复制';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = '复制';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }
+        }
+
+        // 随机生成路径
+        async function regeneratePath() {
+            try {
+                const response = await fetch('/api/admin/config/regenerate-path', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('adminPathInput').value = result.data.adminPath;
+                    showAlert('已生成新路径，请点击"保存"按钮应用更改');
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || '生成失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // 保存后台路径
+        async function saveAdminPath() {
+            const newPath = document.getElementById('adminPathInput').value.trim();
+
+            if (!newPath) {
+                showAlert('请输入后台路径', 'error');
+                return;
+            }
+
+            // 验证格式
+            if (!/^[a-zA-Z0-9_-]+$/.test(newPath)) {
+                showAlert('路径只能包含字母、数字、下划线和中划线', 'error');
+                return;
+            }
+
+            if (newPath.length < 4 || newPath.length > 32) {
+                showAlert('路径长度需在4-32位之间', 'error');
+                return;
+            }
+
+            // 确认提示
+            if (!confirm(`确定要将后台路径修改为 "${newPath}" 吗？\n\n修改后当前页面将失效，系统会自动跳转到新地址。`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/admin/config/admin_path', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ value: newPath })
+                });
+
+                if (response.ok) {
+                    showAlert('路径已更新，正在跳转...', 'success');
+                    // 跳转到新路径
+                    setTimeout(() => {
+                        window.location.href = '/' + newPath + '/settings.html';
+                    }, 1500);
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // 保存安全设置
+        async function saveSecuritySettings() {
+            const maxAttempts = parseInt(document.getElementById('maxAttemptsInput').value);
+            const lockMinutes = parseInt(document.getElementById('lockMinutesInput').value);
+
+            if (maxAttempts < 3 || maxAttempts > 10) {
+                showAlert('最大失败次数需在3-10之间', 'error');
+                return;
+            }
+
+            if (lockMinutes < 5 || lockMinutes > 60) {
+                showAlert('锁定时间需在5-60分钟之间', 'error');
+                return;
+            }
+
+            try {
+                // 保存最大失败次数
+                await fetch('/api/admin/config/login_max_attempts', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ value: maxAttempts.toString() })
+                });
+
+                // 保存锁定时间
+                await fetch('/api/admin/config/login_lock_minutes', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ value: lockMinutes.toString() })
+                });
+
+                showAlert('安全设置已保存');
+            } catch (error) {
+                showAlert('保存失败', 'error');
+            }
+        }
+
+        // 初始化
+        loadConfig();
+    </script>
+</body>
+</html>

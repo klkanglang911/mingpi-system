@@ -492,6 +492,21 @@
 
                     if (data.mustChangePassword) {
                         window.location.href = '/change-password.html';
+                    } else if (data.user.isAdmin) {
+                        // 管理员登录后获取后台路径并跳转
+                        try {
+                            const pathResponse = await fetch('/api/auth/admin-path', {
+                                headers: { 'Authorization': 'Bearer ' + data.token }
+                            });
+                            const pathData = await pathResponse.json();
+                            if (pathResponse.ok && pathData.adminPath) {
+                                window.location.href = '/' + pathData.adminPath + '/';
+                            } else {
+                                window.location.href = '/main.html';
+                            }
+                        } catch {
+                            window.location.href = '/main.html';
+                        }
                     } else {
                         window.location.href = '/main.html';
                     }

@@ -44,6 +44,16 @@ async function initDatabase() {
     return db;
 }
 
+// 生成随机路径
+function generateRandomPath() {
+    const chars = 'abcdefghijkmnpqrstuvwxyz23456789'; // 排除易混淆字符
+    let result = '';
+    for (let i = 0; i < 8; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+}
+
 // 创建表结构
 function createTables() {
     // 用户表
@@ -57,7 +67,9 @@ function createTables() {
             is_locked INTEGER DEFAULT 0,
             must_change_password INTEGER DEFAULT 1,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            last_login_at DATETIME
+            last_login_at DATETIME,
+            login_fail_count INTEGER DEFAULT 0,
+            login_locked_until DATETIME
         )
     `);
 
@@ -67,6 +79,27 @@ function createTables() {
     } catch (e) {
         // 字段已存在，忽略错误
     }
+
+    // 为已存在的表添加登录失败计数字段
+    try {
+        db.run(`ALTER TABLE users ADD COLUMN login_fail_count INTEGER DEFAULT 0`);
+    } catch (e) {}
+    try {
+        db.run(`ALTER TABLE users ADD COLUMN login_locked_until DATETIME`);
+    } catch (e) {}
+
+    // 系统配置表
+    db.run(`
+        CREATE TABLE IF NOT EXISTS system_config (
+            key VARCHAR(50) PRIMARY KEY,
+            value TEXT NOT NULL,
+            description VARCHAR(200),
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+
+    // 初始化默认配置
+    initDefaultConfig();
 
     // 命批表
     db.run(`
@@ -130,6 +163,46 @@ function createTables() {
     db.run(`CREATE INDEX IF NOT EXISTS idx_access_logs_device ON access_logs(device_type)`);
 
     console.log('数据表初始化完成');
+}
+
+// 初始化默认配置
+function initDefaultConfig() {
+    const defaultConfigs = [
+        { key: 'admin_path', value: generateRandomPath(), description: '后台管理路径' },
+        { key: 'login_max_attempts', value: '5', description: '最大登录失败次数' },
+        { key: 'login_lock_minutes', value: '15', description: '登录锁定时间(分钟)' }
+    ];
+
+    defaultConfigs.forEach(config => {
+        // 检查配置是否已存在
+        const existing = db.exec(`SELECT key FROM system_config WHERE key = '${config.key}'`);
+        if (existing.length === 0 || existing[0].values.length === 0) {
+            db.run(`
+                INSERT INTO system_config (key, value, description)
+                VALUES ('${config.key}', '${config.value}', '${config.description}')
+            `);
+            console.log(`初始化配置: ${config.key} = ${config.value}`);
+        }
+    });
+}
+
+// 获取系统配置
+function getConfig(key) {
+    const result = db.exec(`SELECT value FROM system_config WHERE key = '${key}'`);
+    if (result.length > 0 && result[0].values.length > 0) {
+        return result[0].values[0][0];
+    }
+    return null;
+}
+
+// 设置系统配置
+function setConfig(key, value) {
+    db.run(`
+        UPDATE system_config
+        SET value = ?, updated_at = datetime('now', '+8 hours')
+        WHERE key = ?
+    `, [value, key]);
+    saveDatabase();
 }
 
 // 创建默认管理员
@@ -220,5 +293,7 @@ module.exports = {
     query,
     queryOne,
     run,
-    saveDatabase
+    saveDatabase,
+    getConfig,
+    setConfig
 };

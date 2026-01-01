@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { query, queryOne, run } = require('../config/database');
+const { query, queryOne, run, getConfig, setConfig } = require('../config/database');
 const { generatePassword, hashPassword } = require('../utils/password');
 const { logFromRequest, ActionTypes } = require('../utils/accessLog');
 
@@ -1210,6 +1210,108 @@ router.get('/stats/locations', (req, res) => {
     } catch (error) {
         console.error('获取地理位置统计错误:', error);
         res.status(500).json({ error: '获取统计数据失败' });
+    }
+});
+
+// ============ 系统配置管理 ============
+
+/**
+ * GET /api/admin/config
+ * 获取所有系统配置
+ */
+router.get('/config', (req, res) => {
+    try {
+        const configs = query('SELECT key, value, description, updated_at FROM system_config');
+
+        res.json({
+            success: true,
+            data: configs.reduce((acc, c) => {
+                acc[c.key] = {
+                    value: c.value,
+                    description: c.description,
+                    updatedAt: c.updated_at
+                };
+                return acc;
+            }, {})
+        });
+    } catch (error) {
+        console.error('获取系统配置错误:', error);
+        res.status(500).json({ error: '获取配置失败' });
+    }
+});
+
+/**
+ * PUT /api/admin/config/:key
+ * 更新系统配置
+ */
+router.put('/config/:key', (req, res) => {
+    try {
+        const { key } = req.params;
+        const { value } = req.body;
+
+        if (value === undefined || value === null) {
+            return res.status(400).json({ error: '配置值不能为空' });
+        }
+
+        // 验证配置项是否存在
+        const existing = queryOne('SELECT key FROM system_config WHERE key = ?', [key]);
+        if (!existing) {
+            return res.status(404).json({ error: '配置项不存在' });
+        }
+
+        // 特殊验证：后台路径
+        if (key === 'admin_path') {
+            // 路径只能包含字母、数字、下划线和中划线
+            if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+                return res.status(400).json({ error: '后台路径只能包含字母、数字、下划线和中划线' });
+            }
+            // 路径长度限制
+            if (value.length < 4 || value.length > 32) {
+                return res.status(400).json({ error: '后台路径长度需在4-32个字符之间' });
+            }
+            // 不能是常见路径
+            const forbiddenPaths = ['admin', 'api', 'public', 'static', 'assets', 'css', 'js', 'img', 'images'];
+            if (forbiddenPaths.includes(value.toLowerCase())) {
+                return res.status(400).json({ error: '不能使用保留路径名' });
+            }
+        }
+
+        // 更新配置
+        setConfig(key, value);
+
+        res.json({
+            success: true,
+            message: '配置已更新',
+            data: { key, value }
+        });
+    } catch (error) {
+        console.error('更新系统配置错误:', error);
+        res.status(500).json({ error: '更新配置失败' });
+    }
+});
+
+/**
+ * POST /api/admin/config/regenerate-path
+ * 重新生成随机后台路径
+ */
+router.post('/config/regenerate-path', (req, res) => {
+    try {
+        const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+        let newPath = '';
+        for (let i = 0; i < 8; i++) {
+            newPath += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+
+        setConfig('admin_path', newPath);
+
+        res.json({
+            success: true,
+            message: '已生成新的后台路径',
+            data: { adminPath: newPath }
+        });
+    } catch (error) {
+        console.error('重新生成路径错误:', error);
+        res.status(500).json({ error: '生成路径失败' });
     }
 });
 
