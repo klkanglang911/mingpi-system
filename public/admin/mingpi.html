@@ -575,41 +575,48 @@
     <div class="container">
         <div id="alertBox"></div>
 
-        <!-- 批量导入面板 -->
+        <!-- 命批编辑面板（整合批量导入和单条编辑） -->
         <div class="panel">
             <h3>
-                批量导入
+                命批编辑
                 <div class="panel-actions">
                     <button class="btn btn-sm btn-secondary" onclick="downloadTemplate()">下载CSV模板</button>
                     <button class="btn btn-sm btn-secondary" onclick="exportAll()">导出全部</button>
                 </div>
             </h3>
 
-            <div class="tabs">
-                <div class="tab active" data-tab="visual">可视化导入</div>
-                <div class="tab" data-tab="csv">CSV导入</div>
+            <div class="tabs" id="mainTabs">
+                <div class="tab active" data-tab="batch">批量导入</div>
+                <div class="tab" data-tab="single">单条编辑</div>
             </div>
 
-            <!-- 可视化导入 -->
-            <div class="tab-content active" id="tab-visual">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>选择用户</label>
-                        <div class="searchable-select" id="batchUserSelectWrapper">
-                            <input type="text" class="searchable-select-input" id="batchUserSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
-                            <input type="hidden" id="batchUserSelect">
-                            <div class="searchable-select-dropdown" id="batchUserSelectDropdown"></div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>农历年份</label>
-                        <select id="batchYearSelect"></select>
-                    </div>
+            <!-- 批量导入 -->
+            <div class="tab-content active" id="tab-batch">
+                <div class="tabs" id="batchSubTabs">
+                    <div class="tab active" data-tab="visual">可视化导入</div>
+                    <div class="tab" data-tab="csv">CSV导入</div>
                 </div>
 
-                <div class="form-group">
-                    <label>批量输入命批内容 <span class="line-count" id="lineCount">(0/12行)</span></label>
-                    <textarea class="batch-textarea" id="batchInput" placeholder="每行一个月的命批内容，第1行=正月，第2行=二月...第12行=腊月
+                <!-- 可视化导入 -->
+                <div class="tab-content active" id="tab-visual">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>选择用户</label>
+                            <div class="searchable-select" id="batchUserSelectWrapper">
+                                <input type="text" class="searchable-select-input" id="batchUserSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
+                                <input type="hidden" id="batchUserSelect">
+                                <div class="searchable-select-dropdown" id="batchUserSelectDropdown"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>农历年份</label>
+                            <select id="batchYearSelect"></select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>批量输入命批内容 <span class="line-count" id="lineCount">(0/12行)</span></label>
+                        <textarea class="batch-textarea" id="batchInput" placeholder="每行一个月的命批内容，第1行=正月，第2行=二月...第12行=腊月
 
 格式A（推荐）：直接输入内容，按行自动对应月份
 正月命批内容...
@@ -619,58 +626,58 @@
 1:正月命批内容...
 5:五月命批内容...
 12:腊月命批内容..."></textarea>
-                    <p class="input-hint">支持两种格式：① 纯内容按行（12行对应12个月）② 带月份前缀（如"1:内容"）可只导入部分月份。空行将跳过该月。</p>
-                </div>
+                        <p class="input-hint">支持两种格式：① 纯内容按行（12行对应12个月）② 带月份前缀（如"1:内容"）可只导入部分月份。空行将跳过该月。</p>
+                    </div>
 
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                    <button class="btn btn-primary" onclick="previewBatchImport()">预览导入</button>
-                    <button class="btn btn-danger" onclick="showClearConfirm()">批量清空</button>
-                </div>
-            </div>
-
-            <!-- CSV导入 -->
-            <div class="tab-content" id="tab-csv">
-                <div class="upload-area" onclick="document.getElementById('csvFile').click()">
-                    <div class="upload-icon">📄</div>
-                    <p>点击选择 CSV 文件或拖拽到此处</p>
-                    <p class="input-hint">格式：用户名,农历年份,月份,命批内容</p>
-                    <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(this)">
-                </div>
-                <div id="csvPreview" style="margin-top: 1rem;"></div>
-            </div>
-        </div>
-
-        <!-- 单条编辑面板 -->
-        <div class="panel">
-            <h3>单条编辑</h3>
-            <div class="form-row">
-                <div class="form-group">
-                    <label>选择用户</label>
-                    <div class="searchable-select" id="userSelectWrapper">
-                        <input type="text" class="searchable-select-input" id="userSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
-                        <input type="hidden" id="userSelect">
-                        <div class="searchable-select-dropdown" id="userSelectDropdown"></div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="previewBatchImport()">预览导入</button>
+                        <button class="btn btn-danger" onclick="showClearConfirm()">批量清空</button>
                     </div>
                 </div>
-                <div class="form-group">
-                    <label>农历年份</label>
-                    <select id="yearSelect"></select>
+
+                <!-- CSV导入 -->
+                <div class="tab-content" id="tab-csv">
+                    <div class="upload-area" onclick="document.getElementById('csvFile').click()">
+                        <div class="upload-icon">📄</div>
+                        <p>点击选择 CSV 文件或拖拽到此处</p>
+                        <p class="input-hint">格式：用户名,农历年份,月份,命批内容</p>
+                        <input type="file" id="csvFile" accept=".csv" onchange="handleCSVUpload(this)">
+                    </div>
+                    <div id="csvPreview" style="margin-top: 1rem;"></div>
                 </div>
             </div>
 
-            <div id="monthSelector" style="display: none;">
-                <label style="font-size: 0.875rem; color: var(--ink-light);">选择月份（绿色表示已有内容）</label>
-                <div class="lunar-months" id="lunarMonths"></div>
-            </div>
-
-            <div id="contentEditor" style="display: none; margin-top: 1.5rem;">
-                <div class="form-group">
-                    <label>命批内容 - <span id="selectedMonthLabel"></span></label>
-                    <textarea id="contentInput" placeholder="请输入命批内容..."></textarea>
+            <!-- 单条编辑 -->
+            <div class="tab-content" id="tab-single">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择用户</label>
+                        <div class="searchable-select" id="userSelectWrapper">
+                            <input type="text" class="searchable-select-input" id="userSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
+                            <input type="hidden" id="userSelect">
+                            <div class="searchable-select-dropdown" id="userSelectDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>农历年份</label>
+                        <select id="yearSelect"></select>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-primary" onclick="saveMingpi()">保存</button>
-                    <button class="btn btn-danger" onclick="deleteMingpi()">删除</button>
+
+                <div id="monthSelector" style="display: none;">
+                    <label style="font-size: 0.875rem; color: var(--ink-light);">选择月份（绿色表示已有内容）</label>
+                    <div class="lunar-months" id="lunarMonths"></div>
+                </div>
+
+                <div id="contentEditor" style="display: none; margin-top: 1.5rem;">
+                    <div class="form-group">
+                        <label>命批内容 - <span id="selectedMonthLabel"></span></label>
+                        <textarea id="contentInput" placeholder="请输入命批内容..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" onclick="saveMingpi()">保存</button>
+                        <button class="btn btn-danger" onclick="deleteMingpi()">删除</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -919,17 +926,21 @@
             dropdown.innerHTML = html;
         }
 
-        // 初始化年份选择器
+        // 初始化年份选择器（从2025年开始）
         function initYearSelect() {
             const currentYear = new Date().getFullYear();
+            const startYear = 2025;
+            const endYear = Math.max(currentYear + 2, startYear + 5); // 至少到当前年+2年，或2030年
+
             ['yearSelect', 'batchYearSelect'].forEach(selectId => {
                 const select = document.getElementById(selectId);
                 select.innerHTML = '';
-                for (let y = currentYear + 1; y >= currentYear - 5; y--) {
+                for (let y = endYear; y >= startYear; y--) {
                     const option = document.createElement('option');
                     option.value = y;
                     option.textContent = y + '年';
-                    if (y === currentYear) option.selected = true;
+                    // 默认选中当前年（如果>=2025），否则选2025
+                    if (y === Math.max(currentYear, startYear)) option.selected = true;
                     select.appendChild(option);
                 }
             });
@@ -1013,11 +1024,32 @@
         }
 
         // ============ 标签页切换 ============
-        document.querySelectorAll('.tab').forEach(tab => {
+        // 主标签页切换（批量导入 / 单条编辑）
+        document.querySelectorAll('#mainTabs .tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                document.querySelectorAll('#mainTabs .tab').forEach(t => t.classList.remove('active'));
                 tab.classList.add('active');
+
+                // 隐藏所有主内容区
+                document.getElementById('tab-batch').classList.remove('active');
+                document.getElementById('tab-single').classList.remove('active');
+
+                // 显示对应内容区
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // 批量导入子标签页切换（可视化导入 / CSV导入）
+        document.querySelectorAll('#batchSubTabs .tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('#batchSubTabs .tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                // 隐藏所有子内容区
+                document.getElementById('tab-visual').classList.remove('active');
+                document.getElementById('tab-csv').classList.remove('active');
+
+                // 显示对应内容区
                 document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
             });
         });
@@ -1506,6 +1538,12 @@
                     setTimeout(() => {
                         const displayText = userData.displayName + ' (' + userData.username + ')';
 
+                        // 切换到单条编辑标签
+                        document.querySelectorAll('#mainTabs .tab').forEach(t => t.classList.remove('active'));
+                        document.querySelector('#mainTabs .tab[data-tab="single"]').classList.add('active');
+                        document.getElementById('tab-batch').classList.remove('active');
+                        document.getElementById('tab-single').classList.add('active');
+
                         // 设置单条编辑的用户选择
                         document.getElementById('userSelect').value = userData.id;
                         document.getElementById('userSelectInput').value = displayText;
@@ -1513,7 +1551,7 @@
                         document.getElementById('monthSelector').style.display = 'block';
                         loadUserMingpi(userData.id);
 
-                        // 设置批量导入的用户选择
+                        // 同时设置批量导入的用户选择
                         document.getElementById('batchUserSelect').value = userData.id;
                         document.getElementById('batchUserSelectInput').value = displayText;
                     }, 500);
