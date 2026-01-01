@@ -1672,7 +1672,10 @@
         }
 
         // ========== 收藏引导蒙版控制 ==========
-        const BOOKMARK_SHOWN_KEY = 'bookmarkGuideShown';
+        // 基于用户ID生成存储key，确保每个用户独立记录
+        function getBookmarkShownKey() {
+            return 'bookmarkGuideShown_' + (user.id || 'guest');
+        }
 
         // 点击蒙版背景关闭
         function handleBookmarkOverlayClick(event) {
@@ -1695,8 +1698,8 @@
             if (overlay) {
                 overlay.classList.add('hidden');
             }
-            // 记录已显示过，避免每次都弹出
-            localStorage.setItem(BOOKMARK_SHOWN_KEY, 'true');
+            // 记录当前用户已显示过，避免每次都弹出
+            localStorage.setItem(getBookmarkShownKey(), 'true');
         }
 
         // 检查是否需要显示收藏引导
@@ -1708,8 +1711,8 @@
             // 如果不是微信环境，不显示
             if (!isWeChat) return;
 
-            // 检查是否已显示过
-            const hasShown = localStorage.getItem(BOOKMARK_SHOWN_KEY);
+            // 检查当前用户是否已显示过
+            const hasShown = localStorage.getItem(getBookmarkShownKey());
             if (hasShown) return;
 
             // 显示收藏引导蒙版
