@@ -80,33 +80,43 @@ router.post('/logout', (req, res) => {
 /**
  * POST /api/auth/change-password
  * 修改密码
+ * - 首次登录（must_change_password = 1）时不需要验证旧密码
+ * - 主动修改密码时需要验证旧密码
  */
 router.post('/change-password', authMiddleware, async (req, res) => {
     try {
         const { oldPassword, newPassword } = req.body;
 
-        if (!oldPassword || !newPassword) {
-            return res.status(400).json({ error: '请填写完整信息' });
+        // 查询当前用户
+        const user = queryOne('SELECT password_hash, must_change_password FROM users WHERE id = ?', [req.user.id]);
+
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        const isFirstLogin = user.must_change_password === 1;
+
+        // 首次登录时只需要新密码，主动修改时需要旧密码
+        if (isFirstLogin) {
+            if (!newPassword) {
+                return res.status(400).json({ error: '请输入新密码' });
+            }
+        } else {
+            if (!oldPassword || !newPassword) {
+                return res.status(400).json({ error: '请填写完整信息' });
+            }
+
+            // 验证旧密码（仅非首次登录时）
+            const isValid = await verifyPassword(oldPassword, user.password_hash);
+            if (!isValid) {
+                return res.status(400).json({ error: '当前密码错误' });
+            }
         }
 
         // 验证新密码强度
         const validation = validatePasswordStrength(newPassword);
         if (!validation.valid) {
             return res.status(400).json({ error: validation.message });
-        }
-
-        // 查询当前用户
-        const user = queryOne('SELECT password_hash FROM users WHERE id = ?', [req.user.id]);
-
-        if (!user) {
-            return res.status(404).json({ error: '用户不存在' });
-        }
-
-        // 验证旧密码
-        const isValid = await verifyPassword(oldPassword, user.password_hash);
-
-        if (!isValid) {
-            return res.status(400).json({ error: '当前密码错误' });
         }
 
         // 哈希新密码
