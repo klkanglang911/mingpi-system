@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.1.3] - 2026-01-02
+
+### Fixed / 修复
+- 登录页面按钮高度异常问题（移除错误的padding-top: 12vh）
+- 登录页面布局调整为顶部对齐（padding-top从12vh改为2rem）
+
+---
+
 ## [1.1.2] - 2026-01-02
 
 ### Fixed / 修复
