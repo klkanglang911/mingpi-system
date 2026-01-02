@@ -96,9 +96,12 @@ EOF
     fi
 
     # 构建并启动
-    step "构建并启动服务..."
+    step "构建镜像（不使用缓存）..."
     cd docker
-    docker_compose up -d --build
+    docker_compose build --no-cache
+
+    step "启动服务..."
+    docker_compose up -d
 
     # 等待启动
     info "等待服务启动..."
