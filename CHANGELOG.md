@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.1.6] - 2026-01-03
+
+### Optimized / 优化
+- 广告管理页面加载速度大幅提升
+  - 列表 API 不再返回完整图片数据（从 237KB 降到 < 1KB）
+  - 图片预览改为异步加载
+  - 页面框架秒开，图片后台加载
+
+---
+
 ## [1.1.5] - 2026-01-03
 
 ### Fixed / 修复

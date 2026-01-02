@@ -1856,12 +1856,16 @@ lisi,2025,丙寅,丙午,"春季运势...","夏季运势...","秋季运势...","�
 
 /**
  * GET /api/admin/ads
- * 获取所有广告列表
+ * 获取所有广告列表（不含完整图片数据，优化加载速度）
  */
 router.get('/ads', (req, res) => {
     try {
         const ads = query(`
-            SELECT a.*,
+            SELECT a.id, a.ad_type, a.name, a.link_url, a.is_enabled,
+                   a.start_time, a.end_time, a.display_frequency,
+                   a.countdown_seconds, a.sort_order, a.created_at, a.updated_at,
+                   CASE WHEN a.image_url IS NOT NULL AND a.image_url != '' THEN 1 ELSE 0 END as has_image,
+                   CASE WHEN a.image_url LIKE 'data:%' THEN 'base64' ELSE 'url' END as image_type,
                 (SELECT COUNT(*) FROM ad_stats WHERE ad_id = a.id AND action = 'view') as view_count,
                 (SELECT COUNT(*) FROM ad_stats WHERE ad_id = a.id AND action = 'click') as click_count,
                 (SELECT COUNT(*) FROM ad_stats WHERE ad_id = a.id AND action = 'close') as close_count
@@ -1875,7 +1879,8 @@ router.get('/ads', (req, res) => {
                 id: ad.id,
                 adType: ad.ad_type,
                 name: ad.name,
-                imageUrl: ad.image_url,
+                hasImage: ad.has_image === 1,
+                imageType: ad.image_type,
                 linkUrl: ad.link_url,
                 isEnabled: ad.is_enabled === 1,
                 startTime: ad.start_time,

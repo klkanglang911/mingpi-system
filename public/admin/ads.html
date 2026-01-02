@@ -799,10 +799,17 @@
             const prefix = type;
 
             if (ad) {
-                // 预览图
+                // 预览图 - 异步加载
                 const preview = document.getElementById(prefix + 'Preview');
-                preview.innerHTML = `<img src="${ad.imageUrl}" alt="${ad.name}">`;
-                preview.classList.remove('empty');
+                if (ad.hasImage) {
+                    preview.innerHTML = '<div style="color:var(--mist-gray)">加载图片中...</div>';
+                    preview.classList.remove('empty');
+                    // 异步获取图片
+                    loadAdImage(ad.id, preview);
+                } else {
+                    preview.innerHTML = '未设置图片';
+                    preview.classList.add('empty');
+                }
 
                 // 信息
                 document.getElementById(prefix + 'Name').textContent = ad.name;
@@ -851,6 +858,25 @@
             }
         }
 
+        // 异步加载广告图片
+        async function loadAdImage(adId, previewElement) {
+            try {
+                const response = await fetch(`/api/admin/ads/${adId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+                if (data.success && data.data.imageUrl) {
+                    previewElement.innerHTML = `<img src="${data.data.imageUrl}" alt="预览">`;
+                } else {
+                    previewElement.innerHTML = '图片加载失败';
+                    previewElement.classList.add('empty');
+                }
+            } catch (error) {
+                previewElement.innerHTML = '图片加载失败';
+                previewElement.classList.add('empty');
+            }
+        }
+
         function formatPeriod(start, end) {
             if (!start && !end) return '永久有效';
             const s = start ? new Date(start).toLocaleDateString() : '立即';
@@ -859,21 +885,13 @@
         }
 
         // 编辑广告
-        function editAd(type) {
-            const ad = adsData[type];
-            const isNew = !ad;
+        async function editAd(type) {
+            const adBasic = adsData[type];
+            const isNew = !adBasic;
 
             document.getElementById('editModalTitle').textContent = isNew ? '创建广告' : '编辑广告';
-            document.getElementById('editAdId').value = ad ? ad.id : '';
+            document.getElementById('editAdId').value = adBasic ? adBasic.id : '';
             document.getElementById('editAdType').value = type;
-            document.getElementById('editName').value = ad ? ad.name : '';
-            document.getElementById('editImageUrl').value = ad ? ad.imageUrl : '';
-            document.getElementById('editLinkUrl').value = ad ? ad.linkUrl || '' : '';
-            document.getElementById('editStartTime').value = ad && ad.startTime ? ad.startTime.slice(0, 16) : '';
-            document.getElementById('editEndTime').value = ad && ad.endTime ? ad.endTime.slice(0, 16) : '';
-            document.getElementById('editDisplayFrequency').value = ad ? ad.displayFrequency : 'every_visit';
-            document.getElementById('editCountdownSeconds').value = ad ? ad.countdownSeconds : 3;
-            document.getElementById('editIsEnabled').checked = ad ? ad.isEnabled : true;
 
             // 显示/隐藏全屏广告选项
             document.getElementById('fullscreenOptions').style.display = type === 'fullscreen' ? 'block' : 'none';
@@ -881,14 +899,52 @@
             // 显示/隐藏删除按钮
             document.getElementById('deleteAdBtn').style.display = isNew ? 'none' : 'block';
 
-            // 更新图片预览
+            // 更新图片预览区域
             const uploadArea = document.getElementById('imageUploadArea');
-            if (ad && ad.imageUrl) {
-                uploadArea.innerHTML = `<img src="${ad.imageUrl}" alt="预览">`;
-                uploadArea.classList.add('has-image');
-            } else {
+
+            if (isNew) {
+                // 新建广告
+                document.getElementById('editName').value = '';
+                document.getElementById('editImageUrl').value = '';
+                document.getElementById('editLinkUrl').value = '';
+                document.getElementById('editStartTime').value = '';
+                document.getElementById('editEndTime').value = '';
+                document.getElementById('editDisplayFrequency').value = 'every_visit';
+                document.getElementById('editCountdownSeconds').value = 3;
+                document.getElementById('editIsEnabled').checked = true;
                 uploadArea.innerHTML = '<div class="upload-hint">点击上传图片或输入图片URL</div>';
                 uploadArea.classList.remove('has-image');
+            } else {
+                // 编辑广告 - 先填充基本信息，然后异步加载图片
+                document.getElementById('editName').value = adBasic.name;
+                document.getElementById('editLinkUrl').value = adBasic.linkUrl || '';
+                document.getElementById('editStartTime').value = adBasic.startTime ? adBasic.startTime.slice(0, 16) : '';
+                document.getElementById('editEndTime').value = adBasic.endTime ? adBasic.endTime.slice(0, 16) : '';
+                document.getElementById('editDisplayFrequency').value = adBasic.displayFrequency;
+                document.getElementById('editCountdownSeconds').value = adBasic.countdownSeconds;
+                document.getElementById('editIsEnabled').checked = adBasic.isEnabled;
+
+                // 显示加载状态
+                uploadArea.innerHTML = '<div class="upload-hint">加载图片中...</div>';
+                uploadArea.classList.remove('has-image');
+                document.getElementById('editImageUrl').value = '';
+
+                // 异步获取完整广告数据（含图片）
+                try {
+                    const response = await fetch(`/api/admin/ads/${adBasic.id}`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const data = await response.json();
+                    if (data.success && data.data.imageUrl) {
+                        document.getElementById('editImageUrl').value = data.data.imageUrl;
+                        uploadArea.innerHTML = `<img src="${data.data.imageUrl}" alt="预览">`;
+                        uploadArea.classList.add('has-image');
+                    } else {
+                        uploadArea.innerHTML = '<div class="upload-hint">点击上传图片或输入图片URL</div>';
+                    }
+                } catch (error) {
+                    uploadArea.innerHTML = '<div class="upload-hint">图片加载失败，点击重新上传</div>';
+                }
             }
 
             document.getElementById('editModal').classList.add('show');
