@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>四季财官 · 灵庐书院</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #3d3d3d;
+            --paper-white: #f8f5f0;
+            --paper-cream: #efe9e0;
+            --vermilion: #c23a2b;
+            --vermilion-light: #e85a4b;
+            --gold-accent: #b8860b;
+            --mist-gray: #9a9590;
+            --shadow-ink: rgba(26, 26, 26, 0.08);
+            --border-light: rgba(26, 26, 26, 0.1);
+            /* 四季主题色 */
+            --spring-green: #4a8c5c;
+            --summer-red: #c23a2b;
+            --autumn-gold: #b8860b;
+            --winter-blue: #4a6b8a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--paper-white);
+            color: var(--ink-black);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 10%, rgba(200, 195, 185, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(180, 175, 165, 0.3) 0%, transparent 40%),
+                radial-gradient(ellipse at 60% 40%, rgba(190, 185, 175, 0.2) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 80px;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header-ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ornament-line {
+            width: 3rem;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--ink-light), transparent);
+        }
+
+        .ornament-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--vermilion);
+            border-radius: 50%;
+        }
+
+        .title {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-weight: 600;
+            font-size: 2.5rem;
+            letter-spacing: 0.3rem;
+            color: var(--ink-black);
+            text-shadow: 2px 2px 4px var(--shadow-ink);
+        }
+
+        .user-greeting {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            margin-top: 0.25rem;
+        }
+
+        .logout-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.25rem;
+            background: none;
+            border: 1px solid var(--border-light);
+            color: var(--mist-gray);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            color: var(--vermilion);
+            border-color: var(--vermilion);
+        }
+
+        /* 年份选择器 */
+        .year-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            animation: fadeInDown 0.6s ease-out 0.1s both;
+        }
+
+        .year-nav-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-light);
+            background: var(--paper-white);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: var(--ink-light);
+        }
+
+        .year-nav-btn:hover {
+            background: var(--paper-cream);
+            border-color: var(--gold-accent);
+            color: var(--gold-accent);
+        }
+
+        .year-display {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            min-width: 100px;
+            text-align: center;
+        }
+
+        /* 大运流年摘要 */
+        .fortune-summary {
+            background: var(--paper-white);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--border-light);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+
+        .fortune-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .fortune-summary-label {
+            font-size: 0.7rem;
+            color: var(--mist-gray);
+        }
+
+        .fortune-summary-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--vermilion);
+        }
+
+        /* 四季区域 */
+        .seasons-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .season-card {
+            background: linear-gradient(135deg, var(--paper-cream) 0%, var(--paper-white) 100%);
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 12px var(--shadow-ink);
+            overflow: hidden;
+            animation: fadeInLeft 0.6s ease-out both;
+        }
+
+        .season-card:nth-child(1) { animation-delay: 0.2s; }
+        .season-card:nth-child(2) { animation-delay: 0.3s; }
+        .season-card:nth-child(3) { animation-delay: 0.4s; }
+        .season-card:nth-child(4) { animation-delay: 0.5s; }
+
+        .season-card.spring { border-left: 3px solid var(--spring-green); }
+        .season-card.summer { border-left: 3px solid var(--summer-red); }
+        .season-card.autumn { border-left: 3px solid var(--autumn-gold); }
+        .season-card.winter { border-left: 3px solid var(--winter-blue); }
+
+        .season-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .season-icon {
+            font-size: 1.25rem;
+        }
+
+        .season-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+        }
+
+        .season-card.spring .season-name { color: var(--spring-green); }
+        .season-card.summer .season-name { color: var(--summer-red); }
+        .season-card.autumn .season-name { color: var(--autumn-gold); }
+        .season-card.winter .season-name { color: var(--winter-blue); }
+
+        .season-months {
+            font-size: 0.65rem;
+            color: var(--mist-gray);
+            margin-left: auto;
+        }
+
+        .season-content {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            color: var(--ink-light);
+            white-space: pre-wrap;
+        }
+
+        .season-content.empty {
+            color: var(--mist-gray);
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        /* 空状态提示 */
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--mist-gray);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            animation: fadeInUp 0.6s ease-out 0.6s both;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.15rem;
+        }
+
+        /* 底部导航栏 */
+        .bottom-navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--paper-white);
+            border-top: 1px solid rgba(26, 26, 26, 0.08);
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            z-index: 100;
+            box-shadow: 0 -2px 12px var(--shadow-ink);
+        }
+
+        .bottom-navbar .nav-item {
+            flex: 1;
+            max-width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--mist-gray);
+            font-size: 0.7rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .bottom-navbar .nav-item:active {
+            background: rgba(194, 58, 43, 0.05);
+        }
+
+        .bottom-navbar .nav-item.active {
+            color: var(--vermilion);
+        }
+
+        .bottom-navbar .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 2px;
+            background: var(--vermilion);
+            border-radius: 0 0 2px 2px;
+        }
+
+        .bottom-navbar .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bottom-navbar .nav-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .bottom-navbar .nav-item.active .nav-icon svg {
+            stroke-width: 2;
+        }
+
+        .bottom-navbar .nav-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.02em;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 360px) {
+            html { font-size: 14px; }
+            .container { padding: 1rem 1rem 70px; }
+            .season-content { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="logout-btn" id="logoutBtn">退出</button>
+
+        <header class="header">
+            <div class="header-ornament">
+                <span class="ornament-line"></span>
+                <span class="ornament-dot"></span>
+                <span class="ornament-line"></span>
+            </div>
+            <h1 class="title" id="userName">用户</h1>
+            <p class="user-greeting">愿您今日安好</p>
+        </header>
+
+        <!-- 年份选择器 -->
+        <div class="year-selector">
+            <button class="year-nav-btn" id="prevYear" aria-label="上一年">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div class="year-display" id="yearDisplay">2025年</div>
+            <button class="year-nav-btn" id="nextYear" aria-label="下一年">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <!-- 大运流年摘要 -->
+        <div class="fortune-summary" id="fortuneSummary" style="display: none;">
+            <div class="fortune-summary-item">
+                <span class="fortune-summary-label">大运</span>
+                <span class="fortune-summary-value" id="dayunValue">-</span>
+            </div>
+            <div class="fortune-summary-item">
+                <span class="fortune-summary-label">流年</span>
+                <span class="fortune-summary-value" id="liunianValue">-</span>
+            </div>
+        </div>
+
+        <!-- 四季内容 -->
+        <div class="seasons-container" id="seasonsContainer">
+            <div class="season-card spring">
+                <div class="season-header">
+                    <span class="season-icon">🌸</span>
+                    <span class="season-name">春季</span>
+                    <span class="season-months">立春 ~ 立夏</span>
+                </div>
+                <div class="season-content" id="springContent">数据加载中...</div>
+            </div>
+
+            <div class="season-card summer">
+                <div class="season-header">
+                    <span class="season-icon">☀️</span>
+                    <span class="season-name">夏季</span>
+                    <span class="season-months">立夏 ~ 立秋</span>
+                </div>
+                <div class="season-content" id="summerContent">数据加载中...</div>
+            </div>
+
+            <div class="season-card autumn">
+                <div class="season-header">
+                    <span class="season-icon">🍂</span>
+                    <span class="season-name">秋季</span>
+                    <span class="season-months">立秋 ~ 立冬</span>
+                </div>
+                <div class="season-content" id="autumnContent">数据加载中...</div>
+            </div>
+
+            <div class="season-card winter">
+                <div class="season-header">
+                    <span class="season-icon">❄️</span>
+                    <span class="season-name">冬季</span>
+                    <span class="season-months">立冬 ~ 立春</span>
+                </div>
+                <div class="season-content" id="winterContent">数据加载中...</div>
+            </div>
+        </div>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-state-icon">🌿</div>
+            <p class="empty-state-text">该年份的四季运势尚未录入<br>请联系管理员添加</p>
+        </div>
+
+        <footer class="footer">
+            <p class="footer-text">人间有净土 · 欢迎来灵庐</p>
+        </footer>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-navbar">
+        <a href="bazi.html" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            </span>
+            <span class="nav-label">八字岁运</span>
+        </a>
+        <a href="analysis.html" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </span>
+            <span class="nav-label">命局分析</span>
+        </a>
+        <a href="seasons.html" class="nav-item active">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </span>
+            <span class="nav-label">四季财官</span>
+        </a>
+        <a href="main.html" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="nav-label">流星赶月</span>
+        </a>
+    </nav>
+
+    <script>
+        // 检查登录状态
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // 获取用户信息
+        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+        document.getElementById('userName').textContent = userInfo.displayName || '用户';
+
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+            window.location.href = '/';
+        });
+
+        // 当前查看的年份
+        let currentYear = new Date().getFullYear();
+
+        // 更新年份显示
+        function updateYearDisplay() {
+            document.getElementById('yearDisplay').textContent = currentYear + '年';
+        }
+
+        // 加载数据
+        async function loadData() {
+            // 显示加载状态
+            document.getElementById('springContent').textContent = '数据加载中...';
+            document.getElementById('summerContent').textContent = '数据加载中...';
+            document.getElementById('autumnContent').textContent = '数据加载中...';
+            document.getElementById('winterContent').textContent = '数据加载中...';
+            document.getElementById('seasonsContainer').style.display = 'flex';
+            document.getElementById('emptyState').style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/mingpi/yearly-fortune/${currentYear}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const result = await response.json();
+
+                const fortune = result.data;
+
+                // 检查是否有数据
+                if (!fortune) {
+                    document.getElementById('seasonsContainer').style.display = 'none';
+                    document.getElementById('fortuneSummary').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
+                // 显示大运流年
+                if (fortune.dayun || fortune.liunian) {
+                    document.getElementById('dayunValue').textContent = fortune.dayun || '-';
+                    document.getElementById('liunianValue').textContent = fortune.liunian || '-';
+                    document.getElementById('fortuneSummary').style.display = 'flex';
+                } else {
+                    document.getElementById('fortuneSummary').style.display = 'none';
+                }
+
+                // 填充四季内容
+                const setSeasonContent = (id, content) => {
+                    const el = document.getElementById(id);
+                    if (content && content.trim()) {
+                        el.textContent = content;
+                        el.classList.remove('empty');
+                    } else {
+                        el.textContent = '暂无内容';
+                        el.classList.add('empty');
+                    }
+                };
+
+                setSeasonContent('springContent', fortune.springContent);
+                setSeasonContent('summerContent', fortune.summerContent);
+                setSeasonContent('autumnContent', fortune.autumnContent);
+                setSeasonContent('winterContent', fortune.winterContent);
+
+                // 如果四季全都没有内容，显示空状态
+                if (!fortune.springContent && !fortune.summerContent &&
+                    !fortune.autumnContent && !fortune.winterContent &&
+                    !fortune.dayun && !fortune.liunian) {
+                    document.getElementById('seasonsContainer').style.display = 'none';
+                    document.getElementById('fortuneSummary').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('springContent').textContent = '加载失败';
+                document.getElementById('summerContent').textContent = '加载失败';
+                document.getElementById('autumnContent').textContent = '加载失败';
+                document.getElementById('winterContent').textContent = '加载失败';
+            }
+        }
+
+        // 年份切换
+        document.getElementById('prevYear').addEventListener('click', () => {
+            currentYear--;
+            updateYearDisplay();
+            loadData();
+        });
+
+        document.getElementById('nextYear').addEventListener('click', () => {
+            currentYear++;
+            updateYearDisplay();
+            loadData();
+        });
+
+        // 初始化
+        updateYearDisplay();
+        loadData();
+    </script>
+</body>
+</html>

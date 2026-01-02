@@ -45,13 +45,18 @@ Key files:
 ### Frontend (public/)
 - Vanilla HTML/CSS/JS with Chinese traditional aesthetics
 - `index.html` - Login page
-- `main.html` - User dashboard with lunar calendar
-- `admin/` - Admin panel (users.html, mingpi.html)
+- `main.html` - User dashboard with lunar calendar (月命批)
+- `bazi.html` - 八字岁运 (Four Pillars and Fortune)
+- `analysis.html` - 命局分析 (Destiny Analysis)
+- `seasons.html` - 四季财官 (Four Seasons Fortune)
+- `admin/` - Admin panel (users.html, mingpi.html, settings.html)
 
 ### Database Schema
 ```sql
 users (id, username, password_hash, display_name, is_admin, is_locked, must_change_password, ...)
-mingpi (id, user_id, lunar_year, lunar_month, content, ...)
+mingpi (id, user_id, lunar_year, lunar_month, content, ...)  -- 月批内容
+user_profile (id, user_id, year_pillar, month_pillar, day_pillar, hour_pillar, qiyun_age, analysis, ...)  -- 固定资料
+user_yearly_fortune (id, user_id, lunar_year, dayun, liunian, spring_content, summer_content, autumn_content, winter_content, ...)  -- 年度运势
 access_logs (id, user_id, action, ip_address, device_type, os, browser, ...)
 ```
 
@@ -62,10 +67,19 @@ access_logs (id, user_id, action, ip_address, device_type, os, browser, ...)
 | `POST /api/auth/login` | Login with username/password |
 | `POST /api/auth/change-password` | Change password (no old password needed on first login) |
 | `GET /api/mingpi/:year/:month` | Get fortune content for lunar year/month |
+| `GET /api/mingpi/profile` | Get current user's profile (八字、起运、命局分析) |
+| `GET /api/mingpi/yearly-fortune` | Get current user's yearly fortune (current year) |
+| `GET /api/mingpi/yearly-fortune/:year` | Get current user's yearly fortune for specific year |
 | `GET /api/admin/users` | List all users |
 | `POST /api/admin/users` | Create user (returns generated password) |
 | `POST /api/admin/mingpi` | Create/update fortune content |
 | `POST /api/admin/mingpi/batch` | Batch import fortune content |
+| `GET /api/admin/user-profile/:userId` | Get user profile |
+| `POST /api/admin/user-profile` | Create/update user profile |
+| `DELETE /api/admin/user-profile/:userId` | Delete user profile |
+| `GET /api/admin/yearly-fortune/:userId/:year` | Get yearly fortune |
+| `POST /api/admin/yearly-fortune` | Create/update yearly fortune |
+| `DELETE /api/admin/yearly-fortune/:userId/:year` | Delete yearly fortune |
 
 ## Environment Variables
 
@@ -83,3 +97,6 @@ DATABASE_PATH=../data/mingpi.db
 - **Access logging** captures real client IP via `X-Forwarded-For` header (trust proxy enabled)
 - **User search** in admin panel supports searchable dropdowns with "create new user" option
 - **Batch import** supports both line-by-line format and month-prefixed format (e.g., `1:content`)
+- **Data model**:
+  - Fixed per user: 四柱八字 (年柱/月柱/日柱/时柱), 起运年龄, 命局分析
+  - Yearly per user: 大运, 流年, 四季财官 (春/夏/秋/冬)

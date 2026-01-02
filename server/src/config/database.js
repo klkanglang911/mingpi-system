@@ -119,6 +119,44 @@ function createTables() {
     // 创建索引
     db.run(`CREATE INDEX IF NOT EXISTS idx_mingpi_user_date ON mingpi(user_id, lunar_year, lunar_month)`);
 
+    // 用户资料表（固定数据：八字、起运、命局分析）
+    db.run(`
+        CREATE TABLE IF NOT EXISTS user_profile (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL UNIQUE,
+            year_pillar TEXT,
+            month_pillar TEXT,
+            day_pillar TEXT,
+            hour_pillar TEXT,
+            qiyun_age INTEGER,
+            analysis TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    `);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_user_profile_user_id ON user_profile(user_id)`);
+
+    // 年度运势表（每年更新：大运、流年、四季财官）
+    db.run(`
+        CREATE TABLE IF NOT EXISTS user_yearly_fortune (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            lunar_year INTEGER NOT NULL,
+            dayun TEXT,
+            liunian TEXT,
+            spring_content TEXT,
+            summer_content TEXT,
+            autumn_content TEXT,
+            winter_content TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(user_id, lunar_year),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+    `);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_user_yearly_fortune ON user_yearly_fortune(user_id, lunar_year)`);
+
     // 访问日志表
     db.run(`
         CREATE TABLE IF NOT EXISTS access_logs (

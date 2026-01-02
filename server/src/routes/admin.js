@@ -1315,4 +1315,540 @@ router.post('/config/regenerate-path', (req, res) => {
     }
 });
 
+// ============ 用户资料管理（固定数据：八字、起运、命局分析） ============
+
+/**
+ * GET /api/admin/user-profile
+ * 获取用户资料列表
+ */
+router.get('/user-profile', (req, res) => {
+    try {
+        const { userId } = req.query;
+        let sql = `
+            SELECT p.*, u.display_name, u.username
+            FROM user_profile p
+            JOIN users u ON p.user_id = u.id
+        `;
+        const params = [];
+
+        if (userId) {
+            sql += ` WHERE p.user_id = ?`;
+            params.push(parseInt(userId));
+        }
+
+        sql += ` ORDER BY u.display_name`;
+
+        const profiles = query(sql, params);
+
+        res.json({
+            success: true,
+            data: profiles.map(p => ({
+                id: p.id,
+                userId: p.user_id,
+                userDisplayName: p.display_name,
+                username: p.username,
+                yearPillar: p.year_pillar,
+                monthPillar: p.month_pillar,
+                dayPillar: p.day_pillar,
+                hourPillar: p.hour_pillar,
+                qiyunAge: p.qiyun_age,
+                analysis: p.analysis,
+                createdAt: p.created_at,
+                updatedAt: p.updated_at
+            }))
+        });
+    } catch (error) {
+        console.error('获取用户资料列表错误:', error);
+        res.status(500).json({ error: '获取用户资料列表失败' });
+    }
+});
+
+/**
+ * GET /api/admin/user-profile/:userId
+ * 获取单个用户资料
+ */
+router.get('/user-profile/:userId', (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+
+        const profile = queryOne(`
+            SELECT p.*, u.display_name, u.username
+            FROM user_profile p
+            JOIN users u ON p.user_id = u.id
+            WHERE p.user_id = ?
+        `, [userId]);
+
+        if (!profile) {
+            return res.json({
+                success: true,
+                data: null
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                id: profile.id,
+                userId: profile.user_id,
+                userDisplayName: profile.display_name,
+                username: profile.username,
+                yearPillar: profile.year_pillar,
+                monthPillar: profile.month_pillar,
+                dayPillar: profile.day_pillar,
+                hourPillar: profile.hour_pillar,
+                qiyunAge: profile.qiyun_age,
+                analysis: profile.analysis,
+                createdAt: profile.created_at,
+                updatedAt: profile.updated_at
+            }
+        });
+    } catch (error) {
+        console.error('获取用户资料错误:', error);
+        res.status(500).json({ error: '获取用户资料失败' });
+    }
+});
+
+/**
+ * POST /api/admin/user-profile
+ * 创建或更新用户资料 (UPSERT)
+ */
+router.post('/user-profile', (req, res) => {
+    try {
+        const { userId, yearPillar, monthPillar, dayPillar, hourPillar, qiyunAge, analysis } = req.body;
+
+        if (!userId) {
+            return res.status(400).json({ error: '请选择用户' });
+        }
+
+        // 检查用户是否存在
+        const user = queryOne('SELECT id FROM users WHERE id = ?', [userId]);
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        // 检查是否已存在
+        const existing = queryOne('SELECT id FROM user_profile WHERE user_id = ?', [userId]);
+
+        if (existing) {
+            // 更新
+            run(
+                `UPDATE user_profile SET
+                    year_pillar = ?, month_pillar = ?, day_pillar = ?, hour_pillar = ?,
+                    qiyun_age = ?, analysis = ?, updated_at = datetime("now", "+8 hours")
+                WHERE user_id = ?`,
+                [yearPillar || null, monthPillar || null, dayPillar || null, hourPillar || null,
+                 qiyunAge || null, analysis || null, userId]
+            );
+            logFromRequest(req, ActionTypes.ADMIN_EDIT_MINGPI, { targetUserId: userId, type: 'profile' });
+            res.json({ success: true, action: 'updated', id: existing.id });
+        } else {
+            // 创建
+            const result = run(
+                `INSERT INTO user_profile (user_id, year_pillar, month_pillar, day_pillar, hour_pillar, qiyun_age, analysis, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
+                [userId, yearPillar || null, monthPillar || null, dayPillar || null, hourPillar || null,
+                 qiyunAge || null, analysis || null]
+            );
+            logFromRequest(req, ActionTypes.ADMIN_CREATE_MINGPI, { targetUserId: userId, type: 'profile' });
+            res.json({ success: true, action: 'created', id: result.lastInsertRowid });
+        }
+    } catch (error) {
+        console.error('保存用户资料错误:', error);
+        res.status(500).json({ error: '保存用户资料失败' });
+    }
+});
+
+/**
+ * POST /api/admin/user-profile/batch
+ * 批量导入用户资料
+ * CSV格式：{ data: [{username, yearPillar, monthPillar, dayPillar, hourPillar, qiyunAge, analysis}] }
+ */
+router.post('/user-profile/batch', (req, res) => {
+    try {
+        const { data } = req.body;
+        const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+
+        if (!data || !Array.isArray(data)) {
+            return res.status(400).json({ error: '无效的数据格式' });
+        }
+
+        // 构建用户名到ID的映射
+        const users = query('SELECT id, username FROM users');
+        const userMap = {};
+        users.forEach(u => { userMap[u.username] = u.id; });
+
+        for (const row of data) {
+            const { username, yearPillar, monthPillar, dayPillar, hourPillar, qiyunAge, analysis } = row;
+
+            // 查找用户
+            const userId = userMap[username];
+            if (!userId) {
+                results.errors.push(`用户不存在: ${username}`);
+                continue;
+            }
+
+            // 检查是否有任何数据
+            if (!yearPillar && !monthPillar && !dayPillar && !hourPillar && !qiyunAge && !analysis) {
+                results.skipped++;
+                continue;
+            }
+
+            // UPSERT
+            const existing = queryOne('SELECT id FROM user_profile WHERE user_id = ?', [userId]);
+
+            if (existing) {
+                run(
+                    `UPDATE user_profile SET
+                        year_pillar = COALESCE(?, year_pillar),
+                        month_pillar = COALESCE(?, month_pillar),
+                        day_pillar = COALESCE(?, day_pillar),
+                        hour_pillar = COALESCE(?, hour_pillar),
+                        qiyun_age = COALESCE(?, qiyun_age),
+                        analysis = COALESCE(?, analysis),
+                        updated_at = datetime("now", "+8 hours")
+                    WHERE user_id = ?`,
+                    [yearPillar || null, monthPillar || null, dayPillar || null, hourPillar || null,
+                     qiyunAge || null, analysis || null, userId]
+                );
+                results.updated++;
+            } else {
+                run(
+                    `INSERT INTO user_profile (user_id, year_pillar, month_pillar, day_pillar, hour_pillar, qiyun_age, analysis, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
+                    [userId, yearPillar || null, monthPillar || null, dayPillar || null, hourPillar || null,
+                     qiyunAge || null, analysis || null]
+                );
+                results.created++;
+            }
+        }
+
+        logFromRequest(req, ActionTypes.ADMIN_BATCH_IMPORT, { type: 'profile', ...results });
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('批量导入用户资料错误:', error);
+        res.status(500).json({ error: '批量导入失败' });
+    }
+});
+
+/**
+ * DELETE /api/admin/user-profile/:userId
+ * 删除用户资料
+ */
+router.delete('/user-profile/:userId', (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+
+        const existing = queryOne('SELECT id FROM user_profile WHERE user_id = ?', [userId]);
+        if (!existing) {
+            return res.status(404).json({ error: '用户资料不存在' });
+        }
+
+        run('DELETE FROM user_profile WHERE user_id = ?', [userId]);
+        logFromRequest(req, ActionTypes.ADMIN_DELETE_MINGPI, { targetUserId: userId, type: 'profile' });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('删除用户资料错误:', error);
+        res.status(500).json({ error: '删除用户资料失败' });
+    }
+});
+
+/**
+ * GET /api/admin/user-profile/template
+ * 下载用户资料CSV导入模板
+ */
+router.get('/user-profile/template', (req, res) => {
+    const template = `用户名,年柱,月柱,日柱,时柱,起运年龄,命局分析
+zhangsan,癸丑,庚申,己卯,壬申,9,"癸丑女命，天干壬癸聚贵于卯，入女命十八贵格之伤官生财..."
+lisi,甲寅,丙子,戊午,甲寅,6,"甲寅男命，印星高透..."`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=user_profile_template.csv');
+    res.send('\uFEFF' + template);
+});
+
+// ============ 年度运势管理（每年更新：大运、流年、四季财官） ============
+
+/**
+ * GET /api/admin/yearly-fortune
+ * 获取年度运势列表
+ */
+router.get('/yearly-fortune', (req, res) => {
+    try {
+        const { userId, year } = req.query;
+        let sql = `
+            SELECT f.*, u.display_name, u.username
+            FROM user_yearly_fortune f
+            JOIN users u ON f.user_id = u.id
+        `;
+        const params = [];
+        const conditions = [];
+
+        if (userId) {
+            conditions.push('f.user_id = ?');
+            params.push(parseInt(userId));
+        }
+        if (year) {
+            conditions.push('f.lunar_year = ?');
+            params.push(parseInt(year));
+        }
+
+        if (conditions.length > 0) {
+            sql += ` WHERE ` + conditions.join(' AND ');
+        }
+
+        sql += ` ORDER BY f.lunar_year DESC, u.display_name`;
+
+        const fortunes = query(sql, params);
+
+        res.json({
+            success: true,
+            data: fortunes.map(f => ({
+                id: f.id,
+                userId: f.user_id,
+                userDisplayName: f.display_name,
+                username: f.username,
+                lunarYear: f.lunar_year,
+                dayun: f.dayun,
+                liunian: f.liunian,
+                springContent: f.spring_content,
+                summerContent: f.summer_content,
+                autumnContent: f.autumn_content,
+                winterContent: f.winter_content,
+                createdAt: f.created_at,
+                updatedAt: f.updated_at
+            }))
+        });
+    } catch (error) {
+        console.error('获取年度运势列表错误:', error);
+        res.status(500).json({ error: '获取年度运势列表失败' });
+    }
+});
+
+/**
+ * GET /api/admin/yearly-fortune/:userId/:year
+ * 获取指定用户指定年份的运势
+ */
+router.get('/yearly-fortune/:userId/:year', (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+        const year = parseInt(req.params.year);
+
+        const fortune = queryOne(`
+            SELECT f.*, u.display_name, u.username
+            FROM user_yearly_fortune f
+            JOIN users u ON f.user_id = u.id
+            WHERE f.user_id = ? AND f.lunar_year = ?
+        `, [userId, year]);
+
+        if (!fortune) {
+            return res.json({
+                success: true,
+                data: null
+            });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                id: fortune.id,
+                userId: fortune.user_id,
+                userDisplayName: fortune.display_name,
+                username: fortune.username,
+                lunarYear: fortune.lunar_year,
+                dayun: fortune.dayun,
+                liunian: fortune.liunian,
+                springContent: fortune.spring_content,
+                summerContent: fortune.summer_content,
+                autumnContent: fortune.autumn_content,
+                winterContent: fortune.winter_content,
+                createdAt: fortune.created_at,
+                updatedAt: fortune.updated_at
+            }
+        });
+    } catch (error) {
+        console.error('获取年度运势错误:', error);
+        res.status(500).json({ error: '获取年度运势失败' });
+    }
+});
+
+/**
+ * POST /api/admin/yearly-fortune
+ * 创建或更新年度运势 (UPSERT)
+ */
+router.post('/yearly-fortune', (req, res) => {
+    try {
+        const { userId, lunarYear, dayun, liunian, springContent, summerContent, autumnContent, winterContent } = req.body;
+
+        if (!userId || !lunarYear) {
+            return res.status(400).json({ error: '请选择用户和年份' });
+        }
+
+        if (lunarYear < 1900 || lunarYear > 2100) {
+            return res.status(400).json({ error: '无效的农历年份' });
+        }
+
+        // 检查用户是否存在
+        const user = queryOne('SELECT id FROM users WHERE id = ?', [userId]);
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        // 检查是否已存在
+        const existing = queryOne(
+            'SELECT id FROM user_yearly_fortune WHERE user_id = ? AND lunar_year = ?',
+            [userId, lunarYear]
+        );
+
+        if (existing) {
+            // 更新
+            run(
+                `UPDATE user_yearly_fortune SET
+                    dayun = ?, liunian = ?,
+                    spring_content = ?, summer_content = ?, autumn_content = ?, winter_content = ?,
+                    updated_at = datetime("now", "+8 hours")
+                WHERE user_id = ? AND lunar_year = ?`,
+                [dayun || null, liunian || null,
+                 springContent || null, summerContent || null, autumnContent || null, winterContent || null,
+                 userId, lunarYear]
+            );
+            logFromRequest(req, ActionTypes.ADMIN_EDIT_MINGPI, { targetUserId: userId, lunarYear, type: 'yearly-fortune' });
+            res.json({ success: true, action: 'updated', id: existing.id });
+        } else {
+            // 创建
+            const result = run(
+                `INSERT INTO user_yearly_fortune (user_id, lunar_year, dayun, liunian, spring_content, summer_content, autumn_content, winter_content, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
+                [userId, lunarYear, dayun || null, liunian || null,
+                 springContent || null, summerContent || null, autumnContent || null, winterContent || null]
+            );
+            logFromRequest(req, ActionTypes.ADMIN_CREATE_MINGPI, { targetUserId: userId, lunarYear, type: 'yearly-fortune' });
+            res.json({ success: true, action: 'created', id: result.lastInsertRowid });
+        }
+    } catch (error) {
+        console.error('保存年度运势错误:', error);
+        res.status(500).json({ error: '保存年度运势失败' });
+    }
+});
+
+/**
+ * POST /api/admin/yearly-fortune/batch
+ * 批量导入年度运势
+ * CSV格式：{ data: [{username, lunarYear, dayun, liunian, springContent, summerContent, autumnContent, winterContent}] }
+ */
+router.post('/yearly-fortune/batch', (req, res) => {
+    try {
+        const { data } = req.body;
+        const results = { created: 0, updated: 0, skipped: 0, errors: [] };
+
+        if (!data || !Array.isArray(data)) {
+            return res.status(400).json({ error: '无效的数据格式' });
+        }
+
+        // 构建用户名到ID的映射
+        const users = query('SELECT id, username FROM users');
+        const userMap = {};
+        users.forEach(u => { userMap[u.username] = u.id; });
+
+        for (const row of data) {
+            const { username, lunarYear, dayun, liunian, springContent, summerContent, autumnContent, winterContent } = row;
+
+            // 查找用户
+            const userId = userMap[username];
+            if (!userId) {
+                results.errors.push(`用户不存在: ${username}`);
+                continue;
+            }
+
+            // 验证年份
+            if (!lunarYear || lunarYear < 1900 || lunarYear > 2100) {
+                results.errors.push(`无效的年份: ${lunarYear}`);
+                continue;
+            }
+
+            // 检查是否有任何数据
+            if (!dayun && !liunian && !springContent && !summerContent && !autumnContent && !winterContent) {
+                results.skipped++;
+                continue;
+            }
+
+            // UPSERT
+            const existing = queryOne(
+                'SELECT id FROM user_yearly_fortune WHERE user_id = ? AND lunar_year = ?',
+                [userId, lunarYear]
+            );
+
+            if (existing) {
+                run(
+                    `UPDATE user_yearly_fortune SET
+                        dayun = COALESCE(?, dayun),
+                        liunian = COALESCE(?, liunian),
+                        spring_content = COALESCE(?, spring_content),
+                        summer_content = COALESCE(?, summer_content),
+                        autumn_content = COALESCE(?, autumn_content),
+                        winter_content = COALESCE(?, winter_content),
+                        updated_at = datetime("now", "+8 hours")
+                    WHERE user_id = ? AND lunar_year = ?`,
+                    [dayun || null, liunian || null,
+                     springContent || null, summerContent || null, autumnContent || null, winterContent || null,
+                     userId, lunarYear]
+                );
+                results.updated++;
+            } else {
+                run(
+                    `INSERT INTO user_yearly_fortune (user_id, lunar_year, dayun, liunian, spring_content, summer_content, autumn_content, winter_content, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
+                    [userId, lunarYear, dayun || null, liunian || null,
+                     springContent || null, summerContent || null, autumnContent || null, winterContent || null]
+                );
+                results.created++;
+            }
+        }
+
+        logFromRequest(req, ActionTypes.ADMIN_BATCH_IMPORT, { type: 'yearly-fortune', ...results });
+        res.json({ success: true, results });
+    } catch (error) {
+        console.error('批量导入年度运势错误:', error);
+        res.status(500).json({ error: '批量导入失败' });
+    }
+});
+
+/**
+ * DELETE /api/admin/yearly-fortune/:userId/:year
+ * 删除年度运势（按用户和年份）
+ */
+router.delete('/yearly-fortune/:userId/:year', (req, res) => {
+    try {
+        const userId = parseInt(req.params.userId);
+        const lunarYear = parseInt(req.params.year);
+
+        const existing = queryOne('SELECT id FROM user_yearly_fortune WHERE user_id = ? AND lunar_year = ?', [userId, lunarYear]);
+        if (!existing) {
+            return res.status(404).json({ error: '年度运势不存在' });
+        }
+
+        run('DELETE FROM user_yearly_fortune WHERE user_id = ? AND lunar_year = ?', [userId, lunarYear]);
+        logFromRequest(req, ActionTypes.ADMIN_DELETE_MINGPI, { targetUserId: userId, lunarYear, type: 'yearly-fortune' });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('删除年度运势错误:', error);
+        res.status(500).json({ error: '删除年度运势失败' });
+    }
+});
+
+/**
+ * GET /api/admin/yearly-fortune/template
+ * 下载年度运势CSV导入模板
+ */
+router.get('/yearly-fortune/template', (req, res) => {
+    const template = `用户名,农历年份,大运,流年,春季,夏季,秋季,冬季
+zhangsan,2025,乙丑,丙午,"春木当令，财星得位。宜进取开拓，利于求财谋事。","夏火旺盛，官星显耀。宜守成稳进，利于仕途升迁。","秋金肃杀，印星护身。宜收敛积蓄，利于学业进修。","冬水藏润，比劫帮身。宜静养休整，利于谋划来年。"
+lisi,2025,丙寅,丙午,"春季运势...","夏季运势...","秋季运势...","冬季运势..."`;
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=yearly_fortune_template.csv');
+    res.send('\uFEFF' + template);
+});
+
 module.exports = router;

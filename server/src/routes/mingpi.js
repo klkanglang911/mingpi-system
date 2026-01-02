@@ -68,8 +68,124 @@ router.get('/current', (req, res) => {
 });
 
 /**
+ * GET /api/mingpi/profile
+ * 获取当前用户的资料（八字、起运、命局分析）
+ */
+router.get('/profile', (req, res) => {
+    try {
+        const profile = queryOne(
+            'SELECT * FROM user_profile WHERE user_id = ?',
+            [req.user.id]
+        );
+
+        if (profile) {
+            res.json({
+                success: true,
+                data: {
+                    yearPillar: profile.year_pillar,
+                    monthPillar: profile.month_pillar,
+                    dayPillar: profile.day_pillar,
+                    hourPillar: profile.hour_pillar,
+                    qiyunAge: profile.qiyun_age,
+                    analysis: profile.analysis
+                }
+            });
+        } else {
+            res.json({
+                success: true,
+                data: null
+            });
+        }
+    } catch (error) {
+        console.error('获取用户资料错误:', error);
+        res.status(500).json({ error: '获取用户资料失败' });
+    }
+});
+
+/**
+ * GET /api/mingpi/yearly-fortune
+ * 获取当前用户当前年份的运势
+ */
+router.get('/yearly-fortune', (req, res) => {
+    try {
+        const lunar = getCurrentLunarYearMonth();
+
+        const fortune = queryOne(
+            'SELECT * FROM user_yearly_fortune WHERE user_id = ? AND lunar_year = ?',
+            [req.user.id, lunar.year]
+        );
+
+        if (fortune) {
+            res.json({
+                success: true,
+                data: {
+                    lunarYear: fortune.lunar_year,
+                    dayun: fortune.dayun,
+                    liunian: fortune.liunian,
+                    springContent: fortune.spring_content,
+                    summerContent: fortune.summer_content,
+                    autumnContent: fortune.autumn_content,
+                    winterContent: fortune.winter_content
+                }
+            });
+        } else {
+            res.json({
+                success: true,
+                data: null
+            });
+        }
+    } catch (error) {
+        console.error('获取年度运势错误:', error);
+        res.status(500).json({ error: '获取年度运势失败' });
+    }
+});
+
+/**
+ * GET /api/mingpi/yearly-fortune/:year
+ * 获取当前用户指定年份的运势（大运、流年、四季财官）
+ */
+router.get('/yearly-fortune/:year', (req, res) => {
+    try {
+        const year = parseInt(req.params.year);
+
+        if (isNaN(year) || year < 1900 || year > 2100) {
+            return res.status(400).json({ error: '无效的年份参数' });
+        }
+
+        const fortune = queryOne(
+            'SELECT * FROM user_yearly_fortune WHERE user_id = ? AND lunar_year = ?',
+            [req.user.id, year]
+        );
+
+        if (fortune) {
+            res.json({
+                success: true,
+                data: {
+                    lunarYear: fortune.lunar_year,
+                    dayun: fortune.dayun,
+                    liunian: fortune.liunian,
+                    springContent: fortune.spring_content,
+                    summerContent: fortune.summer_content,
+                    autumnContent: fortune.autumn_content,
+                    winterContent: fortune.winter_content
+                }
+            });
+        } else {
+            res.json({
+                success: true,
+                data: null
+            });
+        }
+    } catch (error) {
+        console.error('获取年度运势错误:', error);
+        res.status(500).json({ error: '获取年度运势失败' });
+    }
+});
+
+/**
  * GET /api/mingpi/:year/:month
  * 获取指定农历年月的命批
+ * 注意：此路由必须放在最后，因为它会匹配所有两段路径
  */
 router.get('/:year/:month', (req, res) => {
     try {

@@ -606,6 +606,8 @@
             <div class="tabs" id="mainTabs">
                 <div class="tab active" data-tab="batch">批量导入</div>
                 <div class="tab" data-tab="single">单条编辑</div>
+                <div class="tab" data-tab="profile">用户资料</div>
+                <div class="tab" data-tab="fortune">年度运势</div>
             </div>
 
             <!-- 批量导入 -->
@@ -697,6 +699,128 @@
                         <button class="btn btn-danger" onclick="deleteMingpi()">删除</button>
                     </div>
                 </div>
+            </div>
+
+            <!-- 用户资料（八字、起运、命局分析） -->
+            <div class="tab-content" id="tab-profile">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择用户</label>
+                        <div class="searchable-select" id="profileUserSelectWrapper">
+                            <input type="text" class="searchable-select-input" id="profileUserSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
+                            <input type="hidden" id="profileUserSelect">
+                            <div class="searchable-select-dropdown" id="profileUserSelectDropdown"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="profileEditor" style="display: none; margin-top: 1rem;">
+                    <div style="background: var(--paper-cream); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--vermilion);">四柱八字</h4>
+                        <div class="form-row" style="margin-bottom: 0;">
+                            <div class="form-group">
+                                <label>年柱</label>
+                                <input type="text" id="profileYearPillar" placeholder="如：癸丑" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label>月柱</label>
+                                <input type="text" id="profileMonthPillar" placeholder="如：庚申" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label>日柱</label>
+                                <input type="text" id="profileDayPillar" placeholder="如：己卯" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label>时柱</label>
+                                <input type="text" id="profileHourPillar" placeholder="如：壬申" maxlength="4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>起运年龄</label>
+                            <input type="number" id="profileQiyunAge" placeholder="如：9" min="1" max="20">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>命局分析</label>
+                        <textarea id="profileAnalysis" placeholder="输入命局分析报告..." style="min-height: 200px;"></textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" onclick="saveProfile()">保存</button>
+                        <button class="btn btn-danger" onclick="deleteProfile()">删除</button>
+                    </div>
+                </div>
+
+                <p class="input-hint" style="margin-top: 1rem;">
+                    提示：八字和命局分析为用户固定资料，录入一次后无需每年更新。
+                </p>
+            </div>
+
+            <!-- 年度运势（大运、流年、四季财官） -->
+            <div class="tab-content" id="tab-fortune">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>选择用户</label>
+                        <div class="searchable-select" id="fortuneUserSelectWrapper">
+                            <input type="text" class="searchable-select-input" id="fortuneUserSelectInput" placeholder="搜索或选择用户..." autocomplete="off">
+                            <input type="hidden" id="fortuneUserSelect">
+                            <div class="searchable-select-dropdown" id="fortuneUserSelectDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>农历年份</label>
+                        <select id="fortuneYearSelect"></select>
+                    </div>
+                </div>
+
+                <div id="fortuneEditor" style="display: none; margin-top: 1rem;">
+                    <div style="background: var(--paper-cream); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--vermilion);">运势概览</h4>
+                        <div class="form-row" style="margin-bottom: 0;">
+                            <div class="form-group">
+                                <label>大运</label>
+                                <input type="text" id="fortuneDayun" placeholder="如：乙丑" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label>流年</label>
+                                <input type="text" id="fortuneLiunian" placeholder="如：丙午" maxlength="4">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--paper-cream); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <h4 style="font-size: 0.9rem; margin-bottom: 1rem; color: var(--gold-accent);">四季财官</h4>
+                        <div class="form-group">
+                            <label>🌸 春季（立春~立夏）</label>
+                            <textarea id="fortuneSpring" placeholder="春季运势内容..." style="min-height: 80px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>☀️ 夏季（立夏~立秋）</label>
+                            <textarea id="fortuneSummer" placeholder="夏季运势内容..." style="min-height: 80px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>🍂 秋季（立秋~立冬）</label>
+                            <textarea id="fortuneAutumn" placeholder="秋季运势内容..." style="min-height: 80px;"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>❄️ 冬季（立冬~立春）</label>
+                            <textarea id="fortuneWinter" placeholder="冬季运势内容..." style="min-height: 80px;"></textarea>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary" onclick="saveFortune()">保存</button>
+                        <button class="btn btn-danger" onclick="deleteFortune()">删除</button>
+                    </div>
+                </div>
+
+                <p class="input-hint" style="margin-top: 1rem;">
+                    提示：年度运势每年需要更新，包括大运、流年和四季财官内容。
+                </p>
             </div>
         </div>
 
@@ -965,7 +1089,7 @@
             const startYear = 2025;
             const endYear = Math.max(currentYear + 2, startYear + 5); // 至少到当前年+2年，或2030年
 
-            ['yearSelect', 'batchYearSelect'].forEach(selectId => {
+            ['yearSelect', 'batchYearSelect', 'fortuneYearSelect'].forEach(selectId => {
                 const select = document.getElementById(selectId);
                 select.innerHTML = '';
                 for (let y = endYear; y >= startYear; y--) {
@@ -1002,6 +1126,16 @@
                         document.getElementById('monthSelector').style.display = 'none';
                         document.getElementById('contentEditor').style.display = 'none';
                     }
+                });
+
+                // 初始化用户资料标签页的可搜索下拉框
+                initSearchableSelect('profileUserSelectInput', 'profileUserSelect', 'profileUserSelectDropdown', (userId) => {
+                    loadProfile(userId);
+                });
+
+                // 初始化年度运势标签页的可搜索下拉框
+                initSearchableSelect('fortuneUserSelectInput', 'fortuneUserSelect', 'fortuneUserSelectDropdown', (userId) => {
+                    loadFortune(userId);
                 });
             } catch (error) {
                 showAlert('加载用户失败', 'error');
@@ -1057,7 +1191,7 @@
         }
 
         // ============ 标签页切换 ============
-        // 主标签页切换（批量导入 / 单条编辑）
+        // 主标签页切换（批量导入 / 单条编辑 / 用户资料 / 年度运势）
         document.querySelectorAll('#mainTabs .tab').forEach(tab => {
             tab.addEventListener('click', () => {
                 document.querySelectorAll('#mainTabs .tab').forEach(t => t.classList.remove('active'));
@@ -1066,6 +1200,8 @@
                 // 隐藏所有主内容区
                 document.getElementById('tab-batch').classList.remove('active');
                 document.getElementById('tab-single').classList.remove('active');
+                document.getElementById('tab-profile').classList.remove('active');
+                document.getElementById('tab-fortune').classList.remove('active');
 
                 // 显示对应内容区
                 document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
@@ -1704,6 +1840,242 @@
                 }
             } catch (error) {
                 showAlert('网络错误', 'error');
+            }
+        });
+
+        // ============ 用户资料管理 ============
+        let selectedProfileUserId = null;
+
+        async function loadProfile(userId) {
+            selectedProfileUserId = userId;
+            if (!userId) {
+                document.getElementById('profileEditor').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('profileEditor').style.display = 'block';
+
+            try {
+                const response = await fetch(`/api/admin/user-profile/${userId}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+
+                if (response.ok && data.data) {
+                    const profile = data.data;
+                    document.getElementById('profileYearPillar').value = profile.yearPillar || '';
+                    document.getElementById('profileMonthPillar').value = profile.monthPillar || '';
+                    document.getElementById('profileDayPillar').value = profile.dayPillar || '';
+                    document.getElementById('profileHourPillar').value = profile.hourPillar || '';
+                    document.getElementById('profileQiyunAge').value = profile.qiyunAge || '';
+                    document.getElementById('profileAnalysis').value = profile.analysis || '';
+                } else {
+                    // 没有数据，清空表单
+                    document.getElementById('profileYearPillar').value = '';
+                    document.getElementById('profileMonthPillar').value = '';
+                    document.getElementById('profileDayPillar').value = '';
+                    document.getElementById('profileHourPillar').value = '';
+                    document.getElementById('profileQiyunAge').value = '';
+                    document.getElementById('profileAnalysis').value = '';
+                }
+            } catch (error) {
+                console.error('加载用户资料失败:', error);
+                showAlert('加载用户资料失败', 'error');
+            }
+        }
+
+        async function saveProfile() {
+            if (!selectedProfileUserId) {
+                showAlert('请先选择用户', 'error');
+                return;
+            }
+
+            const profileData = {
+                userId: parseInt(selectedProfileUserId),
+                yearPillar: document.getElementById('profileYearPillar').value.trim(),
+                monthPillar: document.getElementById('profileMonthPillar').value.trim(),
+                dayPillar: document.getElementById('profileDayPillar').value.trim(),
+                hourPillar: document.getElementById('profileHourPillar').value.trim(),
+                qiyunAge: parseInt(document.getElementById('profileQiyunAge').value) || null,
+                analysis: document.getElementById('profileAnalysis').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/admin/user-profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(profileData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('用户资料保存成功');
+                } else {
+                    showAlert(data.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        async function deleteProfile() {
+            if (!selectedProfileUserId) {
+                showAlert('请先选择用户', 'error');
+                return;
+            }
+
+            if (!confirm('确定要删除该用户的资料吗？')) return;
+
+            try {
+                const response = await fetch(`/api/admin/user-profile/${selectedProfileUserId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    showAlert('用户资料已删除');
+                    // 清空表单
+                    document.getElementById('profileYearPillar').value = '';
+                    document.getElementById('profileMonthPillar').value = '';
+                    document.getElementById('profileDayPillar').value = '';
+                    document.getElementById('profileHourPillar').value = '';
+                    document.getElementById('profileQiyunAge').value = '';
+                    document.getElementById('profileAnalysis').value = '';
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || '删除失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // ============ 年度运势管理 ============
+        let selectedFortuneUserId = null;
+
+        async function loadFortune(userId) {
+            selectedFortuneUserId = userId;
+            if (!userId) {
+                document.getElementById('fortuneEditor').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('fortuneEditor').style.display = 'block';
+
+            const lunarYear = parseInt(document.getElementById('fortuneYearSelect').value);
+
+            try {
+                const response = await fetch(`/api/admin/yearly-fortune/${userId}/${lunarYear}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+
+                if (response.ok && data.data) {
+                    const fortune = data.data;
+                    document.getElementById('fortuneDayun').value = fortune.dayun || '';
+                    document.getElementById('fortuneLiunian').value = fortune.liunian || '';
+                    document.getElementById('fortuneSpring').value = fortune.springContent || '';
+                    document.getElementById('fortuneSummer').value = fortune.summerContent || '';
+                    document.getElementById('fortuneAutumn').value = fortune.autumnContent || '';
+                    document.getElementById('fortuneWinter').value = fortune.winterContent || '';
+                } else {
+                    // 没有数据，清空表单
+                    document.getElementById('fortuneDayun').value = '';
+                    document.getElementById('fortuneLiunian').value = '';
+                    document.getElementById('fortuneSpring').value = '';
+                    document.getElementById('fortuneSummer').value = '';
+                    document.getElementById('fortuneAutumn').value = '';
+                    document.getElementById('fortuneWinter').value = '';
+                }
+            } catch (error) {
+                console.error('加载年度运势失败:', error);
+                showAlert('加载年度运势失败', 'error');
+            }
+        }
+
+        async function saveFortune() {
+            if (!selectedFortuneUserId) {
+                showAlert('请先选择用户', 'error');
+                return;
+            }
+
+            const lunarYear = parseInt(document.getElementById('fortuneYearSelect').value);
+
+            const fortuneData = {
+                userId: parseInt(selectedFortuneUserId),
+                lunarYear: lunarYear,
+                dayun: document.getElementById('fortuneDayun').value.trim(),
+                liunian: document.getElementById('fortuneLiunian').value.trim(),
+                springContent: document.getElementById('fortuneSpring').value.trim(),
+                summerContent: document.getElementById('fortuneSummer').value.trim(),
+                autumnContent: document.getElementById('fortuneAutumn').value.trim(),
+                winterContent: document.getElementById('fortuneWinter').value.trim()
+            };
+
+            try {
+                const response = await fetch('/api/admin/yearly-fortune', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(fortuneData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showAlert('年度运势保存成功');
+                } else {
+                    showAlert(data.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        async function deleteFortune() {
+            if (!selectedFortuneUserId) {
+                showAlert('请先选择用户', 'error');
+                return;
+            }
+
+            const lunarYear = parseInt(document.getElementById('fortuneYearSelect').value);
+
+            if (!confirm(`确定要删除该用户 ${lunarYear} 年的运势吗？`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/yearly-fortune/${selectedFortuneUserId}/${lunarYear}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    showAlert('年度运势已删除');
+                    // 清空表单
+                    document.getElementById('fortuneDayun').value = '';
+                    document.getElementById('fortuneLiunian').value = '';
+                    document.getElementById('fortuneSpring').value = '';
+                    document.getElementById('fortuneSummer').value = '';
+                    document.getElementById('fortuneAutumn').value = '';
+                    document.getElementById('fortuneWinter').value = '';
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || '删除失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // 年度运势年份变化时重新加载
+        document.getElementById('fortuneYearSelect').addEventListener('change', () => {
+            if (selectedFortuneUserId) {
+                loadFortune(selectedFortuneUserId);
             }
         });
 
