@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Version Management (版本管理规范)
 
-**当前版本**: v1.1.3
+**当前版本**: v1.1.4
 
 ### 版本更新规则
 - **自动更新小版本**: 每次功能更新/bug修复，自动递增补丁版本号（如 1.0.0 → 1.0.1）

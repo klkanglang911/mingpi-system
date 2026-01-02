@@ -4,6 +4,9 @@ const path = require('path');
 const bcrypt = require('bcryptjs');
 
 let db = null;
+let isDirty = false;  // 标记是否有未保存的更改
+let saveTimer = null; // 定时保存计时器
+const SAVE_INTERVAL = 5000; // 5秒自动保存间隔
 
 // 数据库文件路径
 const getDbPath = () => {
@@ -40,6 +43,9 @@ async function initDatabase() {
 
     // 保存数据库
     saveDatabase();
+
+    // 启动自动保存机制
+    startAutoSave();
 
     return db;
 }
@@ -282,7 +288,7 @@ function setConfig(key, value) {
         SET value = ?, updated_at = datetime('now', '+8 hours')
         WHERE key = ?
     `, [value, key]);
-    saveDatabase();
+    markDirty();  // 标记为脏，延迟保存
 }
 
 // 创建默认管理员
@@ -315,6 +321,50 @@ function saveDatabase() {
     const data = db.export();
     const buffer = Buffer.from(data);
     fs.writeFileSync(dbPath, buffer);
+    isDirty = false;
+}
+
+// 标记数据库已修改（延迟保存）
+function markDirty() {
+    isDirty = true;
+}
+
+// 定时保存检查
+function startAutoSave() {
+    if (saveTimer) return;
+
+    saveTimer = setInterval(() => {
+        if (isDirty) {
+            saveDatabase();
+            console.log('数据库自动保存完成');
+        }
+    }, SAVE_INTERVAL);
+
+    // 确保进程退出时保存
+    process.on('exit', () => {
+        if (isDirty) {
+            saveDatabase();
+            console.log('进程退出，数据库已保存');
+        }
+    });
+
+    // 处理 SIGINT (Ctrl+C)
+    process.on('SIGINT', () => {
+        if (isDirty) {
+            saveDatabase();
+            console.log('收到退出信号，数据库已保存');
+        }
+        process.exit(0);
+    });
+
+    // 处理 SIGTERM
+    process.on('SIGTERM', () => {
+        if (isDirty) {
+            saveDatabase();
+            console.log('收到终止信号，数据库已保存');
+        }
+        process.exit(0);
+    });
 }
 
 // 获取数据库实例
@@ -359,7 +409,7 @@ function run(sql, params = []) {
         } else {
             db.run(sql);
         }
-        saveDatabase();
+        markDirty();  // 标记为脏，延迟保存（性能优化）
         return { lastInsertRowid: db.exec("SELECT last_insert_rowid()")[0]?.values[0]?.[0] };
     } catch (error) {
         console.error('执行错误:', error.message);
@@ -374,6 +424,7 @@ module.exports = {
     queryOne,
     run,
     saveDatabase,
+    markDirty,
     getConfig,
     setConfig
 };
