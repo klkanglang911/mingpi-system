@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Version Management (版本管理规范)
 
-**当前版本**: v1.1.0
+**当前版本**: v1.1.1
 
 ### 版本更新规则
 - **自动更新小版本**: 每次功能更新/bug修复，自动递增补丁版本号（如 1.0.0 → 1.0.1）
@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 3. 更新 `README.md` 中的版本徽章
 4. 更新本文件中的"当前版本"字段
 5. 提交所有更改到 Git
-6. 创建版本标签（如 `v1.1.0`）
+6. 创建版本标签（如 `v1.1.1`）
 7. **自动推送到 GitHub**（包含代码和标签）
 
 ### 版本同步规则（必须遵守）

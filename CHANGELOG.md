@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.1.1] - 2026-01-02
+
+### Fixed / 修复
+- 登录页面加载画面内容错位问题（CSS align-items 修正）
+
+---
+
 ## [1.1.0] - 2026-01-02
 
 ### Added / 新增
