@@ -15,8 +15,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 1. 更新 `server/package.json` 中的 `version` 字段
 2. 更新 `CHANGELOG.md` 添加更新记录
 3. 更新 `README.md` 中的版本徽章
-4. 创建 Git 标签并推送
-5. 提交所有更改并推送到 GitHub
+4. 更新本文件中的"当前版本"字段
+5. 提交所有更改到 Git
+6. 创建版本标签（如 `v1.1.0`）
+7. **自动推送到 GitHub**（包含代码和标签）
+
+### 版本同步规则（必须遵守）
+- **每次项目更新迭代完成后，必须自动推送到 GitHub**
+- **本地开发环境的版本号必须与 GitHub 仓库保持同步**
+- 推送前确认所有更改已提交，版本号已更新
+- 推送命令：`git push origin main --tags`
+- 若推送失败，需排查问题并重试，确保远程仓库同步
 
 ### 版本文件位置
 - `server/package.json` - 产品版本号
