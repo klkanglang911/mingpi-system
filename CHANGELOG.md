@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.1.7] - 2026-01-03
+
+### Fixed / 修复
+- 广告管理页面"查看统计"功能报错问题
+  - 修复 showStatsTab 函数在非点击事件调用时 event.target 未定义的bug
+
+---
+
 ## [1.1.6] - 2026-01-03
 
 ### Optimized / 优化

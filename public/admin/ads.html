@@ -702,9 +702,9 @@
             </div>
 
             <div class="tab-buttons">
-                <button class="tab-btn active" onclick="showStatsTab('daily')">按日统计</button>
-                <button class="tab-btn" onclick="showStatsTab('user')">按用户统计</button>
-                <button class="tab-btn" onclick="showStatsTab('device')">按设备统计</button>
+                <button class="tab-btn active" onclick="showStatsTab('daily', this)">按日统计</button>
+                <button class="tab-btn" onclick="showStatsTab('user', this)">按用户统计</button>
+                <button class="tab-btn" onclick="showStatsTab('device', this)">按设备统计</button>
             </div>
 
             <div id="statsTabContent">
@@ -1100,9 +1100,14 @@
         }
 
         // 切换统计标签
-        function showStatsTab(tab) {
+        function showStatsTab(tab, clickedBtn) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            // 如果是点击事件调用，高亮被点击的按钮；否则高亮第一个按钮
+            if (clickedBtn) {
+                clickedBtn.classList.add('active');
+            } else {
+                document.querySelector('.tab-btn').classList.add('active');
+            }
 
             const header = document.getElementById('statsTableHeader');
             const body = document.getElementById('statsTableBody');
