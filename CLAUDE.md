@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Version Management (版本管理规范)
+
+**当前版本**: v1.0.0
+
+### 版本更新规则
+- **自动更新小版本**: 每次功能更新/bug修复，自动递增补丁版本号（如 1.0.0 → 1.0.1）
+- **手动指定大版本**: 仅当用户明确说明"大版本更新"或"新增重要功能"时，递增次版本号（如 1.0.x → 1.1.0）
+- **重大变更**: 用户明确要求时才更新主版本号（如 1.x.x → 2.0.0）
+
+### 版本更新流程（每次代码更新后自动执行）
+1. 更新 `server/package.json` 中的 `version` 字段
+2. 更新 `CHANGELOG.md` 添加更新记录
+3. 更新 `README.md` 中的版本徽章
+4. 创建 Git 标签并推送
+5. 提交所有更改并推送到 GitHub
+
+### 版本文件位置
+- `server/package.json` - 产品版本号
+- `CHANGELOG.md` - 更新日志
+- `README.md` - 项目说明（含版本徽章）
+
 ## Project Overview
 
 命批系统 (Mingpi System) - A personalized lunar calendar fortune system with admin management. Built for Chinese traditional culture content delivery based on lunar months.

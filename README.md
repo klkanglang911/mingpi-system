@@ -1,5 +1,8 @@
 # 命批系统 (MingPi System)
 
+![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
 个性化农历月批服务系统，支持用户登录、个性化命批展示、管理后台。
 
 ## 功能特性
