@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.1.2] - 2026-01-02
+
+### Fixed / 修复
+- 全屏广告保存失败问题（增加请求体大小限制到10MB，支持大图片上传）
+
+---
+
 ## [1.1.1] - 2026-01-02
 
 ### Fixed / 修复
