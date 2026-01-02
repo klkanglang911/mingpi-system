@@ -797,6 +797,9 @@
         }
 
         .day-cell.weekend .solar-day { color: var(--vermilion); }
+        /* 今天是周末时，文字保持白色 */
+        .day-cell.today.weekend .solar-day { color: var(--paper-white); }
+        .day-cell.today.weekend .lunar-day { color: rgba(255, 255, 255, 0.8); }
 
         .lunar-day {
             font-size: 0.55rem;

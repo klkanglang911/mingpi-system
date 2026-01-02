@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.1.5] - 2026-01-03
+
+### Fixed / 修复
+- 月历中周末且为今天的日期，文字颜色与背景颜色靠色无法看清的问题
+
+---
+
 ## [1.1.4] - 2026-01-02
 
 ### Optimized / 优化
