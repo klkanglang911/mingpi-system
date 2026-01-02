@@ -643,10 +643,10 @@
 二月命批内容...
 
 格式B：带月份前缀，可只导入部分月份
-1:正月命批内容...
-5:五月命批内容...
-12:腊月命批内容..."></textarea>
-                        <p class="input-hint">支持两种格式：① 纯内容按行（12行对应12个月）② 带月份前缀（如"1:内容"）可只导入部分月份。空行将跳过该月。</p>
+正月：命批内容...
+二月：命批内容...
+或使用数字：1:内容... 5:内容..."></textarea>
+                        <p class="input-hint">支持两种格式：① 纯内容按行（12行对应12个月）② 带月份前缀（支持"正月："、"二月："或"1:"等格式）。空行将跳过该月。</p>
                     </div>
 
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -1225,20 +1225,47 @@
 
         // ============ 批量导入 ============
 
+        // 中文月份映射
+        const lunarMonthMap = {
+            '正月': 1, '一月': 1, '1月': 1,
+            '二月': 2, '2月': 2,
+            '三月': 3, '3月': 3,
+            '四月': 4, '4月': 4,
+            '五月': 5, '5月': 5,
+            '六月': 6, '6月': 6,
+            '七月': 7, '7月': 7,
+            '八月': 8, '8月': 8,
+            '九月': 9, '9月': 9,
+            '十月': 10, '10月': 10,
+            '十一月': 11, '冬月': 11, '11月': 11,
+            '十二月': 12, '腊月': 12, '12月': 12
+        };
+
         // 解析批量输入
         function parseBatchInput(text) {
             const lines = text.split('\n');
             const items = [];
 
-            // 检测格式：是否带月份前缀
-            const hasPrefix = lines.some(line => /^\d{1,2}[:：]/.test(line.trim()));
+            // 检测格式：是否带月份前缀（数字或中文月份）
+            const monthPrefixPattern = /^(\d{1,2}|正月|一月|二月|三月|四月|五月|六月|七月|八月|九月|十月|十一月|十二月|冬月|腊月|\d{1,2}月)[:：]/;
+            const hasPrefix = lines.some(line => monthPrefixPattern.test(line.trim()));
 
             if (hasPrefix) {
-                // 格式B：带月份前缀
+                // 格式B：带月份前缀（支持数字和中文）
                 lines.forEach(line => {
-                    const match = line.trim().match(/^(\d{1,2})[:：](.*)$/);
+                    const match = line.trim().match(/^(\d{1,2}|正月|一月|二月|三月|四月|五月|六月|七月|八月|九月|十月|十一月|十二月|冬月|腊月|\d{1,2}月)[:：](.*)$/);
                     if (match) {
-                        const month = parseInt(match[1]);
+                        let month;
+                        const prefix = match[1];
+
+                        // 尝试解析为数字
+                        if (/^\d{1,2}$/.test(prefix)) {
+                            month = parseInt(prefix);
+                        } else {
+                            // 中文月份映射
+                            month = lunarMonthMap[prefix];
+                        }
+
                         const content = match[2].trim();
                         if (month >= 1 && month <= 12) {
                             items.push({ month, content });
