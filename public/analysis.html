@@ -416,13 +416,13 @@
         }
 
         // 获取用户信息
-        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-        document.getElementById('userName').textContent = userInfo.displayName || '用户';
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        document.getElementById('userName').textContent = user.displayName || '用户';
 
         // 退出登录
         document.getElementById('logoutBtn').addEventListener('click', () => {
             localStorage.removeItem('token');
-            localStorage.removeItem('userInfo');
+            localStorage.removeItem('user');
             window.location.href = '/';
         });
 

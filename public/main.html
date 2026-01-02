@@ -1259,17 +1259,32 @@
         const progressText = document.getElementById('progressText');
         const mainContainer = document.getElementById('mainContainer');
 
+        // 检查是否需要显示加载页（同一会话内只显示一次）
+        const skipLoading = sessionStorage.getItem('mainPageLoaded') === 'true';
+
+        // 如果是导航回来的，跳过加载页
+        if (skipLoading) {
+            loadingScreen.style.display = 'none';
+            mainContainer.classList.add('show');
+        }
+
         // 数据加载状态
         let dataLoaded = false;
 
         // 更新进度条
         function updateProgress(value, text) {
+            if (skipLoading) return; // 跳过加载页时不更新进度
             progressFill.style.width = Math.min(value, 100) + '%';
             if (text) progressText.textContent = text;
         }
 
         // 显示主内容
         function showMainContent() {
+            // 标记已加载过
+            sessionStorage.setItem('mainPageLoaded', 'true');
+
+            if (skipLoading) return; // 已经显示了
+
             updateProgress(100, '加载完成');
             setTimeout(() => {
                 loadingScreen.classList.add('fade-out');
