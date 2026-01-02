@@ -157,6 +157,45 @@ function createTables() {
     `);
     db.run(`CREATE INDEX IF NOT EXISTS idx_user_yearly_fortune ON user_yearly_fortune(user_id, lunar_year)`);
 
+
+    // 广告配置表
+    db.run(`
+        CREATE TABLE IF NOT EXISTS ads (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ad_type VARCHAR(20) NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            image_url TEXT NOT NULL,
+            link_url TEXT,
+            is_enabled INTEGER DEFAULT 1,
+            start_time DATETIME,
+            end_time DATETIME,
+            display_frequency VARCHAR(20) DEFAULT 'every_visit',
+            countdown_seconds INTEGER DEFAULT 3,
+            sort_order INTEGER DEFAULT 0,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    `);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_ads_type ON ads(ad_type)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_ads_enabled ON ads(is_enabled)`);
+
+    // 广告统计表
+    db.run(`
+        CREATE TABLE IF NOT EXISTS ad_stats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ad_id INTEGER NOT NULL,
+            user_id INTEGER,
+            action VARCHAR(20) NOT NULL,
+            ip_address VARCHAR(50),
+            device_type VARCHAR(20),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (ad_id) REFERENCES ads(id) ON DELETE CASCADE
+        )
+    `);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_ad_stats_ad ON ad_stats(ad_id, action)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_ad_stats_date ON ad_stats(created_at)`);
+    db.run(`CREATE INDEX IF NOT EXISTS idx_ad_stats_user ON ad_stats(user_id)`);
+
     // 访问日志表
     db.run(`
         CREATE TABLE IF NOT EXISTS access_logs (

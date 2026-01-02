@@ -1062,6 +1062,92 @@
             opacity: 0;
             transition: opacity 0.5s ease;
         }
+        
+        /* ========== 广告位样式 ========== */
+        .ad-banner-section {
+            margin-top: 1.25rem;
+            background: var(--paper-white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px var(--shadow-ink);
+            animation: fadeInUp 0.6s ease-out 0.5s both;
+        }
+
+        .ad-banner-section a {
+            display: block;
+        }
+
+        .ad-banner-section img {
+            width: 100%;
+            max-height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* 全屏广告弹窗 */
+        .fullscreen-ad-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 20000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.85);
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+        }
+
+        .fullscreen-ad-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .fullscreen-ad-container {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+        }
+
+        .fullscreen-ad-container img {
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .fullscreen-ad-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            color: var(--ink-black);
+            transition: all 0.2s;
+        }
+
+        .fullscreen-ad-close:hover {
+            background: var(--paper-white);
+        }
+
+        .fullscreen-ad-close.can-close {
+            padding: 8px 12px;
+            font-size: 1.25rem;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .container.show {
             opacity: 1;
         }
@@ -1137,6 +1223,13 @@
                 <div class="weekday weekend">六</div>
             </div>
             <div class="days-grid" id="daysGrid"></div>
+        </section>
+
+        <!-- 横版广告位 -->
+        <section class="ad-banner-section" id="adBannerSection" style="display:none;">
+            <a id="adBannerLink" target="_blank" rel="noopener">
+                <img id="adBannerImg" src="" alt="广告">
+            </a>
         </section>
 
         <footer class="footer">
@@ -1251,6 +1344,19 @@
 
         <span class="bookmark-close-hint">点击任意处关闭</span>
     </div>
+
+    <!-- 全屏广告弹窗 -->
+    <div class="fullscreen-ad-overlay hidden" id="fullscreenAdOverlay">
+        <div class="fullscreen-ad-container">
+            <button class="fullscreen-ad-close" id="fullscreenAdClose">
+                <span id="closeCountdown">3</span>秒
+            </button>
+            <a id="fullscreenAdLink" target="_blank" rel="noopener">
+                <img id="fullscreenAdImg" src="" alt="广告">
+            </a>
+        </div>
+    </div>
+
 
     <script>
         // ========== 加载页面控制 ==========
@@ -1678,7 +1784,8 @@
             // 并行加载命批和蒙版配置，提升加载速度
             await Promise.all([
                 loadMingpi(),
-                initOverlay()
+                initOverlay(),
+                loadAds()
             ]);
 
             // 记录用户访问（异步，不阻塞页面显示）
@@ -1873,6 +1980,180 @@
                 }
             }
         });
+
+
+        // ========== 广告加载与展示 ==========
+        let adsData = [];
+        let fullscreenAdTimer = null;
+
+        // 加载广告
+        async function loadAds() {
+            try {
+                const response = await fetch('/api/mingpi/ads', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (!data.success) return;
+
+                adsData = data.data;
+
+                // 显示横版广告
+                const bannerAd = adsData.find(ad => ad.adType === 'banner');
+                if (bannerAd) showBannerAd(bannerAd);
+
+                // 检查并显示全屏广告
+                const fullscreenAd = adsData.find(ad => ad.adType === 'fullscreen');
+                if (fullscreenAd && shouldShowFullscreenAd(fullscreenAd)) {
+                    showFullscreenAd(fullscreenAd);
+                }
+            } catch (error) {
+                console.error('加载广告失败:', error);
+            }
+        }
+
+        // 显示横版广告
+        function showBannerAd(ad) {
+            const section = document.getElementById('adBannerSection');
+            const link = document.getElementById('adBannerLink');
+            const img = document.getElementById('adBannerImg');
+
+            if (!section || !link || !img) return;
+
+            img.src = ad.imageUrl;
+            img.alt = ad.name;
+
+            if (ad.linkUrl) {
+                link.href = ad.linkUrl;
+                link.onclick = () => recordAdStat(ad.id, 'click');
+            } else {
+                link.removeAttribute('href');
+                link.style.cursor = 'default';
+            }
+
+            section.style.display = 'block';
+
+            // 记录展示
+            recordAdStat(ad.id, 'view');
+        }
+
+        // 检查是否应该显示全屏广告
+        function shouldShowFullscreenAd(ad) {
+            const key = 'fullscreen_ad_' + ad.id;
+
+            switch (ad.displayFrequency) {
+                case 'every_visit':
+                    return true;
+
+                case 'once_per_day':
+                    const lastShow = localStorage.getItem(key);
+                    if (!lastShow) return true;
+                    const lastDate = new Date(parseInt(lastShow));
+                    const today = new Date();
+                    return lastDate.toDateString() !== today.toDateString();
+
+                case 'once_per_login':
+                    return !sessionStorage.getItem(key);
+
+                default:
+                    return true;
+            }
+        }
+
+        // 显示全屏广告
+        function showFullscreenAd(ad) {
+            const overlay = document.getElementById('fullscreenAdOverlay');
+            const link = document.getElementById('fullscreenAdLink');
+            const img = document.getElementById('fullscreenAdImg');
+            const closeBtn = document.getElementById('fullscreenAdClose');
+            const countdownEl = document.getElementById('closeCountdown');
+
+            if (!overlay || !link || !img || !closeBtn) return;
+
+            img.src = ad.imageUrl;
+            img.alt = ad.name;
+
+            if (ad.linkUrl) {
+                link.href = ad.linkUrl;
+                link.onclick = () => {
+                    recordAdStat(ad.id, 'click');
+                };
+            } else {
+                link.removeAttribute('href');
+                link.style.cursor = 'default';
+            }
+
+            // 倒计时
+            let countdown = ad.countdownSeconds || 3;
+            countdownEl.textContent = countdown;
+            closeBtn.classList.remove('can-close');
+
+            // 显示广告
+            overlay.classList.remove('hidden');
+
+            // 记录展示
+            recordAdStat(ad.id, 'view');
+
+            // 记录频率控制
+            const key = 'fullscreen_ad_' + ad.id;
+            if (ad.displayFrequency === 'once_per_day') {
+                localStorage.setItem(key, Date.now().toString());
+            } else if (ad.displayFrequency === 'once_per_login') {
+                sessionStorage.setItem(key, 'true');
+            }
+
+            // 倒计时
+            fullscreenAdTimer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    countdownEl.textContent = countdown;
+                } else {
+                    clearInterval(fullscreenAdTimer);
+                    countdownEl.textContent = '×';
+                    closeBtn.classList.add('can-close');
+                }
+            }, 1000);
+
+            // 关闭按钮点击
+            closeBtn.onclick = () => {
+                if (countdown <= 0) {
+                    hideFullscreenAd(ad.id);
+                }
+            };
+        }
+
+        // 隐藏全屏广告
+        function hideFullscreenAd(adId) {
+            const overlay = document.getElementById('fullscreenAdOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+            if (fullscreenAdTimer) {
+                clearInterval(fullscreenAdTimer);
+                fullscreenAdTimer = null;
+            }
+            // 记录关闭
+            if (adId) {
+                recordAdStat(adId, 'close');
+            }
+        }
+
+        // 记录广告统计
+        async function recordAdStat(adId, action) {
+            try {
+                await fetch('/api/mingpi/ads/' + adId + '/stat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ action })
+                });
+            } catch (error) {
+                // 忽略错误，不影响用户体验
+            }
+        }
 
         init();
 

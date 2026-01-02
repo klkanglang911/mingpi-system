@@ -1851,4 +1851,390 @@ lisi,2025,丙寅,丙午,"春季运势...","夏季运势...","秋季运势...","�
     res.send('\uFEFF' + template);
 });
 
+
+// ============ 广告管理 ============
+
+/**
+ * GET /api/admin/ads
+ * 获取所有广告列表
+ */
+router.get('/ads', (req, res) => {
+    try {
+        const ads = query(`
+            SELECT a.*,
+                (SELECT COUNT(*) FROM ad_stats WHERE ad_id = a.id AND action = 'view') as view_count,
+                (SELECT COUNT(*) FROM ad_stats WHERE ad_id = a.id AND action = 'click') as click_count,
+                (SELECT COUNT(*) FROM ad_stats WHERE ad_id = a.id AND action = 'close') as close_count
+            FROM ads a
+            ORDER BY a.ad_type, a.sort_order ASC, a.id DESC
+        `);
+
+        res.json({
+            success: true,
+            data: ads.map(ad => ({
+                id: ad.id,
+                adType: ad.ad_type,
+                name: ad.name,
+                imageUrl: ad.image_url,
+                linkUrl: ad.link_url,
+                isEnabled: ad.is_enabled === 1,
+                startTime: ad.start_time,
+                endTime: ad.end_time,
+                displayFrequency: ad.display_frequency,
+                countdownSeconds: ad.countdown_seconds,
+                sortOrder: ad.sort_order,
+                viewCount: ad.view_count || 0,
+                clickCount: ad.click_count || 0,
+                closeCount: ad.close_count || 0,
+                createdAt: ad.created_at,
+                updatedAt: ad.updated_at
+            }))
+        });
+    } catch (error) {
+        console.error('获取广告列表错误:', error);
+        res.status(500).json({ error: '获取广告列表失败' });
+    }
+});
+
+/**
+ * GET /api/admin/ads/:id
+ * 获取单个广告详情
+ */
+router.get('/ads/:id', (req, res) => {
+    try {
+        const adId = parseInt(req.params.id);
+        const ad = queryOne('SELECT * FROM ads WHERE id = ?', [adId]);
+
+        if (!ad) {
+            return res.status(404).json({ error: '广告不存在' });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                id: ad.id,
+                adType: ad.ad_type,
+                name: ad.name,
+                imageUrl: ad.image_url,
+                linkUrl: ad.link_url,
+                isEnabled: ad.is_enabled === 1,
+                startTime: ad.start_time,
+                endTime: ad.end_time,
+                displayFrequency: ad.display_frequency,
+                countdownSeconds: ad.countdown_seconds,
+                sortOrder: ad.sort_order,
+                createdAt: ad.created_at,
+                updatedAt: ad.updated_at
+            }
+        });
+    } catch (error) {
+        console.error('获取广告详情错误:', error);
+        res.status(500).json({ error: '获取广告详情失败' });
+    }
+});
+
+/**
+ * POST /api/admin/ads
+ * 创建广告
+ */
+router.post('/ads', (req, res) => {
+    try {
+        const { adType, name, imageUrl, linkUrl, isEnabled, startTime, endTime, displayFrequency, countdownSeconds, sortOrder } = req.body;
+
+        if (!adType || !name || !imageUrl) {
+            return res.status(400).json({ error: '广告类型、名称和图片不能为空' });
+        }
+
+        if (!['banner', 'fullscreen'].includes(adType)) {
+            return res.status(400).json({ error: '无效的广告类型' });
+        }
+
+        const result = run(`
+            INSERT INTO ads (ad_type, name, image_url, link_url, is_enabled, start_time, end_time, display_frequency, countdown_seconds, sort_order, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', '+8 hours'), datetime('now', '+8 hours'))
+        `, [
+            adType,
+            name,
+            imageUrl,
+            linkUrl || null,
+            isEnabled !== false ? 1 : 0,
+            startTime || null,
+            endTime || null,
+            displayFrequency || 'every_visit',
+            countdownSeconds || 3,
+            sortOrder || 0
+        ]);
+
+        logFromRequest(req, 'admin_create_ad', { adId: result.lastInsertRowid, adType, name });
+
+        res.json({
+            success: true,
+            data: { id: result.lastInsertRowid }
+        });
+    } catch (error) {
+        console.error('创建广告错误:', error);
+        res.status(500).json({ error: '创建广告失败' });
+    }
+});
+
+/**
+ * PUT /api/admin/ads/:id
+ * 更新广告
+ */
+router.put('/ads/:id', (req, res) => {
+    try {
+        const adId = parseInt(req.params.id);
+        const { adType, name, imageUrl, linkUrl, isEnabled, startTime, endTime, displayFrequency, countdownSeconds, sortOrder } = req.body;
+
+        // 检查广告是否存在
+        const ad = queryOne('SELECT id FROM ads WHERE id = ?', [adId]);
+        if (!ad) {
+            return res.status(404).json({ error: '广告不存在' });
+        }
+
+        if (!adType || !name || !imageUrl) {
+            return res.status(400).json({ error: '广告类型、名称和图片不能为空' });
+        }
+
+        run(`
+            UPDATE ads SET
+                ad_type = ?,
+                name = ?,
+                image_url = ?,
+                link_url = ?,
+                is_enabled = ?,
+                start_time = ?,
+                end_time = ?,
+                display_frequency = ?,
+                countdown_seconds = ?,
+                sort_order = ?,
+                updated_at = datetime('now', '+8 hours')
+            WHERE id = ?
+        `, [
+            adType,
+            name,
+            imageUrl,
+            linkUrl || null,
+            isEnabled !== false ? 1 : 0,
+            startTime || null,
+            endTime || null,
+            displayFrequency || 'every_visit',
+            countdownSeconds || 3,
+            sortOrder || 0,
+            adId
+        ]);
+
+        logFromRequest(req, 'admin_edit_ad', { adId, adType, name });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('更新广告错误:', error);
+        res.status(500).json({ error: '更新广告失败' });
+    }
+});
+
+/**
+ * DELETE /api/admin/ads/:id
+ * 删除广告
+ */
+router.delete('/ads/:id', (req, res) => {
+    try {
+        const adId = parseInt(req.params.id);
+
+        // 检查广告是否存在
+        const ad = queryOne('SELECT id, name FROM ads WHERE id = ?', [adId]);
+        if (!ad) {
+            return res.status(404).json({ error: '广告不存在' });
+        }
+
+        // 删除广告（统计数据会级联删除）
+        run('DELETE FROM ads WHERE id = ?', [adId]);
+
+        logFromRequest(req, 'admin_delete_ad', { adId, name: ad.name });
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('删除广告错误:', error);
+        res.status(500).json({ error: '删除广告失败' });
+    }
+});
+
+/**
+ * GET /api/admin/ads/stats/overview
+ * 获取广告统计概览
+ */
+router.get('/ads/stats/overview', (req, res) => {
+    try {
+        const days = parseInt(req.query.days) || 7;
+        const validDays = Math.min(Math.max(days, 1), 90);
+
+        // 总体统计
+        const totalStats = queryOne(`
+            SELECT
+                (SELECT COUNT(*) FROM ad_stats WHERE action = 'view' AND created_at >= datetime('now', '+8 hours', '-${validDays} days')) as total_views,
+                (SELECT COUNT(*) FROM ad_stats WHERE action = 'click' AND created_at >= datetime('now', '+8 hours', '-${validDays} days')) as total_clicks,
+                (SELECT COUNT(*) FROM ad_stats WHERE action = 'close' AND created_at >= datetime('now', '+8 hours', '-${validDays} days')) as total_closes
+        `);
+
+        // 各广告统计
+        const adStats = query(`
+            SELECT
+                a.id,
+                a.ad_type,
+                a.name,
+                COUNT(CASE WHEN s.action = 'view' THEN 1 END) as view_count,
+                COUNT(CASE WHEN s.action = 'click' THEN 1 END) as click_count,
+                COUNT(CASE WHEN s.action = 'close' THEN 1 END) as close_count
+            FROM ads a
+            LEFT JOIN ad_stats s ON a.id = s.ad_id AND s.created_at >= datetime('now', '+8 hours', '-${validDays} days')
+            GROUP BY a.id
+            ORDER BY view_count DESC
+        `);
+
+        // 按日期统计
+        const dailyStats = query(`
+            SELECT
+                date(created_at) as date,
+                COUNT(CASE WHEN action = 'view' THEN 1 END) as views,
+                COUNT(CASE WHEN action = 'click' THEN 1 END) as clicks,
+                COUNT(CASE WHEN action = 'close' THEN 1 END) as closes
+            FROM ad_stats
+            WHERE created_at >= datetime('now', '+8 hours', '-${validDays} days')
+            GROUP BY date(created_at)
+            ORDER BY date DESC
+        `);
+
+        res.json({
+            success: true,
+            data: {
+                days: validDays,
+                totalViews: totalStats?.total_views || 0,
+                totalClicks: totalStats?.total_clicks || 0,
+                totalCloses: totalStats?.total_closes || 0,
+                clickRate: totalStats?.total_views > 0
+                    ? Math.round((totalStats.total_clicks / totalStats.total_views) * 10000) / 100
+                    : 0,
+                adStats: adStats.map(s => ({
+                    id: s.id,
+                    adType: s.ad_type,
+                    name: s.name,
+                    viewCount: s.view_count || 0,
+                    clickCount: s.click_count || 0,
+                    closeCount: s.close_count || 0,
+                    clickRate: s.view_count > 0
+                        ? Math.round((s.click_count / s.view_count) * 10000) / 100
+                        : 0
+                })),
+                dailyStats
+            }
+        });
+    } catch (error) {
+        console.error('获取广告统计概览错误:', error);
+        res.status(500).json({ error: '获取统计数据失败' });
+    }
+});
+
+/**
+ * GET /api/admin/ads/:id/stats
+ * 获取单个广告统计详情
+ */
+router.get('/ads/:id/stats', (req, res) => {
+    try {
+        const adId = parseInt(req.params.id);
+        const days = parseInt(req.query.days) || 7;
+        const validDays = Math.min(Math.max(days, 1), 90);
+
+        // 检查广告是否存在
+        const ad = queryOne('SELECT id, name, ad_type FROM ads WHERE id = ?', [adId]);
+        if (!ad) {
+            return res.status(404).json({ error: '广告不存在' });
+        }
+
+        // 总体统计
+        const totalStats = queryOne(`
+            SELECT
+                COUNT(CASE WHEN action = 'view' THEN 1 END) as view_count,
+                COUNT(CASE WHEN action = 'click' THEN 1 END) as click_count,
+                COUNT(CASE WHEN action = 'close' THEN 1 END) as close_count
+            FROM ad_stats
+            WHERE ad_id = ? AND created_at >= datetime('now', '+8 hours', '-${validDays} days')
+        `, [adId]);
+
+        // 按日期统计
+        const dailyStats = query(`
+            SELECT
+                date(created_at) as date,
+                COUNT(CASE WHEN action = 'view' THEN 1 END) as views,
+                COUNT(CASE WHEN action = 'click' THEN 1 END) as clicks,
+                COUNT(CASE WHEN action = 'close' THEN 1 END) as closes
+            FROM ad_stats
+            WHERE ad_id = ? AND created_at >= datetime('now', '+8 hours', '-${validDays} days')
+            GROUP BY date(created_at)
+            ORDER BY date DESC
+        `, [adId]);
+
+        // 按用户统计
+        const userStats = query(`
+            SELECT
+                s.user_id,
+                u.display_name,
+                u.username,
+                COUNT(CASE WHEN s.action = 'view' THEN 1 END) as view_count,
+                COUNT(CASE WHEN s.action = 'click' THEN 1 END) as click_count,
+                COUNT(CASE WHEN s.action = 'close' THEN 1 END) as close_count
+            FROM ad_stats s
+            LEFT JOIN users u ON s.user_id = u.id
+            WHERE s.ad_id = ? AND s.created_at >= datetime('now', '+8 hours', '-${validDays} days')
+            GROUP BY s.user_id
+            ORDER BY view_count DESC
+            LIMIT 20
+        `, [adId]);
+
+        // 按设备统计
+        const deviceStats = query(`
+            SELECT
+                device_type,
+                COUNT(*) as count
+            FROM ad_stats
+            WHERE ad_id = ? AND created_at >= datetime('now', '+8 hours', '-${validDays} days')
+            GROUP BY device_type
+            ORDER BY count DESC
+        `, [adId]);
+
+        res.json({
+            success: true,
+            data: {
+                ad: {
+                    id: ad.id,
+                    name: ad.name,
+                    adType: ad.ad_type
+                },
+                days: validDays,
+                viewCount: totalStats?.view_count || 0,
+                clickCount: totalStats?.click_count || 0,
+                closeCount: totalStats?.close_count || 0,
+                clickRate: totalStats?.view_count > 0
+                    ? Math.round((totalStats.click_count / totalStats.view_count) * 10000) / 100
+                    : 0,
+                dailyStats,
+                userStats: userStats.map(u => ({
+                    userId: u.user_id,
+                    displayName: u.display_name || '未知用户',
+                    username: u.username,
+                    viewCount: u.view_count || 0,
+                    clickCount: u.click_count || 0,
+                    closeCount: u.close_count || 0
+                })),
+                deviceStats: deviceStats.map(d => ({
+                    deviceType: d.device_type || '未知',
+                    count: d.count
+                }))
+            }
+        });
+    } catch (error) {
+        console.error('获取广告统计详情错误:', error);
+        res.status(500).json({ error: '获取统计数据失败' });
+    }
+});
+
 module.exports = router;

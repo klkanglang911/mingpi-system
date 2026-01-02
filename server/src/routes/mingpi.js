@@ -182,6 +182,86 @@ router.get('/yearly-fortune/:year', (req, res) => {
     }
 });
 
+
+/**
+ * GET /api/mingpi/ads
+ * 获取当前有效的广告
+ */
+router.get('/ads', (req, res) => {
+    try {
+        const { query } = require('../config/database');
+        const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
+        // 查询启用的、在有效期内的广告
+        const ads = query(`
+            SELECT id, ad_type, name, image_url, link_url, display_frequency, countdown_seconds
+            FROM ads
+            WHERE is_enabled = 1
+            AND (start_time IS NULL OR start_time <= ?)
+            AND (end_time IS NULL OR end_time >= ?)
+            ORDER BY sort_order ASC, id DESC
+        `, [now, now]);
+
+        res.json({
+            success: true,
+            data: ads.map(ad => ({
+                id: ad.id,
+                adType: ad.ad_type,
+                name: ad.name,
+                imageUrl: ad.image_url,
+                linkUrl: ad.link_url,
+                displayFrequency: ad.display_frequency,
+                countdownSeconds: ad.countdown_seconds
+            }))
+        });
+    } catch (error) {
+        console.error('获取广告错误:', error);
+        res.status(500).json({ error: '获取广告失败' });
+    }
+});
+
+/**
+ * POST /api/mingpi/ads/:id/stat
+ * 记录广告统计（展示/点击/关闭）
+ */
+router.post('/ads/:id/stat', (req, res) => {
+    try {
+        const { run, queryOne } = require('../config/database');
+        const adId = parseInt(req.params.id);
+        const { action } = req.body;
+
+        // 验证action
+        if (!['view', 'click', 'close'].includes(action)) {
+            return res.status(400).json({ error: '无效的操作类型' });
+        }
+
+        // 验证广告存在
+        const ad = queryOne('SELECT id FROM ads WHERE id = ?', [adId]);
+        if (!ad) {
+            return res.status(404).json({ error: '广告不存在' });
+        }
+
+        // 获取客户端信息
+        const ip = req.headers['x-forwarded-for'] || req.ip || '';
+        const ua = req.headers['user-agent'] || '';
+        let deviceType = 'unknown';
+        if (/Mobile|Android|iPhone/i.test(ua)) deviceType = 'mobile';
+        else if (/Tablet|iPad/i.test(ua)) deviceType = 'tablet';
+        else deviceType = 'desktop';
+
+        // 记录统计
+        run(`
+            INSERT INTO ad_stats (ad_id, user_id, action, ip_address, device_type, created_at)
+            VALUES (?, ?, ?, ?, ?, datetime('now', '+8 hours'))
+        `, [adId, req.user.id, action, ip.split(',')[0].trim(), deviceType]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('记录广告统计错误:', error);
+        res.status(500).json({ error: '记录统计失败' });
+    }
+});
+
 /**
  * GET /api/mingpi/:year/:month
  * 获取指定农历年月的命批

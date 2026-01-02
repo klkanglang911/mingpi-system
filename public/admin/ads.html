@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广告管理 · 命批系统</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #4a4a4a;
+            --vermilion: #c23a2b;
+            --gold-accent: #b8860b;
+            --paper-white: #f8f5f0;
+            --paper-cream: #f0ebe3;
+            --mist-gray: #9a9590;
+            --border-light: rgba(26, 26, 26, 0.1);
+            --success: #2e7d32;
+            --danger: #c62828;
+            --info: #1976d2;
+            --warning: #f57c00;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--ink-black);
+            color: var(--paper-white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 { font-size: 1.25rem; font-weight: 500; }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-right span { font-size: 0.875rem; }
+        .header-right a { color: rgba(255,255,255,0.7); text-decoration: none; font-size: 0.875rem; }
+        .header-right a:hover { color: var(--paper-white); }
+
+        .nav {
+            background: var(--paper-white);
+            border-bottom: 1px solid var(--border-light);
+            padding: 0 2rem;
+        }
+
+        .nav ul { list-style: none; display: flex; gap: 2rem; }
+
+        .nav a {
+            display: block;
+            padding: 1rem 0;
+            color: var(--ink-light);
+            text-decoration: none;
+            font-size: 0.9rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav a:hover, .nav a.active {
+            color: var(--vermilion);
+            border-color: var(--vermilion);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        .ad-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .ad-card {
+            background: var(--paper-white);
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .ad-card-header {
+            background: var(--ink-black);
+            color: var(--paper-white);
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ad-card-header h3 { font-size: 1rem; font-weight: 500; }
+
+        .ad-type-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            background: var(--gold-accent);
+        }
+
+        .ad-card-body { padding: 1.5rem; }
+
+        .ad-preview {
+            background: var(--paper-cream);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            min-height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ad-preview img {
+            max-width: 100%;
+            max-height: 150px;
+            border-radius: 4px;
+        }
+
+        .ad-preview.empty {
+            color: var(--mist-gray);
+            font-size: 0.9rem;
+        }
+
+        .ad-info { margin-bottom: 1rem; }
+
+        .ad-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-light);
+            font-size: 0.875rem;
+        }
+
+        .ad-info-row:last-child { border-bottom: none; }
+
+        .ad-info-label { color: var(--mist-gray); }
+
+        .ad-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-box {
+            background: var(--paper-cream);
+            padding: 0.75rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--ink-black);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+        }
+
+        .ad-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            flex: 1;
+            text-align: center;
+        }
+
+        .btn-primary { background: var(--ink-black); color: var(--paper-white); }
+        .btn-primary:hover { background: var(--ink-light); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { opacity: 0.9; }
+        .btn-info { background: var(--info); color: white; }
+        .btn-info:hover { opacity: 0.9; }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-warning:hover { opacity: 0.9; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { opacity: 0.9; }
+        .btn-secondary {
+            background: var(--paper-cream);
+            color: var(--ink-black);
+            border: 1px solid var(--border-light);
+        }
+
+        .status-enabled { color: var(--success); }
+        .status-disabled { color: var(--danger); }
+
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider { background-color: var(--success); }
+        input:checked + .toggle-slider:before { transform: translateX(24px); }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .modal.show { display: flex; }
+
+        .modal-content {
+            background: var(--paper-white);
+            padding: 2rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h3 { font-size: 1.125rem; }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--mist-gray);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            color: var(--ink-light);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-light);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--gold-accent);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .form-help {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            margin-top: 0.25rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .alert {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: toastSlideIn 0.3s ease-out;
+        }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        .alert-success { background: #2e7d32; color: white; }
+        .alert-error { background: #c62828; color: white; }
+
+        .image-upload-area {
+            border: 2px dashed var(--border-light);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .image-upload-area:hover {
+            border-color: var(--gold-accent);
+            background: rgba(184, 134, 11, 0.05);
+        }
+
+        .image-upload-area.has-image {
+            padding: 1rem;
+        }
+
+        .image-upload-area img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 4px;
+        }
+
+        .image-upload-area .upload-hint {
+            color: var(--mist-gray);
+            font-size: 0.875rem;
+        }
+
+        /* Stats Modal */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-card {
+            background: var(--paper-cream);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stats-card .value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--ink-black);
+        }
+
+        .stats-card .label {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            margin-top: 0.25rem;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .stats-table th {
+            background: var(--paper-cream);
+            font-weight: 500;
+            color: var(--ink-light);
+        }
+
+        .tab-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-light);
+            background: var(--paper-cream);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--ink-black);
+            color: var(--paper-white);
+            border-color: var(--ink-black);
+        }
+
+        @media (max-width: 768px) {
+            .ad-cards { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>命批系统 - 管理后台</h1>
+        <div class="header-right">
+            <span id="adminName">管理员</span>
+            <a href="/" id="logoutBtn">退出</a>
+        </div>
+    </header>
+
+    <nav class="nav">
+        <ul id="navMenu">
+            <li><a href="/admin/">首页</a></li>
+            <li><a href="/admin/users.html">用户管理</a></li>
+            <li><a href="/admin/mingpi.html">命批管理</a></li>
+            <li><a href="/admin/ads.html" class="active">广告管理</a></li>
+            <li><a href="/admin/settings.html">系统设置</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <h2 class="page-title">广告管理</h2>
+
+        <div id="alertBox"></div>
+
+        <div class="ad-cards">
+            <!-- 横版广告卡片 -->
+            <div class="ad-card" id="bannerCard">
+                <div class="ad-card-header">
+                    <h3>横版广告位</h3>
+                    <span class="ad-type-badge">首页月历下方</span>
+                </div>
+                <div class="ad-card-body">
+                    <div class="ad-preview empty" id="bannerPreview">
+                        暂无广告
+                    </div>
+                    <div class="ad-info" id="bannerInfo">
+                        <div class="ad-info-row">
+                            <span class="ad-info-label">名称</span>
+                            <span id="bannerName">-</span>
+                        </div>
+                        <div class="ad-info-row">
+                            <span class="ad-info-label">状态</span>
+                            <span id="bannerStatus">-</span>
+                        </div>
+                        <div class="ad-info-row">
+                            <span class="ad-info-label">有效期</span>
+                            <span id="bannerPeriod">-</span>
+                        </div>
+                    </div>
+                    <div class="ad-stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="bannerViews">0</div>
+                            <div class="stat-label">展示</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="bannerClicks">0</div>
+                            <div class="stat-label">点击</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="bannerClickRate">0%</div>
+                            <div class="stat-label">点击率</div>
+                        </div>
+                    </div>
+                    <div class="ad-actions">
+                        <button class="btn btn-primary" onclick="editAd('banner')">编辑配置</button>
+                        <button class="btn btn-info" onclick="viewStats('banner')">查看统计</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 全屏广告卡片 -->
+            <div class="ad-card" id="fullscreenCard">
+                <div class="ad-card-header">
+                    <h3>全屏广告位</h3>
+                    <span class="ad-type-badge">弹窗竖版</span>
+                </div>
+                <div class="ad-card-body">
+                    <div class="ad-preview empty" id="fullscreenPreview">
+                        暂无广告
+                    </div>
+                    <div class="ad-info" id="fullscreenInfo">
+                        <div class="ad-info-row">
+                            <span class="ad-info-label">名称</span>
+                            <span id="fullscreenName">-</span>
+                        </div>
+                        <div class="ad-info-row">
+                            <span class="ad-info-label">状态</span>
+                            <span id="fullscreenStatus">-</span>
+                        </div>
+                        <div class="ad-info-row">
+                            <span class="ad-info-label">触发频率</span>
+                            <span id="fullscreenFrequency">-</span>
+                        </div>
+                        <div class="ad-info-row">
+                            <span class="ad-info-label">倒计时</span>
+                            <span id="fullscreenCountdown">-</span>
+                        </div>
+                    </div>
+                    <div class="ad-stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="fullscreenViews">0</div>
+                            <div class="stat-label">展示</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="fullscreenClicks">0</div>
+                            <div class="stat-label">点击</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="fullscreenCloses">0</div>
+                            <div class="stat-label">关闭</div>
+                        </div>
+                    </div>
+                    <div class="ad-actions">
+                        <button class="btn btn-primary" onclick="editAd('fullscreen')">编辑配置</button>
+                        <button class="btn btn-info" onclick="viewStats('fullscreen')">查看统计</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑广告 Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="editModalTitle">编辑广告</h3>
+                <button class="modal-close" onclick="closeModal('editModal')">&times;</button>
+            </div>
+            <form id="editForm">
+                <input type="hidden" name="adId" id="editAdId">
+                <input type="hidden" name="adType" id="editAdType">
+
+                <div class="form-group">
+                    <label>广告名称 *</label>
+                    <input type="text" name="name" id="editName" required placeholder="用于管理识别">
+                </div>
+
+                <div class="form-group">
+                    <label>广告图片 *</label>
+                    <div class="image-upload-area" id="imageUploadArea" onclick="document.getElementById('imageInput').click()">
+                        <div class="upload-hint">点击上传图片或输入图片URL</div>
+                    </div>
+                    <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+                    <input type="text" name="imageUrl" id="editImageUrl" placeholder="或直接输入图片URL" style="margin-top: 0.5rem;">
+                </div>
+
+                <div class="form-group">
+                    <label>跳转链接</label>
+                    <input type="url" name="linkUrl" id="editLinkUrl" placeholder="点击广告后跳转的URL（可选）">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>开始时间</label>
+                        <input type="datetime-local" name="startTime" id="editStartTime">
+                        <div class="form-help">留空表示立即生效</div>
+                    </div>
+                    <div class="form-group">
+                        <label>结束时间</label>
+                        <input type="datetime-local" name="endTime" id="editEndTime">
+                        <div class="form-help">留空表示永久有效</div>
+                    </div>
+                </div>
+
+                <!-- 全屏广告特有配置 -->
+                <div id="fullscreenOptions" style="display:none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>触发频率</label>
+                            <select name="displayFrequency" id="editDisplayFrequency">
+                                <option value="every_visit">每次访问</option>
+                                <option value="once_per_day">每天一次</option>
+                                <option value="once_per_login">每次登录</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>倒计时秒数</label>
+                            <select name="countdownSeconds" id="editCountdownSeconds">
+                                <option value="1">1秒</option>
+                                <option value="2">2秒</option>
+                                <option value="3" selected>3秒</option>
+                                <option value="5">5秒</option>
+                                <option value="10">10秒</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 1rem;">
+                        <span>启用广告</span>
+                        <label class="toggle-switch">
+                            <input type="checkbox" name="isEnabled" id="editIsEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="deleteCurrentAd()" id="deleteAdBtn" style="margin-right:auto; display:none;">删除广告</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 统计详情 Modal -->
+    <div class="modal" id="statsModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 id="statsModalTitle">广告统计</h3>
+                <button class="modal-close" onclick="closeModal('statsModal')">&times;</button>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stats-card">
+                    <div class="value" id="statsViews">0</div>
+                    <div class="label">总展示</div>
+                </div>
+                <div class="stats-card">
+                    <div class="value" id="statsClicks">0</div>
+                    <div class="label">总点击</div>
+                </div>
+                <div class="stats-card">
+                    <div class="value" id="statsCloses">0</div>
+                    <div class="label">总关闭</div>
+                </div>
+                <div class="stats-card">
+                    <div class="value" id="statsClickRate">0%</div>
+                    <div class="label">点击率</div>
+                </div>
+            </div>
+
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showStatsTab('daily')">按日统计</button>
+                <button class="tab-btn" onclick="showStatsTab('user')">按用户统计</button>
+                <button class="tab-btn" onclick="showStatsTab('device')">按设备统计</button>
+            </div>
+
+            <div id="statsTabContent">
+                <table class="stats-table">
+                    <thead>
+                        <tr id="statsTableHeader"></tr>
+                    </thead>
+                    <tbody id="statsTableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('statsModal')">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || !user.isAdmin) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('adminName').textContent = user.displayName || '管理员';
+
+        // 更新导航链接为当前后台路径
+        let currentAdminPath = 'admin';
+        (function updateNavLinks() {
+            const currentPath = window.location.pathname;
+            const pathParts = currentPath.split('/').filter(p => p);
+            if (pathParts.length > 0) {
+                currentAdminPath = pathParts[0];
+                document.querySelectorAll('#navMenu a').forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href.startsWith('/admin')) {
+                        link.setAttribute('href', href.replace('/admin', '/' + currentAdminPath));
+                    }
+                });
+            }
+        })();
+
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+        });
+
+        // 广告数据缓存
+        let adsData = { banner: null, fullscreen: null };
+        let currentStatsAd = null;
+        let currentStatsData = null;
+
+        function showAlert(message, type = 'success') {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+            setTimeout(() => { alertBox.innerHTML = ''; }, 3000);
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        // 加载广告列表
+        async function loadAds() {
+            try {
+                const response = await fetch('/api/admin/ads', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    // 按类型分组
+                    adsData = { banner: null, fullscreen: null };
+                    data.data.forEach(ad => {
+                        if (ad.adType === 'banner') adsData.banner = ad;
+                        else if (ad.adType === 'fullscreen') adsData.fullscreen = ad;
+                    });
+
+                    updateAdCard('banner', adsData.banner);
+                    updateAdCard('fullscreen', adsData.fullscreen);
+                }
+            } catch (error) {
+                showAlert('加载广告失败', 'error');
+            }
+        }
+
+        // 更新广告卡片显示
+        function updateAdCard(type, ad) {
+            const prefix = type;
+
+            if (ad) {
+                // 预览图
+                const preview = document.getElementById(prefix + 'Preview');
+                preview.innerHTML = `<img src="${ad.imageUrl}" alt="${ad.name}">`;
+                preview.classList.remove('empty');
+
+                // 信息
+                document.getElementById(prefix + 'Name').textContent = ad.name;
+                document.getElementById(prefix + 'Status').innerHTML = ad.isEnabled
+                    ? '<span class="status-enabled">● 已启用</span>'
+                    : '<span class="status-disabled">● 已禁用</span>';
+
+                if (type === 'banner') {
+                    const period = formatPeriod(ad.startTime, ad.endTime);
+                    document.getElementById('bannerPeriod').textContent = period;
+                } else {
+                    const freqMap = { 'every_visit': '每次访问', 'once_per_day': '每天一次', 'once_per_login': '每次登录' };
+                    document.getElementById('fullscreenFrequency').textContent = freqMap[ad.displayFrequency] || '-';
+                    document.getElementById('fullscreenCountdown').textContent = ad.countdownSeconds + '秒';
+                }
+
+                // 统计
+                document.getElementById(prefix + 'Views').textContent = ad.viewCount || 0;
+                document.getElementById(prefix + 'Clicks').textContent = ad.clickCount || 0;
+
+                if (type === 'banner') {
+                    const clickRate = ad.viewCount > 0 ? ((ad.clickCount / ad.viewCount) * 100).toFixed(1) : 0;
+                    document.getElementById('bannerClickRate').textContent = clickRate + '%';
+                } else {
+                    document.getElementById('fullscreenCloses').textContent = ad.closeCount || 0;
+                }
+            } else {
+                // 无广告
+                const preview = document.getElementById(prefix + 'Preview');
+                preview.innerHTML = '暂无广告';
+                preview.classList.add('empty');
+
+                document.getElementById(prefix + 'Name').textContent = '-';
+                document.getElementById(prefix + 'Status').textContent = '-';
+                document.getElementById(prefix + 'Views').textContent = '0';
+                document.getElementById(prefix + 'Clicks').textContent = '0';
+
+                if (type === 'banner') {
+                    document.getElementById('bannerPeriod').textContent = '-';
+                    document.getElementById('bannerClickRate').textContent = '0%';
+                } else {
+                    document.getElementById('fullscreenFrequency').textContent = '-';
+                    document.getElementById('fullscreenCountdown').textContent = '-';
+                    document.getElementById('fullscreenCloses').textContent = '0';
+                }
+            }
+        }
+
+        function formatPeriod(start, end) {
+            if (!start && !end) return '永久有效';
+            const s = start ? new Date(start).toLocaleDateString() : '立即';
+            const e = end ? new Date(end).toLocaleDateString() : '永久';
+            return `${s} ~ ${e}`;
+        }
+
+        // 编辑广告
+        function editAd(type) {
+            const ad = adsData[type];
+            const isNew = !ad;
+
+            document.getElementById('editModalTitle').textContent = isNew ? '创建广告' : '编辑广告';
+            document.getElementById('editAdId').value = ad ? ad.id : '';
+            document.getElementById('editAdType').value = type;
+            document.getElementById('editName').value = ad ? ad.name : '';
+            document.getElementById('editImageUrl').value = ad ? ad.imageUrl : '';
+            document.getElementById('editLinkUrl').value = ad ? ad.linkUrl || '' : '';
+            document.getElementById('editStartTime').value = ad && ad.startTime ? ad.startTime.slice(0, 16) : '';
+            document.getElementById('editEndTime').value = ad && ad.endTime ? ad.endTime.slice(0, 16) : '';
+            document.getElementById('editDisplayFrequency').value = ad ? ad.displayFrequency : 'every_visit';
+            document.getElementById('editCountdownSeconds').value = ad ? ad.countdownSeconds : 3;
+            document.getElementById('editIsEnabled').checked = ad ? ad.isEnabled : true;
+
+            // 显示/隐藏全屏广告选项
+            document.getElementById('fullscreenOptions').style.display = type === 'fullscreen' ? 'block' : 'none';
+
+            // 显示/隐藏删除按钮
+            document.getElementById('deleteAdBtn').style.display = isNew ? 'none' : 'block';
+
+            // 更新图片预览
+            const uploadArea = document.getElementById('imageUploadArea');
+            if (ad && ad.imageUrl) {
+                uploadArea.innerHTML = `<img src="${ad.imageUrl}" alt="预览">`;
+                uploadArea.classList.add('has-image');
+            } else {
+                uploadArea.innerHTML = '<div class="upload-hint">点击上传图片或输入图片URL</div>';
+                uploadArea.classList.remove('has-image');
+            }
+
+            document.getElementById('editModal').classList.add('show');
+        }
+
+        // 处理图片上传
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64 = e.target.result;
+                    document.getElementById('editImageUrl').value = base64;
+
+                    const uploadArea = document.getElementById('imageUploadArea');
+                    uploadArea.innerHTML = `<img src="${base64}" alt="预览">`;
+                    uploadArea.classList.add('has-image');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 监听URL输入变化
+        document.getElementById('editImageUrl').addEventListener('input', function() {
+            const url = this.value.trim();
+            const uploadArea = document.getElementById('imageUploadArea');
+
+            if (url) {
+                uploadArea.innerHTML = `<img src="${url}" alt="预览" onerror="this.parentElement.innerHTML='<div class=upload-hint>图片加载失败</div>'">`;
+                uploadArea.classList.add('has-image');
+            } else {
+                uploadArea.innerHTML = '<div class="upload-hint">点击上传图片或输入图片URL</div>';
+                uploadArea.classList.remove('has-image');
+            }
+        });
+
+        // 保存广告
+        document.getElementById('editForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const adId = document.getElementById('editAdId').value;
+            const adType = document.getElementById('editAdType').value;
+            const name = document.getElementById('editName').value;
+            const imageUrl = document.getElementById('editImageUrl').value;
+            const linkUrl = document.getElementById('editLinkUrl').value;
+            const startTime = document.getElementById('editStartTime').value;
+            const endTime = document.getElementById('editEndTime').value;
+            const displayFrequency = document.getElementById('editDisplayFrequency').value;
+            const countdownSeconds = parseInt(document.getElementById('editCountdownSeconds').value);
+            const isEnabled = document.getElementById('editIsEnabled').checked;
+
+            if (!imageUrl) {
+                showAlert('请上传广告图片或输入图片URL', 'error');
+                return;
+            }
+
+            const payload = {
+                adType,
+                name,
+                imageUrl,
+                linkUrl: linkUrl || null,
+                startTime: startTime || null,
+                endTime: endTime || null,
+                displayFrequency,
+                countdownSeconds,
+                isEnabled
+            };
+
+            try {
+                const url = adId ? `/api/admin/ads/${adId}` : '/api/admin/ads';
+                const method = adId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeModal('editModal');
+                    showAlert(adId ? '广告已更新' : '广告已创建');
+                    loadAds();
+                } else {
+                    showAlert(data.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        });
+
+        // 删除广告
+        async function deleteCurrentAd() {
+            const adId = document.getElementById('editAdId').value;
+            if (!adId) return;
+
+            if (!confirm('确定要删除这个广告吗？统计数据也会一并删除。')) return;
+
+            try {
+                const response = await fetch(`/api/admin/ads/${adId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (response.ok) {
+                    closeModal('editModal');
+                    showAlert('广告已删除');
+                    loadAds();
+                } else {
+                    const data = await response.json();
+                    showAlert(data.error || '删除失败', 'error');
+                }
+            } catch (error) {
+                showAlert('网络错误', 'error');
+            }
+        }
+
+        // 查看统计
+        async function viewStats(type) {
+            const ad = adsData[type];
+            if (!ad) {
+                showAlert('暂无广告数据', 'error');
+                return;
+            }
+
+            currentStatsAd = ad;
+
+            try {
+                const response = await fetch(`/api/admin/ads/${ad.id}/stats?days=30`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    currentStatsData = data.data;
+
+                    document.getElementById('statsModalTitle').textContent = `${ad.name} - 统计详情`;
+                    document.getElementById('statsViews').textContent = data.data.viewCount;
+                    document.getElementById('statsClicks').textContent = data.data.clickCount;
+                    document.getElementById('statsCloses').textContent = data.data.closeCount;
+                    document.getElementById('statsClickRate').textContent = data.data.clickRate + '%';
+
+                    showStatsTab('daily');
+                    document.getElementById('statsModal').classList.add('show');
+                }
+            } catch (error) {
+                showAlert('加载统计失败', 'error');
+            }
+        }
+
+        // 切换统计标签
+        function showStatsTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            const header = document.getElementById('statsTableHeader');
+            const body = document.getElementById('statsTableBody');
+
+            if (tab === 'daily') {
+                header.innerHTML = '<th>日期</th><th>展示</th><th>点击</th><th>关闭</th>';
+                body.innerHTML = currentStatsData.dailyStats.map(d => `
+                    <tr>
+                        <td>${d.date}</td>
+                        <td>${d.views}</td>
+                        <td>${d.clicks}</td>
+                        <td>${d.closes}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--mist-gray)">暂无数据</td></tr>';
+            } else if (tab === 'user') {
+                header.innerHTML = '<th>用户</th><th>展示</th><th>点击</th><th>关闭</th>';
+                body.innerHTML = currentStatsData.userStats.map(u => `
+                    <tr>
+                        <td>${u.displayName || u.username || '未知'}</td>
+                        <td>${u.viewCount}</td>
+                        <td>${u.clickCount}</td>
+                        <td>${u.closeCount}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="4" style="text-align:center;color:var(--mist-gray)">暂无数据</td></tr>';
+            } else if (tab === 'device') {
+                header.innerHTML = '<th>设备类型</th><th>访问次数</th>';
+                body.innerHTML = currentStatsData.deviceStats.map(d => `
+                    <tr>
+                        <td>${d.deviceType}</td>
+                        <td>${d.count}</td>
+                    </tr>
+                `).join('') || '<tr><td colspan="2" style="text-align:center;color:var(--mist-gray)">暂无数据</td></tr>';
+            }
+        }
+
+        // 初始化
+        loadAds();
+    </script>
+</body>
+</html>
