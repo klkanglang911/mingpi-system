@@ -112,6 +112,44 @@
             border-color: var(--vermilion);
         }
 
+        /* 年份选择器 */
+        .year-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.25rem;
+            animation: fadeInDown 0.6s ease-out 0.1s both;
+        }
+
+        .year-nav-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-light);
+            background: var(--paper-white);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: var(--ink-light);
+        }
+
+        .year-nav-btn:hover {
+            background: var(--paper-cream);
+            border-color: var(--gold-accent);
+            color: var(--gold-accent);
+        }
+
+        .year-display {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            min-width: 100px;
+            text-align: center;
+        }
+
         /* 命局分析区域 */
         .analysis-section {
             background: linear-gradient(135deg, var(--paper-cream) 0%, var(--paper-white) 100%);
@@ -334,6 +372,21 @@
             <p class="user-greeting">愿您今日安好</p>
         </header>
 
+        <!-- 年份选择器 -->
+        <div class="year-selector">
+            <button class="year-nav-btn" id="prevYear" aria-label="上一年">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div class="year-display" id="yearDisplay">2025年</div>
+            <button class="year-nav-btn" id="nextYear" aria-label="下一年">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+
         <section class="analysis-section" id="analysisSection">
             <div class="analysis-title">· 命局分析 ·</div>
 
@@ -372,7 +425,7 @@
 
         <div class="empty-state" id="emptyState" style="display: none;">
             <div class="empty-state-icon">📜</div>
-            <p class="empty-state-text">您的命局分析报告尚未生成<br>请联系管理员添加</p>
+            <p class="empty-state-text">该年份的命局分析报告尚未生成<br>请联系管理员添加</p>
         </div>
 
         <footer class="footer">
@@ -429,6 +482,92 @@
             window.location.href = '/';
         });
 
+        // ========== 农历年计算 ==========
+        const Gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const Zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+        // 农历数据（用于计算农历年份）
+        const lunarInfo = [
+            0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
+            0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
+            0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
+            0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950,
+            0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557,
+            0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5b0, 0x14573, 0x052b0, 0x0a9a8, 0x0e950, 0x06aa0,
+            0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0,
+            0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6,
+            0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570,
+            0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x055c0, 0x0ab60, 0x096d5, 0x092e0,
+            0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5,
+            0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930,
+            0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530,
+            0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45,
+            0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0,
+            0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06b20, 0x1a6c4, 0x0aae0,
+            0x0a2e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4,
+            0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0,
+            0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160,
+            0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252,
+            0x0d520
+        ];
+
+        function lYearDays(y) {
+            let sum = 348;
+            for (let i = 0x8000; i > 0x8; i >>= 1) {
+                sum += (lunarInfo[y - 1900] & i) ? 1 : 0;
+            }
+            return sum + leapDays(y);
+        }
+
+        function leapMonth(y) { return lunarInfo[y - 1900] & 0xf; }
+        function leapDays(y) {
+            if (leapMonth(y)) return (lunarInfo[y - 1900] & 0x10000) ? 30 : 29;
+            return 0;
+        }
+        function monthDays(y, m) { return (lunarInfo[y - 1900] & (0x10000 >> m)) ? 30 : 29; }
+
+        // 阳历转农历
+        function solarToLunar(y, m, d) {
+            if (y < 1900 || y > 2100) return null;
+            let offset = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(1900, 0, 31)) / 86400000);
+            let year = 1900, temp = 0;
+            for (; year < 2101 && offset > 0; year++) {
+                temp = lYearDays(year);
+                offset -= temp;
+            }
+            if (offset < 0) { offset += temp; year--; }
+
+            let isLeap = false, leap = leapMonth(year), month = 1;
+            for (; month < 13 && offset > 0; month++) {
+                if (leap > 0 && month === (leap + 1) && !isLeap) {
+                    --month; isLeap = true; temp = leapDays(year);
+                } else { temp = monthDays(year, month); }
+                if (isLeap && month === (leap + 1)) isLeap = false;
+                offset -= temp;
+            }
+            if (offset === 0 && leap > 0 && month === leap + 1) {
+                if (isLeap) isLeap = false;
+                else { isLeap = true; --month; }
+            }
+            if (offset < 0) { offset += temp; --month; }
+
+            const day = offset + 1;
+            return { year, month, day, isLeap };
+        }
+
+        // 获取农历年名称
+        function getLunarYearName(lunarYear) {
+            return Gan[(lunarYear - 4) % 10] + Zhi[(lunarYear - 4) % 12] + '年';
+        }
+
+        // 获取当前农历年
+        const today = new Date();
+        const todayLunar = solarToLunar(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        const currentLunarYear = todayLunar ? todayLunar.year : today.getFullYear();
+
+        // 当前查看的农历年份（只允许当年和次年）
+        let viewLunarYear = currentLunarYear;
+
         // 拆分八字字符
         function splitPillar(pillar) {
             if (!pillar || pillar.length < 2) return { tiangan: '-', dizhi: '-' };
@@ -438,29 +577,56 @@
             };
         }
 
-        // 加载数据
-        async function loadData() {
+        // 更新年份显示
+        function updateYearDisplay() {
+            document.getElementById('yearDisplay').textContent = getLunarYearName(viewLunarYear);
+            updateNavButtons();
+        }
+
+        // 更新导航按钮状态
+        function updateNavButtons() {
+            const prevBtn = document.getElementById('prevYear');
+            const nextBtn = document.getElementById('nextYear');
+
+            // 当前年不能往前翻
+            if (viewLunarYear <= currentLunarYear) {
+                prevBtn.style.opacity = '0.3';
+                prevBtn.style.pointerEvents = 'none';
+            } else {
+                prevBtn.style.opacity = '1';
+                prevBtn.style.pointerEvents = 'auto';
+            }
+
+            // 次年不能往后翻
+            if (viewLunarYear >= currentLunarYear + 1) {
+                nextBtn.style.opacity = '0.3';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        // 缓存的八字数据（固定，不随年份变化）
+        let cachedProfile = null;
+
+        // 加载八字数据（只加载一次）
+        async function loadProfile() {
+            if (cachedProfile !== null) return cachedProfile;
+
             try {
                 const response = await fetch('/api/mingpi/profile', {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const result = await response.json();
-
-                const profile = result.data;
-
-                // 检查是否有数据
-                if (!profile || !profile.analysis) {
-                    document.getElementById('analysisSection').style.display = 'none';
-                    document.getElementById('emptyState').style.display = 'block';
-                    return;
-                }
+                cachedProfile = result.data;
 
                 // 填充八字摘要
-                if (profile.yearPillar || profile.monthPillar || profile.dayPillar || profile.hourPillar) {
-                    const year = splitPillar(profile.yearPillar);
-                    const month = splitPillar(profile.monthPillar);
-                    const day = splitPillar(profile.dayPillar);
-                    const hour = splitPillar(profile.hourPillar);
+                if (cachedProfile && (cachedProfile.yearPillar || cachedProfile.monthPillar || cachedProfile.dayPillar || cachedProfile.hourPillar)) {
+                    const year = splitPillar(cachedProfile.yearPillar);
+                    const month = splitPillar(cachedProfile.monthPillar);
+                    const day = splitPillar(cachedProfile.dayPillar);
+                    const hour = splitPillar(cachedProfile.hourPillar);
 
                     document.getElementById('yearGan').textContent = year.tiangan;
                     document.getElementById('yearZhi').textContent = year.dizhi;
@@ -474,17 +640,66 @@
                     document.getElementById('baziSummary').style.display = 'block';
                 }
 
+                return cachedProfile;
+            } catch (error) {
+                console.error('加载八字数据失败:', error);
+                return null;
+            }
+        }
+
+        // 加载命局分析数据（按年份）
+        async function loadAnalysis() {
+            // 显示加载状态
+            document.getElementById('analysisContent').textContent = '数据加载中...';
+            document.getElementById('analysisSection').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+
+            try {
+                // 获取该年度的运势数据
+                const response = await fetch(`/api/mingpi/yearly-fortune/${viewLunarYear}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const result = await response.json();
+
+                const fortune = result.data;
+
+                // 检查是否有命局分析数据
+                if (!fortune || !fortune.analysis) {
+                    document.getElementById('analysisSection').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
                 // 填充分析内容
-                document.getElementById('analysisContent').textContent = profile.analysis;
+                document.getElementById('analysisContent').textContent = fortune.analysis;
 
             } catch (error) {
-                console.error('加载数据失败:', error);
+                console.error('加载命局分析失败:', error);
                 document.getElementById('analysisContent').textContent = '加载失败，请刷新重试';
             }
         }
 
+        // 年份切换
+        document.getElementById('prevYear').addEventListener('click', () => {
+            if (viewLunarYear > currentLunarYear) {
+                viewLunarYear--;
+                updateYearDisplay();
+                loadAnalysis();
+            }
+        });
+
+        document.getElementById('nextYear').addEventListener('click', () => {
+            if (viewLunarYear < currentLunarYear + 1) {
+                viewLunarYear++;
+                updateYearDisplay();
+                loadAnalysis();
+            }
+        });
+
         // 初始化
-        loadData();
+        updateYearDisplay();
+        loadProfile();  // 加载八字（一次性）
+        loadAnalysis(); // 加载当前年份的命局分析
     </script>
 </body>
 </html>

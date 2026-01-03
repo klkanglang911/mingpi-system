@@ -1654,6 +1654,7 @@ router.get('/yearly-fortune', (req, res) => {
                 summerContent: f.summer_content,
                 autumnContent: f.autumn_content,
                 winterContent: f.winter_content,
+                analysis: f.analysis,
                 createdAt: f.created_at,
                 updatedAt: f.updated_at
             }))
@@ -1701,6 +1702,7 @@ router.get('/yearly-fortune/:userId/:year', (req, res) => {
                 summerContent: fortune.summer_content,
                 autumnContent: fortune.autumn_content,
                 winterContent: fortune.winter_content,
+                analysis: fortune.analysis,
                 createdAt: fortune.created_at,
                 updatedAt: fortune.updated_at
             }
@@ -1717,7 +1719,7 @@ router.get('/yearly-fortune/:userId/:year', (req, res) => {
  */
 router.post('/yearly-fortune', (req, res) => {
     try {
-        const { userId, lunarYear, dayun, liunian, springContent, summerContent, autumnContent, winterContent } = req.body;
+        const { userId, lunarYear, dayun, liunian, springContent, summerContent, autumnContent, winterContent, analysis } = req.body;
 
         if (!userId || !lunarYear) {
             return res.status(400).json({ error: '请选择用户和年份' });
@@ -1745,10 +1747,12 @@ router.post('/yearly-fortune', (req, res) => {
                 `UPDATE user_yearly_fortune SET
                     dayun = ?, liunian = ?,
                     spring_content = ?, summer_content = ?, autumn_content = ?, winter_content = ?,
+                    analysis = ?,
                     updated_at = datetime("now", "+8 hours")
                 WHERE user_id = ? AND lunar_year = ?`,
                 [dayun || null, liunian || null,
                  springContent || null, summerContent || null, autumnContent || null, winterContent || null,
+                 analysis || null,
                  userId, lunarYear]
             );
             logFromRequest(req, ActionTypes.ADMIN_EDIT_MINGPI, { targetUserId: userId, lunarYear, type: 'yearly-fortune' });
@@ -1756,10 +1760,11 @@ router.post('/yearly-fortune', (req, res) => {
         } else {
             // 创建
             const result = run(
-                `INSERT INTO user_yearly_fortune (user_id, lunar_year, dayun, liunian, spring_content, summer_content, autumn_content, winter_content, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
+                `INSERT INTO user_yearly_fortune (user_id, lunar_year, dayun, liunian, spring_content, summer_content, autumn_content, winter_content, analysis, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now", "+8 hours"), datetime("now", "+8 hours"))`,
                 [userId, lunarYear, dayun || null, liunian || null,
-                 springContent || null, summerContent || null, autumnContent || null, winterContent || null]
+                 springContent || null, summerContent || null, autumnContent || null, winterContent || null,
+                 analysis || null]
             );
             logFromRequest(req, ActionTypes.ADMIN_CREATE_MINGPI, { targetUserId: userId, lunarYear, type: 'yearly-fortune' });
             res.json({ success: true, action: 'created', id: result.lastInsertRowid });

@@ -163,6 +163,12 @@ function createTables() {
     `);
     db.run(`CREATE INDEX IF NOT EXISTS idx_user_yearly_fortune ON user_yearly_fortune(user_id, lunar_year)`);
 
+    // 为 user_yearly_fortune 表添加 analysis 字段（兼容旧数据）
+    try {
+        db.run(`ALTER TABLE user_yearly_fortune ADD COLUMN analysis TEXT`);
+    } catch (e) {
+        // 字段已存在，忽略错误
+    }
 
     // 广告配置表
     db.run(`

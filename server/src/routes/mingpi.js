@@ -125,7 +125,8 @@ router.get('/yearly-fortune', (req, res) => {
                     springContent: fortune.spring_content,
                     summerContent: fortune.summer_content,
                     autumnContent: fortune.autumn_content,
-                    winterContent: fortune.winter_content
+                    winterContent: fortune.winter_content,
+                    analysis: fortune.analysis
                 }
             });
         } else {
@@ -167,7 +168,8 @@ router.get('/yearly-fortune/:year', (req, res) => {
                     springContent: fortune.spring_content,
                     summerContent: fortune.summer_content,
                     autumnContent: fortune.autumn_content,
-                    winterContent: fortune.winter_content
+                    winterContent: fortune.winter_content,
+                    analysis: fortune.analysis
                 }
             });
         } else {

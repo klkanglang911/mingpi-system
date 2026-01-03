@@ -619,6 +619,13 @@
             font-style: italic;
         }
 
+        .tips-hint {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            margin-bottom: 0.5rem;
+        }
+
         .lunar-countdown {
             display: flex;
             align-items: center;
@@ -1967,7 +1974,13 @@
                 });
                 if (response.ok) {
                     const data = await response.json();
-                    tipsEl.textContent = data.data.content || '暂无命批内容';
+                    if (data.data.isDefault) {
+                        // 预置内容：显示提示文字 + 内容
+                        tipsEl.innerHTML = '<span class="tips-hint">暂无本月命批，为您展示——</span>' + data.data.content;
+                    } else {
+                        // 用户录入内容：直接显示
+                        tipsEl.textContent = data.data.content || '暂无命批内容';
+                    }
                     tipsEl.classList.remove('loading');
                 } else {
                     tipsEl.textContent = '暂无命批内容';
