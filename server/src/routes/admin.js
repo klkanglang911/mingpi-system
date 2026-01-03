@@ -5,9 +5,48 @@
 
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
 const { query, queryOne, run, getConfig, setConfig } = require('../config/database');
 const { generatePassword, hashPassword } = require('../utils/password');
 const { logFromRequest, ActionTypes } = require('../utils/accessLog');
+
+// 配置 multer 存储
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = path.join(__dirname, '../../uploads/ads');
+        // 确保目录存在
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        // 生成唯一文件名: 时间戳 + 随机数 + 原始扩展名
+        const ext = path.extname(file.originalname).toLowerCase();
+        const uniqueName = `ad_${Date.now()}_${Math.random().toString(36).substr(2, 9)}${ext}`;
+        cb(null, uniqueName);
+    }
+});
+
+// 文件过滤器，只允许图片
+const fileFilter = (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('只支持 JPEG、PNG、GIF、WebP 格式的图片'), false);
+    }
+};
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 限制 5MB
+    }
+});
 
 // ============ 用户管理 ============
 
@@ -1939,6 +1978,119 @@ router.get('/ads/:id', (req, res) => {
 });
 
 /**
+ * POST /api/admin/ads/upload-image
+ * 上传广告图片
+ */
+router.post('/ads/upload-image', upload.single('image'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: '请选择要上传的图片' });
+        }
+
+        // 返回文件路径（相对于 uploads 目录）
+        const imageUrl = `/uploads/ads/${req.file.filename}`;
+
+        logFromRequest(req, 'admin_upload_ad_image', { filename: req.file.filename });
+
+        res.json({
+            success: true,
+            data: {
+                imageUrl: imageUrl,
+                filename: req.file.filename,
+                size: req.file.size,
+                mimetype: req.file.mimetype
+            }
+        });
+    } catch (error) {
+        console.error('上传广告图片错误:', error);
+        res.status(500).json({ error: '上传图片失败' });
+    }
+});
+
+// 处理 multer 错误
+router.use('/ads/upload-image', (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: '图片大小不能超过 5MB' });
+        }
+        return res.status(400).json({ error: '上传失败: ' + err.message });
+    } else if (err) {
+        return res.status(400).json({ error: err.message });
+    }
+    next();
+});
+
+/**
+ * POST /api/admin/ads/migrate-images
+ * 迁移 Base64 图片到文件存储
+ */
+router.post('/ads/migrate-images', async (req, res) => {
+    try {
+        // 查找所有使用 Base64 存储的广告
+        const ads = query(`SELECT id, name, image_url FROM ads WHERE image_url LIKE 'data:%'`);
+
+        if (ads.length === 0) {
+            return res.json({
+                success: true,
+                message: '没有需要迁移的图片',
+                migrated: 0
+            });
+        }
+
+        const uploadDir = path.join(__dirname, '../../uploads/ads');
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+
+        let migratedCount = 0;
+        const errors = [];
+
+        for (const ad of ads) {
+            try {
+                // 解析 Base64 数据
+                const matches = ad.image_url.match(/^data:image\/(\w+);base64,(.+)$/);
+                if (!matches) {
+                    errors.push({ id: ad.id, name: ad.name, error: '无效的 Base64 格式' });
+                    continue;
+                }
+
+                const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+                const base64Data = matches[2];
+                const buffer = Buffer.from(base64Data, 'base64');
+
+                // 生成文件名
+                const filename = `ad_${ad.id}_${Date.now()}.${ext}`;
+                const filePath = path.join(uploadDir, filename);
+
+                // 写入文件
+                fs.writeFileSync(filePath, buffer);
+
+                // 更新数据库
+                const newImageUrl = `/uploads/ads/${filename}`;
+                run('UPDATE ads SET image_url = ?, updated_at = datetime("now", "+8 hours") WHERE id = ?', [newImageUrl, ad.id]);
+
+                migratedCount++;
+            } catch (err) {
+                errors.push({ id: ad.id, name: ad.name, error: err.message });
+            }
+        }
+
+        logFromRequest(req, 'admin_migrate_ad_images', { migratedCount, errorCount: errors.length });
+
+        res.json({
+            success: true,
+            message: `成功迁移 ${migratedCount} 张图片`,
+            migrated: migratedCount,
+            total: ads.length,
+            errors: errors.length > 0 ? errors : undefined
+        });
+    } catch (error) {
+        console.error('迁移广告图片错误:', error);
+        res.status(500).json({ error: '迁移图片失败' });
+    }
+});
+
+/**
  * POST /api/admin/ads
  * 创建广告
  */
@@ -2046,10 +2198,18 @@ router.delete('/ads/:id', (req, res) => {
     try {
         const adId = parseInt(req.params.id);
 
-        // 检查广告是否存在
-        const ad = queryOne('SELECT id, name FROM ads WHERE id = ?', [adId]);
+        // 检查广告是否存在，并获取图片路径
+        const ad = queryOne('SELECT id, name, image_url FROM ads WHERE id = ?', [adId]);
         if (!ad) {
             return res.status(404).json({ error: '广告不存在' });
+        }
+
+        // 如果是文件存储的图片，删除文件
+        if (ad.image_url && ad.image_url.startsWith('/uploads/ads/')) {
+            const filePath = path.join(__dirname, '../..', ad.image_url);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
         }
 
         // 删除广告（统计数据会级联删除）

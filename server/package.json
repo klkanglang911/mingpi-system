@@ -1,6 +1,6 @@
 {
   "name": "mingpi-system",
-  "version": "1.1.7",
+  "version": "1.2.0",
   "description": "命批系统 - 个性化农历月批服务",
   "main": "src/app.js",
   "scripts": {
@@ -20,6 +20,7 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "multer": "^1.4.5-lts.1"
   }
 }

@@ -362,6 +362,7 @@
 
         .alert-success { background: #2e7d32; color: white; }
         .alert-error { background: #c62828; color: white; }
+        .alert-info { background: #1565c0; color: white; }
 
         .image-upload-area {
             border: 2px dashed var(--border-light);
@@ -479,15 +480,20 @@
     <nav class="nav">
         <ul id="navMenu">
             <li><a href="/admin/">首页</a></li>
-            <li><a href="/admin/users.html">用户管理</a></li>
-            <li><a href="/admin/mingpi.html">命批管理</a></li>
-            <li><a href="/admin/ads.html" class="active">广告管理</a></li>
-            <li><a href="/admin/settings.html">系统设置</a></li>
+            <li><a href="/admin/users">用户管理</a></li>
+            <li><a href="/admin/mingpi">命批管理</a></li>
+            <li><a href="/admin/ads" class="active">广告管理</a></li>
+            <li><a href="/admin/settings">系统设置</a></li>
         </ul>
     </nav>
 
     <div class="container">
-        <h2 class="page-title">广告管理</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 class="page-title" style="margin-bottom: 0;">广告管理</h2>
+            <button onclick="migrateImages()" class="btn" style="background: var(--antique-gold); color: white; font-size: 0.85rem; padding: 0.5rem 1rem;">
+                迁移旧图片
+            </button>
+        </div>
 
         <div id="alertBox"></div>
 
@@ -951,19 +957,51 @@
         }
 
         // 处理图片上传
-        function handleImageUpload(input) {
+        async function handleImageUpload(input) {
             const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    document.getElementById('editImageUrl').value = base64;
+            if (!file) return;
 
-                    const uploadArea = document.getElementById('imageUploadArea');
-                    uploadArea.innerHTML = `<img src="${base64}" alt="预览">`;
+            // 检查文件类型
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showAlert('只支持 JPEG、PNG、GIF、WebP 格式的图片', 'error');
+                return;
+            }
+
+            // 检查文件大小 (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showAlert('图片大小不能超过 5MB', 'error');
+                return;
+            }
+
+            const uploadArea = document.getElementById('imageUploadArea');
+            uploadArea.innerHTML = '<div class="upload-hint">上传中...</div>';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+
+                const response = await fetch('/api/admin/ads/upload-image', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    const imageUrl = data.data.imageUrl;
+                    document.getElementById('editImageUrl').value = imageUrl;
+                    uploadArea.innerHTML = `<img src="${imageUrl}" alt="预览">`;
                     uploadArea.classList.add('has-image');
-                };
-                reader.readAsDataURL(file);
+                } else {
+                    throw new Error(data.error || '上传失败');
+                }
+            } catch (error) {
+                uploadArea.innerHTML = '<div class="upload-hint">上传失败，点击重试</div>';
+                showAlert(error.message || '上传图片失败', 'error');
             }
         }
 
@@ -1140,6 +1178,36 @@
                         <td>${d.count}</td>
                     </tr>
                 `).join('') || '<tr><td colspan="2" style="text-align:center;color:var(--mist-gray)">暂无数据</td></tr>';
+            }
+        }
+
+        // 迁移旧图片（Base64 -> 文件存储）
+        async function migrateImages() {
+            if (!confirm('确定要将所有 Base64 格式的图片迁移到文件存储吗？\n\n这将提升系统性能，迁移后旧格式数据将被删除。')) {
+                return;
+            }
+
+            try {
+                showAlert('正在迁移图片...', 'info');
+
+                const response = await fetch('/api/admin/ads/migrate-images', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    showAlert(data.message);
+                    // 重新加载广告列表
+                    loadAds();
+                } else {
+                    throw new Error(data.error || '迁移失败');
+                }
+            } catch (error) {
+                showAlert(error.message || '迁移图片失败', 'error');
             }
         }
 

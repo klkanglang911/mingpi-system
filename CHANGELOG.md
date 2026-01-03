@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.2.0] - 2026-01-03
+
+### Added / 新增
+- **图片文件存储系统**
+  - 广告图片改为上传到服务器文件系统，不再存储 Base64
+  - 新增 `/api/admin/ads/upload-image` 图片上传接口
+  - 新增 `/api/admin/ads/migrate-images` 旧数据迁移接口
+  - 后台广告管理页面新增"迁移旧图片"按钮
+  - Docker 新增 uploads 持久化卷
+
+### Improved / 优化
+- **URL 美化**
+  - 隐藏 .html 扩展名，URL 更简洁美观
+  - `/main.html` → `/main`
+  - `/analysis.html` → `/analysis`
+  - `/58xuzgnt/users.html` → `/58xuzgnt/users`
+  - 旧链接仍兼容可访问
+
+### Dependencies / 依赖
+- 新增 multer 文件上传中间件
+
+---
+
 ## [1.1.7] - 2026-01-03
 
 ### Fixed / 修复

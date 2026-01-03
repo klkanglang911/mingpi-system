@@ -5,6 +5,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const { initDatabase, getConfig } = require('./config/database');
@@ -27,6 +28,9 @@ app.use(express.json({ limit: '10mb' }));  // 增加请求体大小限制，支�
 const publicPath = process.env.NODE_ENV === 'production'
     ? path.join(__dirname, '../public')
     : path.join(__dirname, '../../public');
+
+// 上传文件目录
+const uploadsPath = path.join(__dirname, '../uploads');
 
 // 动态后台路径中间件
 const dynamicAdminMiddleware = (req, res, next) => {
@@ -56,6 +60,9 @@ app.use(dynamicAdminMiddleware);
 // 静态文件服务
 app.use(express.static(publicPath));
 
+// 上传文件静态服务
+app.use('/uploads', express.static(uploadsPath));
+
 // API 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/mingpi', authMiddleware, mingpiRoutes);
@@ -66,12 +73,38 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// SPA 路由支持 - 所有未匹配的路由返回 index.html
-app.get('*', (req, res) => {
-    // 如果是 API 请求，返回 404
+// URL 美化：隐藏 .html 扩展名
+// 支持 /main, /analysis, /seasons, /bazi, /change-password 等
+app.get('*', (req, res, next) => {
+    // 跳过 API 请求
     if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: '接口不存在' });
     }
+
+    // 跳过已有扩展名的请求（静态资源）
+    if (path.extname(req.path)) {
+        return next();
+    }
+
+    // 跳过根路径
+    if (req.path === '/') {
+        return res.sendFile(path.join(publicPath, 'index.html'));
+    }
+
+    // 尝试查找对应的 .html 文件
+    const htmlPath = path.join(publicPath, req.path + '.html');
+
+    if (fs.existsSync(htmlPath)) {
+        return res.sendFile(htmlPath);
+    }
+
+    // 检查是否是目录，尝试返回 index.html
+    const indexPath = path.join(publicPath, req.path, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        return res.sendFile(indexPath);
+    }
+
+    // 都不存在，返回首页（SPA 兜底）
     res.sendFile(path.join(publicPath, 'index.html'));
 });
 
