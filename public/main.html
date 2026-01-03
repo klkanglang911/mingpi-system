@@ -676,8 +676,41 @@
             font-weight: 600;
             font-size: 1.75rem;
             color: var(--gold-accent);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.15rem;
             position: relative;
+        }
+
+        .jieqi-pair {
+            font-size: 0.85rem;
+            color: rgba(248, 245, 240, 0.9);
+            letter-spacing: 0.15em;
+            margin-bottom: 0.5rem;
+            position: relative;
+            font-weight: 500;
+        }
+
+        .jieqi-time-range {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.7rem;
+            color: rgba(248, 245, 240, 0.6);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .jieqi-time-range .time-start,
+        .jieqi-time-range .time-end {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        .jieqi-time-range .time-arrow {
+            color: var(--gold-accent);
+            opacity: 0.7;
         }
 
         .countdown-text {
@@ -1239,8 +1272,14 @@
             </button>
             <div class="lunar-content">
                 <div class="lunar-month-name" id="lunarMonthName">腊月</div>
+                <div class="jieqi-pair" id="jieqiPair">小寒-大寒</div>
+                <div class="jieqi-time-range" id="jieqiTimeRange">
+                    <span class="time-start">1/5 16:23</span>
+                    <span class="time-arrow">→</span>
+                    <span class="time-end">2/3 22:10</span>
+                </div>
                 <div class="countdown-text" id="countdownText">
-                    距本月结束还剩 <span class="countdown-number" id="daysRemaining">0</span> 天
+                    距丑月开始还有 <span class="countdown-number">0</span> 天
                 </div>
                 <div class="lunar-year-info" id="lunarYearInfo">甲辰年</div>
             </div>
@@ -1477,11 +1516,28 @@
         });
 
         // ========== 农历计算（使用 lunar-javascript 库）==========
-        // 农历月份和日期显示名称
+        // 节气月名称：地支月格式
+        const jieQiMonthNames = [
+            '寅月', '卯月', '辰月', '巳月', '午月', '未月',
+            '申月', '酉月', '戌月', '亥月', '子月', '丑月'
+        ];
+        // 节气月对应的节气对（节-气）
+        const jieQiPairs = [
+            '立春-雨水', '惊蛰-春分', '清明-谷雨', '立夏-小满',
+            '芒种-夏至', '小暑-大暑', '立秋-处暑', '白露-秋分',
+            '寒露-霜降', '立冬-小雪', '大雪-冬至', '小寒-大寒'
+        ];
+        // 节气月短名（用于月历卡片）
+        const jieQiMonthShortNames = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+        // 农历月份和日期显示名称（用于日期格子显示）
         const lunarMonthNames = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
         // 天干地支
         const Gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
         const Zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+        // 节气月对应的起始节气（"节"）
+        const jieQiStartTerms = ['立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪', '小寒'];
+        // 节气月对应的结束节气（下个月的"节"）
+        const jieQiEndTerms = ['惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪', '小寒', '立春'];
 
         // 节日定义（补充库中可能没有的）
         const extraLunarFestivals = {
@@ -1619,7 +1675,7 @@
             }
         }
 
-        // 获取农历月份对应的公历日期范围
+        // 获取农历月份对应的公历日期范围（保留用于日期格子显示农历）
         function getLunarMonthSolarRange(lunarYear, lunarMonth) {
             try {
                 const lunarMonthObj = LunarMonth.fromYm(lunarYear, lunarMonth);
@@ -1654,20 +1710,239 @@
             }
         }
 
+        // ========== 节气月计算 ==========
+        // 获取指定年份某个节气的公历日期（精确到时分秒）
+        function getJieQiDate(year, jieQiName) {
+            try {
+                // 使用 LunarYear 获取节气表（最精确）
+                const lunarYear = LunarYear.fromYear(year);
+                const jieQiJulianDays = lunarYear.getJieQiJulianDays();
+                // 24节气名称顺序（LunarYear.getJieQiJulianDays 从大雪开始）
+                const allJieQi = ['大雪', '冬至', '小寒', '大寒', '立春', '雨水',
+                                 '惊蛰', '春分', '清明', '谷雨', '立夏', '小满',
+                                 '芒种', '夏至', '小暑', '大暑', '立秋', '处暑',
+                                 '白露', '秋分', '寒露', '霜降', '立冬', '小雪'];
+                const index = allJieQi.indexOf(jieQiName);
+                if (index >= 0 && jieQiJulianDays[index]) {
+                    const solar = Solar.fromJulianDay(jieQiJulianDays[index]);
+                    return {
+                        year: solar.getYear(),
+                        month: solar.getMonth(),
+                        day: solar.getDay(),
+                        hour: solar.getHour(),
+                        minute: solar.getMinute(),
+                        second: solar.getSecond(),
+                        timestamp: new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay(),
+                                          solar.getHour(), solar.getMinute(), solar.getSecond()).getTime()
+                    };
+                }
+                return null;
+            } catch (e) {
+                console.error('获取节气日期失败:', e);
+                return null;
+            }
+        }
+
+        // 获取节气月对应的公历日期范围（精确到时分秒）
+        // jieQiYear: 节气年（以立春为界）
+        // jieQiMonth: 1-12 (1=寅月/正月, 12=丑月/腊月)
+        function getJieQiMonthSolarRange(jieQiYear, jieQiMonth) {
+            try {
+                // 节气月对应的起始节气
+                const startTermName = jieQiStartTerms[jieQiMonth - 1];
+                // 下一个节气月的起始节气（作为本月结束）
+                const nextMonth = jieQiMonth === 12 ? 1 : jieQiMonth + 1;
+                const endTermName = jieQiStartTerms[nextMonth - 1];
+
+                // 获取起始节气日期（精确到时分秒）
+                let startDate = getJieQiDateByLunarYear(jieQiYear, startTermName, jieQiMonth);
+                // 获取结束节气日期（下一个月的起始节气，精确到时分秒）
+                let endDate = getJieQiDateByLunarYear(jieQiMonth === 12 ? jieQiYear + 1 : jieQiYear, endTermName, nextMonth);
+
+                if (!startDate || !endDate) {
+                    console.error('获取节气日期失败', jieQiYear, jieQiMonth, startTermName, endTermName);
+                    return null;
+                }
+
+                // 结束日期是下一个节气的前一天（用于日历显示）
+                // 但保存精确的结束时间戳用于边界判断
+                const endDateObj = new Date(endDate.year, endDate.month - 1, endDate.day);
+                endDateObj.setDate(endDateObj.getDate() - 1);
+
+                // 格式化时间字符串（用于显示）
+                const formatTime = (d) => {
+                    const h = String(d.hour || 0).padStart(2, '0');
+                    const m = String(d.minute || 0).padStart(2, '0');
+                    const s = String(d.second || 0).padStart(2, '0');
+                    return `${h}:${m}:${s}`;
+                };
+
+                return {
+                    start: startDate,
+                    end: {
+                        year: endDateObj.getFullYear(),
+                        month: endDateObj.getMonth() + 1,
+                        day: endDateObj.getDate()
+                    },
+                    // 精确的边界时间戳（用于判断日期归属）
+                    startTimestamp: startDate.timestamp,
+                    endTimestamp: endDate.timestamp,
+                    // 时间字符串（用于显示）
+                    startTimeStr: formatTime(startDate),
+                    endTimeStr: formatTime(endDate),
+                    startTerm: startTermName,
+                    endTerm: endTermName
+                };
+            } catch (e) {
+                console.error('获取节气月范围错误:', e);
+                return null;
+            }
+        }
+
+        // 根据节气年获取节气日期（精确到时分秒）
+        // 重要：LunarYear.fromYear(YYYY).getJieQiJulianDays() 返回从 YYYY-1 年12月大雪开始的24节气
+        function getJieQiDateByLunarYear(jieQiYear, jieQiName, jieQiMonth) {
+            try {
+                // 24节气名称顺序（LunarYear.getJieQiJulianDays 从大雪开始）
+                const allJieQi = ['大雪', '冬至', '小寒', '大寒', '立春', '雨水',
+                                 '惊蛰', '春分', '清明', '谷雨', '立夏', '小满',
+                                 '芒种', '夏至', '小暑', '大暑', '立秋', '处暑',
+                                 '白露', '秋分', '寒露', '霜降', '立冬', '小雪'];
+
+                const index = allJieQi.indexOf(jieQiName);
+                if (index < 0) return null;
+
+                // 确定应该使用哪个 LunarYear 对象
+                // LunarYear.fromYear(Y) 返回的节气表：
+                //   - 大雪(index=0)、冬至(index=1) 是 Y-1 年12月的
+                //   - 小寒(index=2)~小雪(index=23) 是 Y 年的
+                //
+                // 节气月与公历年的关系：
+                //   - 子月(11)：大雪/冬至在 jieQiYear 年12月 → 需要 LunarYear.fromYear(jieQiYear+1)
+                //   - 丑月(12)：小寒/大寒在 jieQiYear+1 年1月 → 需要 LunarYear.fromYear(jieQiYear+1)
+                //   - 寅月(1)~亥月(10)：节气在 jieQiYear 年 → 需要 LunarYear.fromYear(jieQiYear)
+
+                let lunarYearParam;
+                if (jieQiMonth >= 11) {
+                    // 子月(11)和丑月(12)：使用 jieQiYear+1
+                    lunarYearParam = jieQiYear + 1;
+                } else {
+                    // 寅月(1)到亥月(10)：使用 jieQiYear
+                    lunarYearParam = jieQiYear;
+                }
+
+                const lunarYear = LunarYear.fromYear(lunarYearParam);
+                const jieQiJulianDays = lunarYear.getJieQiJulianDays();
+
+                if (jieQiJulianDays[index]) {
+                    const solar = Solar.fromJulianDay(jieQiJulianDays[index]);
+                    return {
+                        year: solar.getYear(),
+                        month: solar.getMonth(),
+                        day: solar.getDay(),
+                        hour: solar.getHour(),
+                        minute: solar.getMinute(),
+                        second: solar.getSecond(),
+                        timestamp: new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay(),
+                                          solar.getHour(), solar.getMinute(), solar.getSecond()).getTime()
+                    };
+                }
+
+                return null;
+            } catch (e) {
+                console.error('获取节气日期失败:', jieQiYear, jieQiName, e);
+                return null;
+            }
+        }
+
+        // 根据公历日期获取当前所处的节气月
+        function getCurrentJieQiMonth(solarYear, solarMonth, solarDay) {
+            try {
+                const solar = Solar.fromYmd(solarYear, solarMonth, solarDay);
+                const lunar = solar.getLunar();
+
+                // 获取当前日期所在的节气月
+                // lunar-javascript 的 getMonthInGanZhi() 返回月干支
+                // 月支即可确定节气月
+                const monthGanZhi = lunar.getMonthInGanZhi();
+                const monthZhi = monthGanZhi.charAt(1); // 取地支
+
+                // 地支到节气月的映射
+                const zhiToMonth = {
+                    '寅': 1, '卯': 2, '辰': 3, '巳': 4, '午': 5, '未': 6,
+                    '申': 7, '酉': 8, '戌': 9, '亥': 10, '子': 11, '丑': 12
+                };
+
+                const jieQiMonth = zhiToMonth[monthZhi];
+
+                // 计算节气年（以立春为界）
+                // lunar.getYearInGanZhi() 返回的是以立春为界的年干支
+                const yearGanZhi = lunar.getYearInGanZhi();
+                const yearGan = yearGanZhi.charAt(0);
+                const yearZhi = yearGanZhi.charAt(1);
+
+                // 通过天干地支反推年份
+                // 甲子年 = 公元4年，每60年一循环
+                const ganIndex = Gan.indexOf(yearGan);
+                const zhiIndex = Zhi.indexOf(yearZhi);
+
+                // 计算干支序号(0-59)
+                let ganZhiIndex = 0;
+                for (let i = 0; i < 60; i++) {
+                    if (i % 10 === ganIndex && i % 12 === zhiIndex) {
+                        ganZhiIndex = i;
+                        break;
+                    }
+                }
+
+                // 公元4年是甲子年(序号0)
+                // 计算当前干支对应的年份（在当前世纪附近）
+                let jieQiYear = 4 + ganZhiIndex;
+                while (jieQiYear < solarYear - 60) {
+                    jieQiYear += 60;
+                }
+                // 确保年份在合理范围内
+                while (jieQiYear > solarYear + 1) {
+                    jieQiYear -= 60;
+                }
+
+                return {
+                    year: jieQiYear,
+                    month: jieQiMonth,
+                    name: jieQiMonthNames[jieQiMonth - 1],
+                    shortName: jieQiMonthShortNames[jieQiMonth - 1] + '月',
+                    yearGanZhi: yearGanZhi,
+                    monthGanZhi: monthGanZhi
+                };
+            } catch (e) {
+                console.error('获取当前节气月失败:', e);
+                return null;
+            }
+        }
+
         // ========== 状态 ==========
         const today = new Date();
         const todayYear = today.getFullYear();
         const todayMonth = today.getMonth() + 1;
         const todayDate = today.getDate();
-        let viewLunarYear, viewLunarMonth;
-        let viewLunarMonthRange = { start: null, end: null };
+        let viewJieQiYear, viewJieQiMonth;  // 节气年月
+        let viewJieQiMonthRange = { start: null, end: null };  // 节气月的公历日期范围
 
-        function isInViewLunarMonth(year, month, day) {
-            if (!viewLunarMonthRange.start || !viewLunarMonthRange.end) return false;
-            const date = new Date(year, month - 1, day);
-            const startDate = new Date(viewLunarMonthRange.start.year, viewLunarMonthRange.start.month - 1, viewLunarMonthRange.start.day);
-            const endDate = new Date(viewLunarMonthRange.end.year, viewLunarMonthRange.end.month - 1, viewLunarMonthRange.end.day);
-            return date >= startDate && date <= endDate;
+        function isInViewJieQiMonth(year, month, day) {
+            if (!viewJieQiMonthRange.start || !viewJieQiMonthRange.end) return false;
+            if (!viewJieQiMonthRange.startTimestamp || !viewJieQiMonthRange.endTimestamp) {
+                // 兼容旧数据格式
+                const date = new Date(year, month - 1, day);
+                const startDate = new Date(viewJieQiMonthRange.start.year, viewJieQiMonthRange.start.month - 1, viewJieQiMonthRange.start.day);
+                const endDate = new Date(viewJieQiMonthRange.end.year, viewJieQiMonthRange.end.month - 1, viewJieQiMonthRange.end.day);
+                return date >= startDate && date <= endDate;
+            }
+            // 使用精确时间戳判断：
+            // 一天的开始时间 >= 节气月开始时间，且 < 下个节气月开始时间
+            const dayStart = new Date(year, month - 1, day, 0, 0, 0).getTime();
+            const dayEnd = new Date(year, month - 1, day, 23, 59, 59).getTime();
+            // 如果这一天的任何时刻在节气月内，则认为属于该月
+            return dayStart >= viewJieQiMonthRange.startTimestamp && dayStart < viewJieQiMonthRange.endTimestamp;
         }
 
         function isPastDate(year, month, day) {
@@ -1685,7 +1960,8 @@
             tipsEl.classList.add('loading');
 
             try {
-                const response = await fetch(`/api/mingpi/${viewLunarYear}/${viewLunarMonth}`, {
+                // 使用节气年月查询命批
+                const response = await fetch(`/api/mingpi/${viewJieQiYear}/${viewJieQiMonth}`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if (response.ok) {
@@ -1704,39 +1980,87 @@
         }
 
         // ========== UI 更新 ==========
-        function updateLunarView() {
-            viewLunarMonthRange = getLunarMonthSolarRange(viewLunarYear, viewLunarMonth);
+        function updateJieQiView() {
+            viewJieQiMonthRange = getJieQiMonthSolarRange(viewJieQiYear, viewJieQiMonth);
             updateCountdown();
             renderCalendar();
             loadMingpi();
         }
 
         function updateCountdown() {
-            const range = viewLunarMonthRange;
+            const range = viewJieQiMonthRange;
             if (!range) return;
 
-            document.getElementById('lunarMonthName').textContent = lunarMonthNames[viewLunarMonth - 1] + '月';
+            // 显示节气月名称（如：寅月）
+            document.getElementById('lunarMonthName').textContent = jieQiMonthNames[viewJieQiMonth - 1];
+
+            // 显示节气对（如：立春-雨水）
+            document.getElementById('jieqiPair').textContent = jieQiPairs[viewJieQiMonth - 1];
+
+            // 显示完整的时间范围（精确到秒，包含年份）
+            const timeRangeEl = document.getElementById('jieqiTimeRange');
+            if (range.start && range.startTimeStr) {
+                // 获取结束时间（下个节气的开始时间）
+                const nextMonth = viewJieQiMonth === 12 ? 1 : viewJieQiMonth + 1;
+                const nextYear = viewJieQiMonth === 12 ? viewJieQiYear + 1 : viewJieQiYear;
+                const nextRange = getJieQiMonthSolarRange(nextYear, nextMonth);
+
+                // 格式化起始时间（含年份）
+                const startYear = range.start.year;
+                const startDateStr = `${startYear}/${range.start.month}/${range.start.day} ${range.startTimeStr}`;
+
+                // 格式化结束时间
+                let endDateStr = '';
+                if (nextRange && nextRange.start && nextRange.startTimeStr) {
+                    const endYear = nextRange.start.year;
+                    // 如果年份相同，省略年份
+                    if (endYear === startYear) {
+                        endDateStr = `${nextRange.start.month}/${nextRange.start.day} ${nextRange.startTimeStr}`;
+                    } else {
+                        endDateStr = `${endYear}/${nextRange.start.month}/${nextRange.start.day} ${nextRange.startTimeStr}`;
+                    }
+                } else {
+                    endDateStr = `${range.end.month}/${range.end.day}`;
+                }
+
+                timeRangeEl.innerHTML = `
+                    <span class="time-start">${startDateStr}</span>
+                    <span class="time-arrow">→</span>
+                    <span class="time-end">${endDateStr}</span>
+                `;
+            }
+
+            // 显示节气年干支
             document.getElementById('lunarYearInfo').textContent =
-                Gan[(viewLunarYear - 4) % 10] + Zhi[(viewLunarYear - 4) % 12] + '年';
+                Gan[(viewJieQiYear - 4) % 10] + Zhi[(viewJieQiYear - 4) % 12] + '年';
 
             const countdownEl = document.getElementById('countdownText');
-            const todayLunar = solarToLunar(todayYear, todayMonth, todayDate);
+            const todayJieQi = getCurrentJieQiMonth(todayYear, todayMonth, todayDate);
 
-            // 只有当前农历月才显示剩余天数
-            if (todayLunar && viewLunarYear === todayLunar.year && viewLunarMonth === todayLunar.month) {
-                const remaining = todayLunar.monthDays - todayLunar.day;
-                countdownEl.innerHTML = `距本月结束还剩 <span class="countdown-number">${remaining}</span> 天`;
+            // 只有当前节气月才显示倒计时，非当前月不显示（因为时间范围已包含完整信息）
+            if (todayJieQi && viewJieQiYear === todayJieQi.year && viewJieQiMonth === todayJieQi.month) {
+                // 获取下个月的名称
+                const nextMonth = viewJieQiMonth === 12 ? 1 : viewJieQiMonth + 1;
+                const nextMonthName = jieQiMonthNames[nextMonth - 1];
+
+                // 使用精确时间戳计算距离下个月开始的天数
+                const now = new Date().getTime();
+                if (range.endTimestamp) {
+                    const diffMs = range.endTimestamp - now;
+                    const remaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                    countdownEl.innerHTML = `距<span style="color: var(--gold-accent);">${nextMonthName}</span>开始还有 <span class="countdown-number">${remaining}</span> 天`;
+                    countdownEl.style.display = 'block';
+                } else {
+                    countdownEl.style.display = 'none';
+                }
             } else {
-                // 非当前月份，显示日期范围
-                const startStr = `${range.start.month}月${range.start.day}日`;
-                const endStr = `${range.end.month}月${range.end.day}日`;
-                const yearPrefix = range.end.year !== range.start.year ? range.end.year + '年' : '';
-                countdownEl.innerHTML = `<span style="font-size: 0.8rem;">${range.start.year}年${startStr} - ${yearPrefix}${endStr}</span>`;
+                // 非当前月份，隐藏倒计时区域（时间范围已经包含完整信息）
+                countdownEl.style.display = 'none';
             }
         }
 
         function renderCalendar() {
-            const range = viewLunarMonthRange;
+            const range = viewJieQiMonthRange;
             if (!range) return;
 
             // 计算需要显示哪些阳历月份
@@ -1818,8 +2142,8 @@
             if (isToday) cell.classList.add('today');
             if (isWeekend) cell.classList.add('weekend');
 
-            const inLunarMonth = isInViewLunarMonth(year, month, day);
-            if (inLunarMonth && !isToday) cell.classList.add('lunar-month-belong');
+            const inJieQiMonth = isInViewJieQiMonth(year, month, day);
+            if (inJieQiMonth && !isToday) cell.classList.add('lunar-month-belong');
 
             const past = isPastDate(year, month, day);
             if (past && !isToday) cell.classList.add('past');
@@ -1902,13 +2226,14 @@
 
         // ========== 初始化 ==========
         async function init() {
-            const todayLunar = solarToLunar(todayYear, todayMonth, todayDate);
-            viewLunarYear = todayLunar.year;
-            viewLunarMonth = todayLunar.month;
+            // 使用节气月（以节气为界的月份）
+            const todayJieQi = getCurrentJieQiMonth(todayYear, todayMonth, todayDate);
+            viewJieQiYear = todayJieQi.year;
+            viewJieQiMonth = todayJieQi.month;
 
             // 初次加载数据
             updateProgress(40, '加载数据中...');
-            viewLunarMonthRange = getLunarMonthSolarRange(viewLunarYear, viewLunarMonth);
+            viewJieQiMonthRange = getJieQiMonthSolarRange(viewJieQiYear, viewJieQiMonth);
             updateCountdown();
             renderCalendar();
 
@@ -1932,23 +2257,23 @@
             // 标记数据加载完成
             markDataLoaded();
 
-            // 绑定月份切换事件
+            // 绑定月份切换事件（节气月切换）
             document.getElementById('prevLunarMonth').addEventListener('click', () => {
-                viewLunarMonth--;
-                if (viewLunarMonth < 1) {
-                    viewLunarMonth = 12;
-                    viewLunarYear--;
+                viewJieQiMonth--;
+                if (viewJieQiMonth < 1) {
+                    viewJieQiMonth = 12;
+                    viewJieQiYear--;
                 }
-                updateLunarView();
+                updateJieQiView();
             });
 
             document.getElementById('nextLunarMonth').addEventListener('click', () => {
-                viewLunarMonth++;
-                if (viewLunarMonth > 12) {
-                    viewLunarMonth = 1;
-                    viewLunarYear++;
+                viewJieQiMonth++;
+                if (viewJieQiMonth > 12) {
+                    viewJieQiMonth = 1;
+                    viewJieQiYear++;
                 }
-                updateLunarView();
+                updateJieQiView();
             });
         }
 

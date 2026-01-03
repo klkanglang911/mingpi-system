@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const { queryOne } = require('../config/database');
-const { getCurrentLunarYearMonth, getLunarMonthName } = require('../utils/lunar');
+const { getCurrentJieQiYearMonth, getJieQiMonthName } = require('../utils/lunar');
 
 // 默认命批内容
 const defaultTips = [
@@ -22,26 +22,26 @@ const defaultTips = [
 
 /**
  * GET /api/mingpi/current
- * 获取当前农历月的命批
+ * 获取当前节气月的命批
  */
 router.get('/current', (req, res) => {
     try {
-        const lunar = getCurrentLunarYearMonth();
+        const jieQi = getCurrentJieQiYearMonth();
 
-        // 查询当前用户当前月的命批
+        // 查询当前用户当前节气月的命批
         const mingpi = queryOne(
             'SELECT content FROM mingpi WHERE user_id = ? AND lunar_year = ? AND lunar_month = ?',
-            [req.user.id, lunar.year, lunar.month]
+            [req.user.id, jieQi.year, jieQi.month]
         );
 
         if (mingpi) {
             res.json({
                 success: true,
                 data: {
-                    lunarYear: lunar.year,
-                    lunarMonth: lunar.month,
-                    lunarMonthName: lunar.monthName,
-                    yearGanZhi: lunar.yearGanZhi,
+                    lunarYear: jieQi.year,
+                    lunarMonth: jieQi.month,
+                    lunarMonthName: jieQi.monthName,
+                    yearGanZhi: jieQi.yearGanZhi,
                     content: mingpi.content,
                     isDefault: false
                 }
@@ -52,10 +52,10 @@ router.get('/current', (req, res) => {
             res.json({
                 success: true,
                 data: {
-                    lunarYear: lunar.year,
-                    lunarMonth: lunar.month,
-                    lunarMonthName: lunar.monthName,
-                    yearGanZhi: lunar.yearGanZhi,
+                    lunarYear: jieQi.year,
+                    lunarMonth: jieQi.month,
+                    lunarMonthName: jieQi.monthName,
+                    yearGanZhi: jieQi.yearGanZhi,
                     content: randomTip,
                     isDefault: true
                 }
@@ -264,7 +264,7 @@ router.post('/ads/:id/stat', (req, res) => {
 
 /**
  * GET /api/mingpi/:year/:month
- * 获取指定农历年月的命批
+ * 获取指定节气年月的命批
  * 注意：此路由必须放在最后，因为它会匹配所有两段路径
  */
 router.get('/:year/:month', (req, res) => {
@@ -277,7 +277,7 @@ router.get('/:year/:month', (req, res) => {
             return res.status(400).json({ error: '无效的年月参数' });
         }
 
-        const monthName = getLunarMonthName(month);
+        const monthName = getJieQiMonthName(month);
 
         // 查询命批
         const mingpi = queryOne(

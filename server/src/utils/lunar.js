@@ -36,6 +36,19 @@ const lunarDays = ['初一', '初二', '初三', '初四', '初五', '初六', '
     '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
     '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'];
 
+// 节气月名称（地支名 + 传统名）
+const jieQiMonthNames = [
+    '寅月（正月）', '卯月（二月）', '辰月（三月）', '巳月（四月）',
+    '午月（五月）', '未月（六月）', '申月（七月）', '酉月（八月）',
+    '戌月（九月）', '亥月（十月）', '子月（冬月）', '丑月（腊月）'
+];
+
+// 节气月短名（仅地支）
+const jieQiMonthShortNames = ['寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥', '子', '丑'];
+
+// 节气月对应的起始节气（"节"）
+const jieQiStartTerms = ['立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪', '小寒'];
+
 // 计算农历年总天数
 function lYearDays(y) {
     let sum = 348;
@@ -203,12 +216,113 @@ function getLunarMonthName(month) {
     return lunarMonths[month - 1] + '月';
 }
 
+/**
+ * 获取节气月名称
+ * @param {number} month - 节气月份 (1-12, 1=寅月/正月)
+ * @returns {string} 节气月名称
+ */
+function getJieQiMonthName(month) {
+    if (month < 1 || month > 12) return '';
+    return jieQiMonthNames[month - 1];
+}
+
+/**
+ * 获取节气月短名
+ * @param {number} month - 节气月份 (1-12)
+ * @returns {string} 节气月短名（仅地支）
+ */
+function getJieQiMonthShortName(month) {
+    if (month < 1 || month > 12) return '';
+    return jieQiMonthShortNames[month - 1] + '月';
+}
+
+/**
+ * 获取当前节气年月
+ * 节气年以立春为界，节气月以"节"为界
+ * @returns {object} 当前节气年月信息
+ */
+function getCurrentJieQiYearMonth() {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const d = now.getDate();
+
+    // 使用农历计算获取月干支
+    // 这里简化处理：根据公历日期估算节气月
+    // 实际项目中应使用 lunar-javascript 库进行精确计算
+
+    // 节气月大约对应的公历月份：
+    // 寅月(1)：2月4日左右 - 3月5日左右
+    // 卯月(2)：3月6日左右 - 4月4日左右
+    // ...以此类推
+
+    // 简化的节气月估算（精确计算应使用 lunar-javascript）
+    const jieQiMonthMap = [
+        { month: 12, startDay: 6 },  // 丑月：1月6日左右开始
+        { month: 1, startDay: 4 },   // 寅月：2月4日左右开始
+        { month: 2, startDay: 6 },   // 卯月：3月6日左右开始
+        { month: 3, startDay: 5 },   // 辰月：4月5日左右开始
+        { month: 4, startDay: 6 },   // 巳月：5月6日左右开始
+        { month: 5, startDay: 6 },   // 午月：6月6日左右开始
+        { month: 6, startDay: 7 },   // 未月：7月7日左右开始
+        { month: 7, startDay: 8 },   // 申月：8月8日左右开始
+        { month: 8, startDay: 8 },   // 酉月：9月8日左右开始
+        { month: 9, startDay: 8 },   // 戌月：10月8日左右开始
+        { month: 10, startDay: 7 },  // 亥月：11月7日左右开始
+        { month: 11, startDay: 7 }   // 子月：12月7日左右开始
+    ];
+
+    // 确定当前节气月
+    let jieQiMonth = 1;
+    for (let i = 0; i < 12; i++) {
+        const nextIdx = (i + 1) % 12;
+        const curr = jieQiMonthMap[i];
+        const next = jieQiMonthMap[nextIdx];
+
+        const currMonth = curr.month === 12 ? 1 : curr.month + 1;
+        const nextMonth = next.month === 12 ? 1 : next.month + 1;
+
+        // 检查当前日期是否在这个节气月范围内
+        if (currMonth === m) {
+            if (d >= curr.startDay) {
+                jieQiMonth = i === 0 ? 12 : i;
+                break;
+            } else {
+                jieQiMonth = i === 0 ? 11 : i - 1;
+                if (jieQiMonth === 0) jieQiMonth = 12;
+                break;
+            }
+        }
+    }
+
+    // 确定节气年（以立春为界）
+    let jieQiYear = y;
+    // 立春之前属于上一年
+    if (m === 1 || (m === 2 && d < 4)) {
+        jieQiYear = y - 1;
+    }
+
+    return {
+        year: jieQiYear,
+        month: jieQiMonth,
+        monthName: jieQiMonthNames[jieQiMonth - 1],
+        shortName: jieQiMonthShortNames[jieQiMonth - 1] + '月',
+        yearGanZhi: Gan[(jieQiYear - 4) % 10] + Zhi[(jieQiYear - 4) % 12]
+    };
+}
+
 module.exports = {
     solarToLunar,
     getLunarMonthSolarRange,
     getCurrentLunarYearMonth,
     getLunarMonthName,
+    getJieQiMonthName,
+    getJieQiMonthShortName,
+    getCurrentJieQiYearMonth,
     lunarMonths,
+    jieQiMonthNames,
+    jieQiMonthShortNames,
+    jieQiStartTerms,
     Gan,
     Zhi,
     Animals
