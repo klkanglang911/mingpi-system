@@ -1979,26 +1979,51 @@ router.get('/ads/:id', (req, res) => {
 
 /**
  * POST /api/admin/ads/upload-image
- * 上传广告图片
+ * 上传广告图片（支持同时上传缩略图）
  */
-router.post('/ads/upload-image', upload.single('image'), (req, res) => {
+router.post('/ads/upload-image', upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 }
+]), (req, res) => {
     try {
-        if (!req.file) {
+        if (!req.files || !req.files.image || req.files.image.length === 0) {
             return res.status(400).json({ error: '请选择要上传的图片' });
         }
 
-        // 返回文件路径（相对于 uploads 目录）
-        const imageUrl = `/uploads/ads/${req.file.filename}`;
+        const imageFile = req.files.image[0];
+        const imageUrl = `/uploads/ads/${imageFile.filename}`;
 
-        logFromRequest(req, 'admin_upload_ad_image', { filename: req.file.filename });
+        // 处理缩略图
+        let thumbnailUrl = imageUrl;  // 默认使用原图
+        if (req.files.thumbnail && req.files.thumbnail.length > 0) {
+            const thumbFile = req.files.thumbnail[0];
+            // 重命名缩略图文件，添加 _thumb 后缀
+            const thumbExt = path.extname(thumbFile.filename);
+            const thumbBasename = path.basename(imageFile.filename, path.extname(imageFile.filename));
+            const newThumbName = `${thumbBasename}_thumb${thumbExt || '.webp'}`;
+            const oldThumbPath = path.join(__dirname, '../../uploads/ads', thumbFile.filename);
+            const newThumbPath = path.join(__dirname, '../../uploads/ads', newThumbName);
+
+            // 重命名文件
+            if (fs.existsSync(oldThumbPath)) {
+                fs.renameSync(oldThumbPath, newThumbPath);
+            }
+            thumbnailUrl = `/uploads/ads/${newThumbName}`;
+        }
+
+        logFromRequest(req, 'admin_upload_ad_image', {
+            filename: imageFile.filename,
+            hasThumbnail: !!req.files.thumbnail
+        });
 
         res.json({
             success: true,
             data: {
                 imageUrl: imageUrl,
-                filename: req.file.filename,
-                size: req.file.size,
-                mimetype: req.file.mimetype
+                thumbnailUrl: thumbnailUrl,
+                filename: imageFile.filename,
+                size: imageFile.size,
+                mimetype: imageFile.mimetype
             }
         });
     } catch (error) {

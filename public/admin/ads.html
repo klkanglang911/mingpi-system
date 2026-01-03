@@ -917,7 +917,7 @@
                 document.getElementById('editEndTime').value = '';
                 document.getElementById('editDisplayFrequency').value = 'every_visit';
                 document.getElementById('editCountdownSeconds').value = 3;
-                document.getElementById('editIsEnabled').checked = true;
+                document.getElementById('editIsEnabled').checked = false;  // 新建广告默认不启用
                 uploadArea.innerHTML = '<div class="upload-hint">点击上传图片或输入图片URL</div>';
                 uploadArea.classList.remove('has-image');
             } else {
@@ -975,11 +975,17 @@
             }
 
             const uploadArea = document.getElementById('imageUploadArea');
-            uploadArea.innerHTML = '<div class="upload-hint">上传中...</div>';
+            uploadArea.innerHTML = '<div class="upload-hint">处理图片中...</div>';
 
             try {
+                // 生成缩略图
+                const thumbnailBlob = await compressImage(file, 300, 0.7);  // 最大宽度300px，质量0.7
+
                 const formData = new FormData();
                 formData.append('image', file);
+                formData.append('thumbnail', thumbnailBlob, 'thumbnail.webp');
+
+                uploadArea.innerHTML = '<div class="upload-hint">上传中...</div>';
 
                 const response = await fetch('/api/admin/ads/upload-image', {
                     method: 'POST',
@@ -993,8 +999,10 @@
 
                 if (response.ok && data.success) {
                     const imageUrl = data.data.imageUrl;
+                    const thumbnailUrl = data.data.thumbnailUrl || imageUrl;
                     document.getElementById('editImageUrl').value = imageUrl;
-                    uploadArea.innerHTML = `<img src="${imageUrl}" alt="预览">`;
+                    // 后台预览使用缩略图
+                    uploadArea.innerHTML = `<img src="${thumbnailUrl}" alt="预览">`;
                     uploadArea.classList.add('has-image');
                 } else {
                     throw new Error(data.error || '上传失败');
@@ -1003,6 +1011,48 @@
                 uploadArea.innerHTML = '<div class="upload-hint">上传失败，点击重试</div>';
                 showAlert(error.message || '上传图片失败', 'error');
             }
+        }
+
+        // 压缩图片生成缩略图
+        function compressImage(file, maxWidth, quality) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+
+                    // 计算缩放比例
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // 绘制图片
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 转换为 Blob
+                    canvas.toBlob(
+                        (blob) => {
+                            if (blob) {
+                                resolve(blob);
+                            } else {
+                                reject(new Error('压缩图片失败'));
+                            }
+                        },
+                        'image/webp',
+                        quality
+                    );
+                };
+
+                img.onerror = () => reject(new Error('加载图片失败'));
+                img.src = URL.createObjectURL(file);
+            });
         }
 
         // 监听URL输入变化
