@@ -814,6 +814,45 @@
             font-weight: 600;
         }
 
+        /* 多节日滚动容器 */
+        .lunar-day-scroll {
+            height: 0.7rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .lunar-day-scroll-inner {
+            display: flex;
+            flex-direction: column;
+            animation: scrollUp var(--scroll-duration, 4s) ease-in-out infinite;
+        }
+
+        .lunar-day-scroll-inner .lunar-day {
+            margin-top: 0;
+            height: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @keyframes scrollUp {
+            0%, 40% { transform: translateY(0); }
+            50%, 90% { transform: translateY(-50%); }
+            100% { transform: translateY(0); }
+        }
+
+        /* 三个节日时的动画 */
+        .lunar-day-scroll-inner.items-3 {
+            animation: scrollUp3 6s ease-in-out infinite;
+        }
+
+        @keyframes scrollUp3 {
+            0%, 26% { transform: translateY(0); }
+            33%, 59% { transform: translateY(-33.33%); }
+            66%, 92% { transform: translateY(-66.66%); }
+            100% { transform: translateY(0); }
+        }
+
         .footer {
             text-align: center;
             margin-top: 2rem;
@@ -1361,6 +1400,8 @@
     </div>
 
 
+    <!-- 引入 lunar-javascript 农历计算库 -->
+    <script src="lunar.js"></script>
     <script>
         // ========== 加载页面控制 ==========
         const loadingScreen = document.getElementById('loadingScreen');
@@ -1431,49 +1472,16 @@
             window.location.href = '/';
         });
 
-        // ========== 农历计算 ==========
-        const lunarInfo = [
-            0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
-            0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
-            0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
-            0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950,
-            0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557,
-            0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5b0, 0x14573, 0x052b0, 0x0a9a8, 0x0e950, 0x06aa0,
-            0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0,
-            0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6,
-            0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570,
-            0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x055c0, 0x0ab60, 0x096d5, 0x092e0,
-            0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5,
-            0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930,
-            0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530,
-            0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45,
-            0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0,
-            0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06b20, 0x1a6c4, 0x0aae0,
-            0x0a2e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4,
-            0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0,
-            0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160,
-            0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252,
-            0x0d520
-        ];
-
+        // ========== 农历计算（使用 lunar-javascript 库）==========
+        // 农历月份和日期显示名称
+        const lunarMonthNames = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
+        // 天干地支
         const Gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
         const Zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
-        const lunarMonths = ['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'];
-        const lunarDays = ['初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十',
-            '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十',
-            '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'];
 
-        const solarTerms = ['小寒', '大寒', '立春', '雨水', '惊蛰', '春分', '清明', '谷雨',
-            '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑',
-            '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至'];
-        const sTermInfo = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921,
-            173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033,
-            353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758];
-
-        const lunarFestivals = {
-            '1-1': '春节', '1-15': '元宵', '5-5': '端午', '7-7': '七夕',
-            '7-15': '中元', '8-15': '中秋', '9-9': '重阳', '12-8': '腊八',
-            '12-23': '小年', '12-30': '除夕'
+        // 节日定义（补充库中可能没有的）
+        const extraLunarFestivals = {
+            '12-23': '小年'
         };
         const solarFestivals = {
             '1-1': '元旦', '2-14': '情人节', '3-8': '妇女节', '4-1': '愚人节',
@@ -1481,97 +1489,165 @@
             '12-25': '圣诞节'
         };
 
-        function lYearDays(y) {
-            let sum = 348;
-            for (let i = 0x8000; i > 0x8; i >>= 1) {
-                sum += (lunarInfo[y - 1900] & i) ? 1 : 0;
-            }
-            return sum + leapDays(y);
-        }
-
-        function leapMonth(y) { return lunarInfo[y - 1900] & 0xf; }
-        function leapDays(y) {
-            if (leapMonth(y)) return (lunarInfo[y - 1900] & 0x10000) ? 30 : 29;
-            return 0;
-        }
-        function monthDays(y, m) { return (lunarInfo[y - 1900] & (0x10000 >> m)) ? 30 : 29; }
-
+        // 使用 lunar-javascript 库进行公历转农历
         function solarToLunar(y, m, d) {
-            if (y < 1900 || y > 2100) return null;
-            let offset = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(1900, 0, 31)) / 86400000);
-            let year = 1900, temp = 0;
-            for (; year < 2101 && offset > 0; year++) {
-                temp = lYearDays(year);
-                offset -= temp;
+            try {
+                const solar = Solar.fromYmd(y, m, d);
+                const lunar = solar.getLunar();
+                return {
+                    year: lunar.getYear(),
+                    month: lunar.getMonth(),
+                    day: lunar.getDay(),
+                    isLeap: lunar.getMonth() < 0,  // 负数表示闰月
+                    monthDays: Math.abs(LunarMonth.fromYm(lunar.getYear(), lunar.getMonth()).getDayCount()),
+                    yearGan: lunar.getYearGan(),
+                    yearZhi: lunar.getYearZhi(),
+                    monthName: lunarMonthNames[Math.abs(lunar.getMonth()) - 1] + '月',
+                    dayName: lunar.getDayInChinese()
+                };
+            } catch (e) {
+                console.error('农历转换错误:', e);
+                return null;
             }
-            if (offset < 0) { offset += temp; year--; }
-
-            let isLeap = false, leap = leapMonth(year), month = 1;
-            for (; month < 13 && offset > 0; month++) {
-                if (leap > 0 && month === (leap + 1) && !isLeap) {
-                    --month; isLeap = true; temp = leapDays(year);
-                } else { temp = monthDays(year, month); }
-                if (isLeap && month === (leap + 1)) isLeap = false;
-                offset -= temp;
-            }
-            if (offset === 0 && leap > 0 && month === leap + 1) {
-                if (isLeap) isLeap = false;
-                else { isLeap = true; --month; }
-            }
-            if (offset < 0) { offset += temp; --month; }
-
-            const day = offset + 1;
-            return {
-                year, month, day, isLeap, monthDays: temp,
-                yearGan: Gan[(year - 4) % 10],
-                yearZhi: Zhi[(year - 4) % 12],
-                monthName: lunarMonths[month - 1] + '月',
-                dayName: lunarDays[day - 1]
-            };
         }
 
+        // 使用 lunar-javascript 库获取节气
         function getSolarTerm(y, m, d) {
-            const solarPeriod = (y, n) => {
-                const julianDay = 2415021.324 + (y - 1900) * 365.2422 + sTermInfo[n] / 1440;
-                const date = new Date((julianDay - 2440587.5) * 86400000);
-                return date.getUTCDate();
-            };
-            const termIndex1 = (m - 1) * 2;
-            const termIndex2 = termIndex1 + 1;
-            if (d === solarPeriod(y, termIndex1)) return solarTerms[termIndex1];
-            if (d === solarPeriod(y, termIndex2)) return solarTerms[termIndex2];
-            return null;
+            try {
+                const solar = Solar.fromYmd(y, m, d);
+                const lunar = solar.getLunar();
+                const jieQi = lunar.getJieQi();
+                return jieQi || null;
+            } catch (e) {
+                return null;
+            }
         }
 
+        // 获取节日
         function getFestival(y, m, d, lunar) {
+            // 先检查公历节日
             const solarKey = `${m}-${d}`;
             if (solarFestivals[solarKey]) return solarFestivals[solarKey];
-            const lunarKey = `${lunar.month}-${lunar.day}`;
-            if (lunarFestivals[lunarKey]) return lunarFestivals[lunarKey];
-            if (lunar.month === 12 && lunar.day === lunar.monthDays) return '除夕';
+
+            // 使用 lunar-javascript 库获取节日
+            try {
+                const solar = Solar.fromYmd(y, m, d);
+                const lunarObj = solar.getLunar();
+
+                // 获取农历节日
+                const festivals = lunarObj.getFestivals();
+                if (festivals && festivals.length > 0) {
+                    return festivals[0];
+                }
+
+                // 检查额外的农历节日
+                const lunarKey = `${lunar.month}-${lunar.day}`;
+                if (extraLunarFestivals[lunarKey]) return extraLunarFestivals[lunarKey];
+
+                // 检查除夕（农历腊月最后一天）
+                if (lunar.month === 12 && lunar.day === lunar.monthDays) return '除夕';
+            } catch (e) {
+                // 忽略错误
+            }
             return null;
         }
 
-        function getLunarMonthSolarRange(lunarYear, lunarMonth) {
-            if (lunarYear < 1900 || lunarYear > 2100 || lunarMonth < 1 || lunarMonth > 12) return null;
-            let daysFromBase = 0;
-            for (let y = 1900; y < lunarYear; y++) daysFromBase += lYearDays(y);
-            const leap = leapMonth(lunarYear);
-            for (let m = 1; m < lunarMonth; m++) {
-                daysFromBase += monthDays(lunarYear, m);
-                if (leap > 0 && m === leap) daysFromBase += leapDays(lunarYear);
+        // 获取数九（从冬至开始，每九天为一"九"，共九九八十一天）
+        function getShuJiu(y, m, d) {
+            try {
+                const shuJiuNames = ['冬一九', '冬二九', '冬三九', '冬四九', '冬五九', '冬六九', '冬七九', '冬八九', '冬九九'];
+
+                // 获取当前日期
+                const currentDate = new Date(y, m - 1, d);
+
+                // 查找当年或前一年的冬至日期
+                // 冬至通常在12月21-23日之间
+                let dongZhiYear = y;
+                let dongZhiDate = null;
+
+                // 先检查当年12月的冬至
+                for (let day = 20; day <= 23; day++) {
+                    const term = getSolarTerm(y, 12, day);
+                    if (term === '冬至') {
+                        dongZhiDate = new Date(y, 11, day);
+                        break;
+                    }
+                }
+
+                // 如果当前日期在当年冬至之前，需要用上一年的冬至
+                if (dongZhiDate && currentDate < dongZhiDate) {
+                    dongZhiDate = null;
+                    dongZhiYear = y - 1;
+                }
+
+                // 如果没找到或需要上一年的，查找上一年12月的冬至
+                if (!dongZhiDate) {
+                    for (let day = 20; day <= 23; day++) {
+                        const term = getSolarTerm(dongZhiYear, 12, day);
+                        if (term === '冬至') {
+                            dongZhiDate = new Date(dongZhiYear, 11, day);
+                            break;
+                        }
+                    }
+                }
+
+                if (!dongZhiDate) return null;
+
+                // 计算距离冬至的天数
+                const diffTime = currentDate.getTime() - dongZhiDate.getTime();
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                // 数九范围：0-80天（共81天）
+                if (diffDays < 0 || diffDays > 80) return null;
+
+                // 计算是第几九的第几天
+                const jiuIndex = Math.floor(diffDays / 9);  // 0-8
+                const dayInJiu = diffDays % 9 + 1;  // 1-9
+
+                // 只在每个"九"的第一天显示
+                if (dayInJiu === 1) {
+                    return shuJiuNames[jiuIndex];
+                }
+
+                return null;
+            } catch (e) {
+                return null;
             }
-            const baseTime = Date.UTC(1900, 0, 31);
-            const startTime = baseTime + daysFromBase * 86400000;
-            const startDate = new Date(startTime);
-            const days = monthDays(lunarYear, lunarMonth);
-            const endTime = startTime + (days - 1) * 86400000;
-            const endDate = new Date(endTime);
-            return {
-                start: { year: startDate.getUTCFullYear(), month: startDate.getUTCMonth() + 1, day: startDate.getUTCDate() },
-                end: { year: endDate.getUTCFullYear(), month: endDate.getUTCMonth() + 1, day: endDate.getUTCDate() },
-                days
-            };
+        }
+
+        // 获取农历月份对应的公历日期范围
+        function getLunarMonthSolarRange(lunarYear, lunarMonth) {
+            try {
+                const lunarMonthObj = LunarMonth.fromYm(lunarYear, lunarMonth);
+                if (!lunarMonthObj) return null;
+
+                const days = lunarMonthObj.getDayCount();
+
+                // 获取该农历月初一对应的公历日期
+                const firstDay = Lunar.fromYmd(lunarYear, lunarMonth, 1);
+                const firstSolar = firstDay.getSolar();
+
+                // 获取该农历月最后一天对应的公历日期
+                const lastDay = Lunar.fromYmd(lunarYear, lunarMonth, days);
+                const lastSolar = lastDay.getSolar();
+
+                return {
+                    start: {
+                        year: firstSolar.getYear(),
+                        month: firstSolar.getMonth(),
+                        day: firstSolar.getDay()
+                    },
+                    end: {
+                        year: lastSolar.getYear(),
+                        month: lastSolar.getMonth(),
+                        day: lastSolar.getDay()
+                    },
+                    days
+                };
+            } catch (e) {
+                console.error('获取农历月份范围错误:', e);
+                return null;
+            }
         }
 
         // ========== 状态 ==========
@@ -1635,7 +1711,7 @@
             const range = viewLunarMonthRange;
             if (!range) return;
 
-            document.getElementById('lunarMonthName').textContent = lunarMonths[viewLunarMonth - 1] + '月';
+            document.getElementById('lunarMonthName').textContent = lunarMonthNames[viewLunarMonth - 1] + '月';
             document.getElementById('lunarYearInfo').textContent =
                 Gan[(viewLunarYear - 4) % 10] + Zhi[(viewLunarYear - 4) % 12] + '年';
 
@@ -1747,28 +1823,76 @@
             const lunar = solarToLunar(year, month, day);
             const solarTerm = getSolarTerm(year, month, day);
             const festival = getFestival(year, month, day, lunar);
+            const shuJiu = getShuJiu(year, month, day);
 
             const solarDiv = document.createElement('div');
             solarDiv.className = 'solar-day';
             solarDiv.textContent = showMonthPrefix ? `${month}/${day}` : day;
 
-            const lunarDiv = document.createElement('div');
-            lunarDiv.className = 'lunar-day';
+            // 收集所有要显示的标签（节气、节日、数九等）
+            const labels = [];
 
-            if (festival) {
-                lunarDiv.textContent = festival;
-                lunarDiv.classList.add('festival');
-            } else if (solarTerm) {
-                lunarDiv.textContent = solarTerm;
-                lunarDiv.classList.add('festival');
-            } else if (lunar.day === 1) {
-                lunarDiv.textContent = lunar.monthName;
-            } else {
-                lunarDiv.textContent = lunar.dayName;
+            // 节气优先级最高
+            if (solarTerm) {
+                labels.push({ text: solarTerm, isFestival: true });
             }
 
-            cell.appendChild(solarDiv);
-            cell.appendChild(lunarDiv);
+            // 数九（与节气同级显示）
+            if (shuJiu) {
+                labels.push({ text: shuJiu, isFestival: true });
+            }
+
+            // 节日
+            if (festival) {
+                labels.push({ text: festival, isFestival: true });
+            }
+
+            // 如果没有节气、数九和节日，显示农历日期
+            if (labels.length === 0) {
+                if (lunar.day === 1) {
+                    labels.push({ text: lunar.monthName, isFestival: false });
+                } else {
+                    labels.push({ text: lunar.dayName, isFestival: false });
+                }
+            }
+
+            // 根据标签数量决定显示方式
+            if (labels.length === 1) {
+                // 单个标签，直接显示
+                const lunarDiv = document.createElement('div');
+                lunarDiv.className = 'lunar-day';
+                lunarDiv.textContent = labels[0].text;
+                if (labels[0].isFestival) {
+                    lunarDiv.classList.add('festival');
+                }
+                cell.appendChild(solarDiv);
+                cell.appendChild(lunarDiv);
+            } else {
+                // 多个标签，使用滚动动画
+                const scrollContainer = document.createElement('div');
+                scrollContainer.className = 'lunar-day-scroll';
+
+                const scrollInner = document.createElement('div');
+                scrollInner.className = 'lunar-day-scroll-inner';
+                if (labels.length === 3) {
+                    scrollInner.classList.add('items-3');
+                }
+
+                labels.forEach(label => {
+                    const lunarDiv = document.createElement('div');
+                    lunarDiv.className = 'lunar-day';
+                    lunarDiv.textContent = label.text;
+                    if (label.isFestival) {
+                        lunarDiv.classList.add('festival');
+                    }
+                    scrollInner.appendChild(lunarDiv);
+                });
+
+                scrollContainer.appendChild(scrollInner);
+                cell.appendChild(solarDiv);
+                cell.appendChild(scrollContainer);
+            }
+
             return cell;
         }
 
