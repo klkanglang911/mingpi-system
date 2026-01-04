@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.5.1] - 2026-01-04
+
+### Added / 新增
+- **微信访问限制功能**
+  - 用户前端页面仅限微信浏览器访问
+  - 非微信访问显示引导页面（复制链接到微信打开）
+  - 隐藏测试入口 `/bypass/xxx`（Cookie 有效期 7 天）
+  - 管理后台不受限制，任意浏览器可访问
+  - API、静态资源、上传文件等路径不受限制
+
+### Dependencies / 依赖
+- 新增 cookie-parser 中间件
+
+---
+
 ## [1.5.0] - 2026-01-04
 
 ### Added / 新增

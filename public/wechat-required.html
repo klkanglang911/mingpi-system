@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>请在微信中打开 · 灵庐书院</title>
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #3d3d3d;
+            --paper-white: #f8f5f0;
+            --paper-cream: #efe9e0;
+            --vermilion: #c23a2b;
+            --gold-accent: #b8860b;
+            --mist-gray: #9a9590;
+            --wechat-green: #07c160;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            background: var(--paper-white);
+            color: var(--ink-black);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 10%, rgba(200, 195, 185, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(180, 175, 165, 0.3) 0%, transparent 40%),
+                radial-gradient(ellipse at 60% 40%, rgba(190, 185, 175, 0.2) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .icon-wechat {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 1.5rem;
+            background: var(--wechat-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 4px 20px rgba(7, 193, 96, 0.3);
+        }
+
+        .icon-wechat svg {
+            width: 48px;
+            height: 48px;
+            fill: white;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.1rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: var(--mist-gray);
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--mist-gray), transparent);
+        }
+
+        .divider-text {
+            font-size: 0.8rem;
+            color: var(--mist-gray);
+        }
+
+        .steps {
+            text-align: left;
+            background: var(--paper-cream);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-num {
+            width: 22px;
+            height: 22px;
+            background: var(--vermilion);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            font-size: 0.9rem;
+            color: var(--ink-light);
+            line-height: 1.5;
+            padding-top: 2px;
+        }
+
+        .btn-copy {
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            background: var(--wechat-green);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-copy:hover {
+            background: #06ae56;
+            transform: translateY(-1px);
+        }
+
+        .btn-copy:active {
+            transform: translateY(0);
+        }
+
+        .btn-copy.copied {
+            background: var(--gold-accent);
+        }
+
+        .btn-copy svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .footer {
+            margin-top: 2.5rem;
+            text-align: center;
+        }
+
+        .footer-brand {
+            font-size: 0.9rem;
+            color: var(--vermilion);
+            letter-spacing: 0.2rem;
+            font-weight: 500;
+        }
+
+        .footer-slogan {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            margin-top: 0.25rem;
+            letter-spacing: 0.1rem;
+        }
+
+        @media (max-width: 360px) {
+            html { font-size: 14px; }
+            .container { padding: 0 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon-wechat">
+            <svg viewBox="0 0 24 24">
+                <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.328.328 0 0 0 .186-.059l2.114-1.225a.87.87 0 0 1 .415-.116.88.88 0 0 1 .232.03c.968.254 2.006.389 3.077.389.289 0 .574-.014.857-.039a4.482 4.482 0 0 1-.125-1.057c0-3.57 3.534-6.469 7.912-6.469.283 0 .562.015.838.043-.72-3.605-4.313-6.042-8.882-6.042zM5.855 5.5c.57 0 1.032.453 1.032 1.012s-.462 1.012-1.032 1.012a1.02 1.02 0 0 1-1.032-1.012c0-.559.462-1.012 1.032-1.012zm5.672 0c.57 0 1.032.453 1.032 1.012s-.462 1.012-1.032 1.012a1.02 1.02 0 0 1-1.032-1.012c0-.559.462-1.012 1.032-1.012zM17.245 10c-3.87 0-7.016 2.572-7.016 5.744 0 3.17 3.146 5.744 7.016 5.744.76 0 1.49-.1 2.174-.27a.71.71 0 0 1 .188-.024.7.7 0 0 1 .335.093l1.692.978a.26.26 0 0 0 .15.047.235.235 0 0 0 .233-.234c0-.059-.023-.116-.038-.173l-.313-1.181a.477.477 0 0 1 .171-.53C23.075 19.138 24 17.56 24 15.744 24 12.572 20.854 10 17.245 10zm-2.383 3.406c.457 0 .826.361.826.808a.817.817 0 0 1-.826.808.817.817 0 0 1-.826-.808c0-.447.37-.808.826-.808zm4.766 0c.457 0 .826.361.826.808a.817.817 0 0 1-.826.808.817.817 0 0 1-.826-.808c0-.447.37-.808.826-.808z"/>
+            </svg>
+        </div>
+
+        <h1 class="title">请在微信中打开</h1>
+        <p class="subtitle">为了更好的体验，本应用仅支持在微信内访问</p>
+
+        <div class="steps">
+            <div class="step">
+                <span class="step-num">1</span>
+                <span class="step-text">点击下方按钮复制链接</span>
+            </div>
+            <div class="step">
+                <span class="step-num">2</span>
+                <span class="step-text">打开微信，发送链接给自己或好友</span>
+            </div>
+            <div class="step">
+                <span class="step-num">3</span>
+                <span class="step-text">在微信中点击链接即可访问</span>
+            </div>
+        </div>
+
+        <button class="btn-copy" id="copyBtn" onclick="copyLink()">
+            <svg viewBox="0 0 24 24">
+                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+            </svg>
+            <span id="copyText">复制链接</span>
+        </button>
+
+        <div class="footer">
+            <div class="footer-brand">灵庐书院</div>
+            <div class="footer-slogan">人间有净土 · 欢迎来灵庐</div>
+        </div>
+    </div>
+
+    <script>
+        function copyLink() {
+            const url = window.location.href;
+            const btn = document.getElementById('copyBtn');
+            const text = document.getElementById('copyText');
+
+            // 尝试使用 Clipboard API
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    showCopied();
+                }).catch(() => {
+                    fallbackCopy(url);
+                });
+            } else {
+                fallbackCopy(url);
+            }
+
+            function fallbackCopy(text) {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    showCopied();
+                } catch (e) {
+                    alert('复制失败，请手动复制链接：\n' + url);
+                }
+                document.body.removeChild(textarea);
+            }
+
+            function showCopied() {
+                btn.classList.add('copied');
+                text.textContent = '已复制';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    text.textContent = '复制链接';
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>
