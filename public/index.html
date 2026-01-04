@@ -9,9 +9,6 @@
     <title>登录 · 灵庐书院流星赶月</title>
     <!-- 预加载Logo图片，避免CSS解析阻塞图片加载 -->
     <link rel="preload" href="/images/Logo.png" as="image">
-    <!-- 国内 CDN 字体 -->
-    <link rel="preconnect" href="https://fonts.font.im">
-    <link href="https://fonts.font.im/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>
         :root {
             --ink-black: #1a1a1a;
@@ -32,7 +29,7 @@
         }
 
         body {
-            font-family: "Noto Serif SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             background: linear-gradient(135deg, var(--paper-white) 0%, var(--paper-cream) 100%);
             min-height: 100vh;
             display: flex;
@@ -114,7 +111,7 @@
         }
 
         .title {
-            font-family: "ZCOOL XiaoWei", "Noto Serif SC", "KaiTi", serif;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             font-weight: 600;
             font-size: 2.5rem;
             color: var(--ink-black);
@@ -206,7 +203,7 @@
             border: none;
             border-radius: 8px;
             font-size: 1rem;
-            font-family: "Noto Serif SC", "PingFang SC", serif;
+            font-family: inherit;
             cursor: pointer;
             transition: all 0.3s ease;
             letter-spacing: 0.3em;
@@ -304,7 +301,7 @@
 
         /* 使用优雅字体显示加载文字 */
         .loading-title {
-            font-family: "ZCOOL XiaoWei", "Noto Serif SC", "KaiTi", "PingFang SC", serif;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             font-size: 1.8rem;
             font-weight: 600;
             color: var(--ink-black);
@@ -316,7 +313,7 @@
         }
 
         .loading-subtitle {
-            font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             font-size: 0.9rem;
             color: var(--mist-gray);
             letter-spacing: 0.2em;

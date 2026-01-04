@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 本文件记录项目的所有重要更新。
 
+## [1.6.1] - 2026-01-04
+
+### Improved / 优化
+- **字体加载性能优化**
+  - 登录页面（index.html）替换为系统字体
+  - 修改密码页面（update-password.html）替换为系统字体
+  - 修改登录账号页面（change-username.html）替换为系统字体
+  - 个人中心页面（profile.html）替换为系统字体
+  - 导航栏标签（main.html、fortune.html、seasons.html）替换为系统字体
+  - 移除 Web 字体链接，减少页面加载时间
+  - 使用系统字体栈，在不同操作系统上自动选择最佳字体
+
 ## [1.6.0] - 2026-01-04
 
 ### Improved / 优化

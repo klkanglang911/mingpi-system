@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Version Management (版本管理规范)
 
-**当前版本**: v1.6.0
+**当前版本**: v1.6.1
 
 ### 版本更新规则（用户主动触发）
 **重要**: 每次代码更新迭代后，等待用户主动说"升级版本"才进行 GitHub 推送和版本号更新。
