@@ -1,6 +1,6 @@
 {
   "name": "mingpi-system",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "命批系统 - 个性化农历月批服务",
   "main": "src/app.js",
   "scripts": {
