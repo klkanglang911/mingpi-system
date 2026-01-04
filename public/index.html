@@ -9,6 +9,9 @@
     <title>登录 · 灵庐书院流星赶月</title>
     <!-- 预加载Logo图片，避免CSS解析阻塞图片加载 -->
     <link rel="preload" href="/images/Logo.png" as="image">
+    <!-- 国内 CDN 字体 -->
+    <link rel="preconnect" href="https://fonts.font.im">
+    <link href="https://fonts.font.im/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
     <style>
         :root {
             --ink-black: #1a1a1a;
@@ -29,7 +32,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-family: "Noto Serif SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", serif;
             background: linear-gradient(135deg, var(--paper-white) 0%, var(--paper-cream) 100%);
             min-height: 100vh;
             display: flex;
@@ -37,6 +40,23 @@
             align-items: flex-start;
             padding: 1rem;
             padding-top: 2rem;
+            position: relative;
+            font-variant-ligatures: common-ligatures;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="300" height="300" filter="url(%23noise)" opacity="0.03"/></svg>'),
+                radial-gradient(ellipse at 20% 10%, rgba(200, 195, 185, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(180, 175, 165, 0.25) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 0;
         }
 
         .login-container {
@@ -44,10 +64,13 @@
             max-width: 380px;
             background: var(--paper-white);
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            box-shadow:
+                0 10px 40px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
             padding: 2.5rem 2rem;
             position: relative;
             overflow: hidden;
+            z-index: 1;
         }
 
         .login-container::before {
@@ -91,17 +114,37 @@
         }
 
         .title {
-            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", "KaiTi", serif;
             font-weight: 600;
             font-size: 2.5rem;
             color: var(--ink-black);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.3rem;
+            text-shadow:
+                1px 1px 0 rgba(184, 134, 11, 0.1),
+                2px 2px 6px rgba(0, 0, 0, 0.08);
+            position: relative;
+            display: inline-block;
+        }
+
+        .title::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold-accent), transparent);
+            opacity: 0.6;
         }
 
         .subtitle {
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             color: var(--mist-gray);
-            letter-spacing: 0.2em;
+            letter-spacing: 0.3em;
+            font-weight: 400;
+            margin-top: 0.75rem;
         }
 
         .login-form {
@@ -157,20 +200,24 @@
 
         .btn-login {
             width: 100%;
-            padding: 0.875rem 1rem;
+            padding: 1rem;
             background: var(--ink-black);
             color: var(--paper-white);
             border: none;
             border-radius: 8px;
             font-size: 1rem;
-            font-family: inherit;
+            font-family: "Noto Serif SC", "PingFang SC", serif;
             cursor: pointer;
-            transition: all 0.2s ease;
-            letter-spacing: 0.2em;
+            transition: all 0.3s ease;
+            letter-spacing: 0.3em;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .btn-login:hover {
             background: var(--ink-light);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
 
         .btn-login:disabled {
@@ -255,21 +302,24 @@
             border-radius: 8px;
         }
 
-        /* 使用系统字体显示加载文字 */
+        /* 使用优雅字体显示加载文字 */
         .loading-title {
-            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
-            font-size: 1.5rem;
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", "KaiTi", "PingFang SC", serif;
+            font-size: 1.8rem;
             font-weight: 600;
             color: var(--ink-black);
-            letter-spacing: 0.2em;
+            letter-spacing: 0.3em;
             margin-bottom: 0.5rem;
+            text-shadow:
+                1px 1px 0 rgba(184, 134, 11, 0.1),
+                2px 2px 6px rgba(0, 0, 0, 0.08);
         }
 
         .loading-subtitle {
-            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
-            font-size: 0.85rem;
+            font-family: "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+            font-size: 0.9rem;
             color: var(--mist-gray);
-            letter-spacing: 0.15em;
+            letter-spacing: 0.2em;
         }
 
         .loading-progress {

@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>岁运分析 · 灵庐书院</title>
+    <link rel="preconnect" href="https://fonts.font.im">
+    <link href="https://fonts.font.im/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #3d3d3d;
+            --ink-deep: #0a0a0a;
+            --paper-white: #f8f5f0;
+            --paper-cream: #efe9e0;
+            --paper-aged: #e8e3d8;
+            --vermilion: #c23a2b;
+            --vermilion-light: #e85a4b;
+            --gold-accent: #b8860b;
+            --gold-deep: #8b6508;
+            --mist-gray: #9a9590;
+            --shadow-ink: rgba(26, 26, 26, 0.08);
+            --border-light: rgba(26, 26, 26, 0.1);
+            --border-traditional: rgba(139, 101, 8, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; }
+
+        body {
+            font-family: "Noto Serif SC", "Source Han Serif SC", "Source Han Serif CN", serif;
+            background: var(--paper-white);
+            color: var(--ink-black);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            font-variant-ligatures: common-ligatures;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="300" height="300" filter="url(%23noise)" opacity="0.03"/></svg>'),
+                radial-gradient(ellipse at 20% 10%, rgba(200, 195, 185, 0.3) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(180, 175, 165, 0.25) 0%, transparent 40%),
+                linear-gradient(180deg, rgba(248, 245, 240, 0) 0%, rgba(232, 227, 216, 0.3) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 80px;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header-ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ornament-line {
+            width: 3rem;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--ink-light), transparent);
+        }
+
+        .ornament-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--vermilion);
+            border-radius: 50%;
+        }
+
+        .title {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-weight: 600;
+            font-size: 2.5rem;
+            letter-spacing: 0.3rem;
+            color: var(--ink-black);
+            text-shadow: 2px 2px 4px var(--shadow-ink);
+        }
+
+        .user-greeting {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            margin-top: 0.25rem;
+        }
+
+        /* 八字区域 */
+        .bazi-section {
+            background:
+                linear-gradient(135deg, var(--paper-cream) 0%, var(--paper-white) 100%);
+            border-left: 4px solid var(--vermilion);
+            border-right: 1px solid var(--border-traditional);
+            padding: 1.5rem 1.25rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0 12px 12px 0;
+            box-shadow:
+                0 2px 12px var(--shadow-ink),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            animation: fadeInLeft 0.6s ease-out 0.2s both;
+            position: relative;
+        }
+
+        .bazi-section::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 12px;
+            bottom: 12px;
+            width: 4px;
+            background: linear-gradient(180deg, var(--vermilion), var(--gold-accent));
+            opacity: 0.3;
+        }
+
+        .bazi-section::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, var(--border-traditional), transparent);
+        }
+
+        .bazi-title {
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+            font-size: 0.7rem;
+            color: var(--vermilion);
+            letter-spacing: 0.3rem;
+            margin-bottom: 1.25rem;
+            font-weight: 600;
+            text-align: center;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .bazi-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 1px;
+            background: var(--vermilion);
+            box-shadow: 0 0 4px rgba(194, 58, 43, 0.3);
+        }
+
+        .bazi-pillars {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 0;
+        }
+
+        .bazi-pillar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pillar-label {
+            font-size: 0.7rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.15em;
+            font-weight: 500;
+        }
+
+        .pillar-chars {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background:
+                linear-gradient(135deg, var(--paper-white) 0%, var(--paper-aged) 100%);
+            border: 1.5px solid var(--border-traditional);
+            border-radius: 8px;
+            padding: 0.75rem 0.6rem;
+            min-width: 48px;
+            box-shadow:
+                0 2px 8px rgba(26, 26, 26, 0.06),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            position: relative;
+        }
+
+        .pillar-chars::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            border: 1px solid rgba(139, 101, 8, 0.1);
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        .pillar-char {
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+            line-height: 1.5;
+            text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .pillar-char.tiangan {
+            color: var(--vermilion);
+            filter: drop-shadow(0 1px 2px rgba(194, 58, 43, 0.2));
+        }
+        .pillar-char.dizhi {
+            color: var(--gold-deep);
+            filter: drop-shadow(0 1px 2px rgba(139, 101, 8, 0.2));
+        }
+
+        /* 起运年龄显示 */
+        .qiyun-display {
+            text-align: center;
+            padding: 1.25rem 0 0.75rem;
+            border-top: 1px dashed var(--border-traditional);
+            margin-top: 1.25rem;
+        }
+
+        .qiyun-value {
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+            font-size: 1.65rem;
+            font-weight: 600;
+            color: var(--gold-deep);
+            letter-spacing: 0.15em;
+            text-shadow:
+                1px 1px 0 rgba(255, 255, 255, 0.5),
+                0 2px 4px rgba(139, 101, 8, 0.2);
+        }
+
+        /* 年份选择器 */
+        .year-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.6s ease-out 0.3s both;
+            position: relative;
+        }
+
+        .year-selector::before,
+        .year-selector::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-traditional), transparent);
+            max-width: 60px;
+        }
+
+        .year-nav-btn {
+            width: 36px;
+            height: 36px;
+            border: 1.5px solid var(--border-traditional);
+            background:
+                linear-gradient(135deg, var(--paper-white) 0%, var(--paper-cream) 100%);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: var(--gold-deep);
+            box-shadow:
+                0 2px 6px rgba(26, 26, 26, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .year-nav-btn:hover {
+            background: var(--paper-aged);
+            border-color: var(--gold-accent);
+            color: var(--gold-accent);
+            transform: scale(1.05);
+            box-shadow:
+                0 4px 12px rgba(139, 101, 8, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+        }
+
+        .year-nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        .year-display {
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--ink-deep);
+            min-width: 110px;
+            text-align: center;
+            letter-spacing: 0.1em;
+            padding: 0.4rem 0.8rem;
+            background:
+                linear-gradient(135deg, rgba(248, 245, 240, 0.5) 0%, rgba(232, 227, 216, 0.5) 100%);
+            border-radius: 20px;
+            border: 1px solid rgba(139, 101, 8, 0.15);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding: 1.5rem 1rem;
+            animation: fadeInUp 0.6s ease-out 0.6s both;
+            position: relative;
+        }
+
+        .footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border-traditional), transparent);
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.2em;
+            font-weight: 400;
+            margin-top: 0.75rem;
+        }
+        .fortune-section {
+            background:
+                linear-gradient(135deg, var(--paper-cream) 0%, var(--paper-white) 100%);
+            border-left: 4px solid var(--gold-accent);
+            border-right: 1px solid var(--border-traditional);
+            border-radius: 0 12px 12px 0;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow:
+                0 2px 12px var(--shadow-ink),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            animation: fadeInLeft 0.6s ease-out 0.35s both;
+            position: relative;
+        }
+
+        .fortune-section::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 12px;
+            bottom: 12px;
+            width: 4px;
+            background: linear-gradient(180deg, var(--gold-accent), var(--vermilion));
+            opacity: 0.3;
+        }
+
+        .fortune-section::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, var(--border-traditional), transparent);
+        }
+
+        .fortune-label {
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+            font-size: 0.65rem;
+            color: var(--gold-deep);
+            text-align: center;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.2em;
+            font-weight: 500;
+        }
+
+        .fortune-row {
+            display: flex;
+            justify-content: center;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .fortune-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.6rem 1rem;
+            background:
+                linear-gradient(135deg, var(--paper-white) 0%, var(--paper-aged) 100%);
+            border-radius: 20px;
+            border: 1.5px solid var(--border-traditional);
+            box-shadow:
+                0 2px 6px rgba(26, 26, 26, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            transition: all 0.3s ease;
+        }
+
+        .fortune-item:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 4px 12px rgba(26, 26, 26, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        .fortune-item-label {
+            font-size: 0.7rem;
+            color: var(--mist-gray);
+            font-weight: 500;
+            letter-spacing: 0.1em;
+        }
+
+        .fortune-item-value {
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--ink-black);
+            letter-spacing: 0.05em;
+        }
+
+        .fortune-item-value.highlight { color: var(--vermilion); }
+
+        /* 命局分析区域 */
+        .analysis-section {
+            background:
+                linear-gradient(135deg, var(--paper-cream) 0%, var(--paper-white) 100%);
+            border-left: 4px solid var(--vermilion);
+            border-right: 1px solid var(--border-traditional);
+            padding: 1.5rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0 12px 12px 0;
+            box-shadow:
+                0 2px 12px var(--shadow-ink),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5);
+            animation: fadeInLeft 0.6s ease-out 0.4s both;
+            position: relative;
+        }
+
+        .analysis-section::before {
+            content: '';
+            position: absolute;
+            left: -4px;
+            top: 12px;
+            bottom: 12px;
+            width: 4px;
+            background: linear-gradient(180deg, var(--vermilion), var(--gold-accent));
+            opacity: 0.3;
+        }
+
+        .analysis-section::after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            bottom: 8px;
+            width: 1px;
+            background: linear-gradient(180deg, transparent, var(--border-traditional), transparent);
+        }
+
+        .analysis-title {
+            font-family: "ZCOOL XiaoWei", "Noto Serif SC", serif;
+            font-size: 0.7rem;
+            color: var(--vermilion);
+            letter-spacing: 0.3rem;
+            margin-bottom: 1.25rem;
+            font-weight: 600;
+            text-align: center;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .analysis-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 1px;
+            background: var(--vermilion);
+            box-shadow: 0 0 4px rgba(194, 58, 43, 0.3);
+        }
+
+        .analysis-content {
+            font-size: 1rem;
+            line-height: 2.2;
+            color: var(--ink-light);
+            text-align: justify;
+            white-space: pre-wrap;
+            letter-spacing: 0.05em;
+            text-indent: 2em;
+            font-weight: 400;
+        }
+
+        /* 空状态提示 */
+        .empty-state {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--mist-gray);
+        }
+
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        /* 底部导航栏 */
+        .bottom-navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--paper-white);
+            border-top: 1px solid rgba(26, 26, 26, 0.08);
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            z-index: 100;
+            box-shadow: 0 -2px 12px var(--shadow-ink);
+        }
+
+        .bottom-navbar .nav-item {
+            flex: 1;
+            max-width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--mist-gray);
+            font-size: 0.7rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .bottom-navbar .nav-item:active {
+            background: rgba(194, 58, 43, 0.05);
+        }
+
+        .bottom-navbar .nav-item.active {
+            color: var(--vermilion);
+        }
+
+        .bottom-navbar .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 2px;
+            background: var(--vermilion);
+            border-radius: 0 0 2px 2px;
+        }
+
+        .bottom-navbar .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bottom-navbar .nav-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .bottom-navbar .nav-item.active .nav-icon svg {
+            stroke-width: 2;
+        }
+
+        .bottom-navbar .nav-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.02em;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 360px) {
+            html { font-size: 14px; }
+            .container { padding: 1rem 1rem 70px; }
+            .bazi-pillars { gap: 0.75rem; }
+            .pillar-char { font-size: 1.1rem; }
+            .analysis-content { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-ornament">
+                <span class="ornament-line"></span>
+                <span class="ornament-dot"></span>
+                <span class="ornament-line"></span>
+            </div>
+            <h1 class="title" id="userName">用户</h1>
+            <p class="user-greeting">愿您今日安好</p>
+        </header>
+
+        <!-- 四柱八字（固定不变） -->
+        <section class="bazi-section" id="baziSection">
+            <div class="bazi-title">· 四柱八字 ·</div>
+            <div class="bazi-pillars" id="baziPillars">
+                <div class="bazi-pillar">
+                    <span class="pillar-label">时柱</span>
+                    <div class="pillar-chars">
+                        <span class="pillar-char tiangan" id="hourTiangan">-</span>
+                        <span class="pillar-char dizhi" id="hourDizhi">-</span>
+                    </div>
+                </div>
+                <div class="bazi-pillar">
+                    <span class="pillar-label">日柱</span>
+                    <div class="pillar-chars">
+                        <span class="pillar-char tiangan" id="dayTiangan">-</span>
+                        <span class="pillar-char dizhi" id="dayDizhi">-</span>
+                    </div>
+                </div>
+                <div class="bazi-pillar">
+                    <span class="pillar-label">月柱</span>
+                    <div class="pillar-chars">
+                        <span class="pillar-char tiangan" id="monthTiangan">-</span>
+                        <span class="pillar-char dizhi" id="monthDizhi">-</span>
+                    </div>
+                </div>
+                <div class="bazi-pillar">
+                    <span class="pillar-label">年柱</span>
+                    <div class="pillar-chars">
+                        <span class="pillar-char tiangan" id="yearTiangan">-</span>
+                        <span class="pillar-char dizhi" id="yearDizhi">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bazi-title" style="margin-top: 1.5rem;">· 起运年龄 ·</div>
+            <div class="qiyun-display">
+                <span class="qiyun-value" id="qiyunAge">-</span>
+            </div>
+        </section>
+
+        <!-- 年份选择器 -->
+        <div class="year-selector">
+            <button class="year-nav-btn" id="prevYear" aria-label="上一年">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div class="year-display" id="yearDisplay">乙巳年</div>
+            <button class="year-nav-btn" id="nextYear" aria-label="下一年">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <!-- 运程概览（随年份变化） -->
+        <section class="fortune-section" id="fortuneSection">
+            <div class="fortune-label">— 运程概览 —</div>
+            <div class="fortune-row">
+                <div class="fortune-item">
+                    <span class="fortune-item-label">大运</span>
+                    <span class="fortune-item-value" id="dayunValue">-</span>
+                </div>
+                <div class="fortune-item">
+                    <span class="fortune-item-label">流年</span>
+                    <span class="fortune-item-value" id="liunianValue">-</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 命局分析（随年份变化） -->
+        <section class="analysis-section" id="analysisSection">
+            <div class="analysis-title">· 命局分析 ·</div>
+            <div class="analysis-content" id="analysisContent">
+                数据加载中...
+            </div>
+        </section>
+
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-state-icon">📜</div>
+            <p class="empty-state-text">您的岁运信息尚未录入<br>请联系管理员添加</p>
+        </div>
+
+        <footer class="footer">
+            <p class="footer-text">人间有净土 · 欢迎来灵庐</p>
+        </footer>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-navbar">
+        <a href="/main" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="nav-label">流星赶月</span>
+        </a>
+        <a href="/fortune" class="nav-item active">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+            </span>
+            <span class="nav-label">岁运分析</span>
+        </a>
+        <a href="/seasons" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </span>
+            <span class="nav-label">四季财官</span>
+        </a>
+        <a href="/profile" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+            </span>
+            <span class="nav-label">个人中心</span>
+        </a>
+    </nav>
+
+    <script>
+        // 检查登录状态
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // 获取用户信息
+        const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+        document.getElementById('userName').textContent = user.displayName || '用户';
+
+        // ========== 农历年计算 ==========
+        const Gan = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+        const Zhi = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+        // 农历数据
+        const lunarInfo = [
+            0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
+            0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
+            0x04970, 0x0a4b0, 0x0b4b5, 0x06a50, 0x06d40, 0x1ab54, 0x02b60, 0x09570, 0x052f2, 0x04970,
+            0x06566, 0x0d4a0, 0x0ea50, 0x06e95, 0x05ad0, 0x02b60, 0x186e3, 0x092e0, 0x1c8d7, 0x0c950,
+            0x0d4a0, 0x1d8a6, 0x0b550, 0x056a0, 0x1a5b4, 0x025d0, 0x092d0, 0x0d2b2, 0x0a950, 0x0b557,
+            0x06ca0, 0x0b550, 0x15355, 0x04da0, 0x0a5b0, 0x14573, 0x052b0, 0x0a9a8, 0x0e950, 0x06aa0,
+            0x0aea6, 0x0ab50, 0x04b60, 0x0aae4, 0x0a570, 0x05260, 0x0f263, 0x0d950, 0x05b57, 0x056a0,
+            0x096d0, 0x04dd5, 0x04ad0, 0x0a4d0, 0x0d4d4, 0x0d250, 0x0d558, 0x0b540, 0x0b6a0, 0x195a6,
+            0x095b0, 0x049b0, 0x0a974, 0x0a4b0, 0x0b27a, 0x06a50, 0x06d40, 0x0af46, 0x0ab60, 0x09570,
+            0x04af5, 0x04970, 0x064b0, 0x074a3, 0x0ea50, 0x06b58, 0x055c0, 0x0ab60, 0x096d5, 0x092e0,
+            0x0c960, 0x0d954, 0x0d4a0, 0x0da50, 0x07552, 0x056a0, 0x0abb7, 0x025d0, 0x092d0, 0x0cab5,
+            0x0a950, 0x0b4a0, 0x0baa4, 0x0ad50, 0x055d9, 0x04ba0, 0x0a5b0, 0x15176, 0x052b0, 0x0a930,
+            0x07954, 0x06aa0, 0x0ad50, 0x05b52, 0x04b60, 0x0a6e6, 0x0a4e0, 0x0d260, 0x0ea65, 0x0d530,
+            0x05aa0, 0x076a3, 0x096d0, 0x04afb, 0x04ad0, 0x0a4d0, 0x1d0b6, 0x0d250, 0x0d520, 0x0dd45,
+            0x0b5a0, 0x056d0, 0x055b2, 0x049b0, 0x0a577, 0x0a4b0, 0x0aa50, 0x1b255, 0x06d20, 0x0ada0,
+            0x14b63, 0x09370, 0x049f8, 0x04970, 0x064b0, 0x168a6, 0x0ea50, 0x06b20, 0x1a6c4, 0x0aae0,
+            0x0a2e0, 0x0d2e3, 0x0c960, 0x0d557, 0x0d4a0, 0x0da50, 0x05d55, 0x056a0, 0x0a6d0, 0x055d4,
+            0x052d0, 0x0a9b8, 0x0a950, 0x0b4a0, 0x0b6a6, 0x0ad50, 0x055a0, 0x0aba4, 0x0a5b0, 0x052b0,
+            0x0b273, 0x06930, 0x07337, 0x06aa0, 0x0ad50, 0x14b55, 0x04b60, 0x0a570, 0x054e4, 0x0d160,
+            0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252,
+            0x0d520
+        ];
+
+        function lYearDays(y) {
+            let sum = 348;
+            for (let i = 0x8000; i > 0x8; i >>= 1) {
+                sum += (lunarInfo[y - 1900] & i) ? 1 : 0;
+            }
+            return sum + leapDays(y);
+        }
+
+        function leapMonth(y) { return lunarInfo[y - 1900] & 0xf; }
+        function leapDays(y) {
+            if (leapMonth(y)) return (lunarInfo[y - 1900] & 0x10000) ? 30 : 29;
+            return 0;
+        }
+        function monthDays(y, m) { return (lunarInfo[y - 1900] & (0x10000 >> m)) ? 30 : 29; }
+
+        function solarToLunar(y, m, d) {
+            if (y < 1900 || y > 2100) return null;
+            let offset = Math.floor((Date.UTC(y, m - 1, d) - Date.UTC(1900, 0, 31)) / 86400000);
+            let year = 1900, temp = 0;
+            for (; year < 2101 && offset > 0; year++) {
+                temp = lYearDays(year);
+                offset -= temp;
+            }
+            if (offset < 0) { offset += temp; year--; }
+
+            let isLeap = false, leap = leapMonth(year), month = 1;
+            for (; month < 13 && offset > 0; month++) {
+                if (leap > 0 && month === (leap + 1) && !isLeap) {
+                    --month; isLeap = true; temp = leapDays(year);
+                } else { temp = monthDays(year, month); }
+                if (isLeap && month === (leap + 1)) isLeap = false;
+                offset -= temp;
+            }
+            if (offset === 0 && leap > 0 && month === leap + 1) {
+                if (isLeap) isLeap = false;
+                else { isLeap = true; --month; }
+            }
+            if (offset < 0) { offset += temp; --month; }
+
+            const day = offset + 1;
+            return { year, month, day, isLeap };
+        }
+
+        function getLunarYearName(lunarYear) {
+            return Gan[(lunarYear - 4) % 10] + Zhi[(lunarYear - 4) % 12] + '年';
+        }
+
+        // 获取当前农历年
+        const today = new Date();
+        const todayLunar = solarToLunar(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        const currentLunarYear = todayLunar ? todayLunar.year : today.getFullYear();
+
+        // 当前查看的农历年份
+        let viewLunarYear = currentLunarYear;
+
+        // 拆分八字字符
+        function splitPillar(pillar) {
+            if (!pillar || pillar.length < 2) return { tiangan: '-', dizhi: '-' };
+            return {
+                tiangan: pillar.charAt(0),
+                dizhi: pillar.charAt(1)
+            };
+        }
+
+        // 更新年份显示
+        function updateYearDisplay() {
+            document.getElementById('yearDisplay').textContent = getLunarYearName(viewLunarYear);
+            updateNavButtons();
+        }
+
+        // 更新导航按钮状态
+        function updateNavButtons() {
+            const prevBtn = document.getElementById('prevYear');
+            const nextBtn = document.getElementById('nextYear');
+
+            if (viewLunarYear <= currentLunarYear) {
+                prevBtn.style.opacity = '0.3';
+                prevBtn.style.pointerEvents = 'none';
+            } else {
+                prevBtn.style.opacity = '1';
+                prevBtn.style.pointerEvents = 'auto';
+            }
+
+            if (viewLunarYear >= currentLunarYear + 1) {
+                nextBtn.style.opacity = '0.3';
+                nextBtn.style.pointerEvents = 'none';
+            } else {
+                nextBtn.style.opacity = '1';
+                nextBtn.style.pointerEvents = 'auto';
+            }
+        }
+
+        // 缓存的八字数据
+        let cachedProfile = null;
+
+        // 加载八字数据（只加载一次，不随年份变化）
+        async function loadProfile() {
+            if (cachedProfile !== null) return cachedProfile;
+
+            try {
+                const response = await fetch('/api/mingpi/profile', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const result = await response.json();
+                cachedProfile = result.data;
+
+                if (cachedProfile) {
+                    const year = splitPillar(cachedProfile.yearPillar);
+                    const month = splitPillar(cachedProfile.monthPillar);
+                    const day = splitPillar(cachedProfile.dayPillar);
+                    const hour = splitPillar(cachedProfile.hourPillar);
+
+                    document.getElementById('yearTiangan').textContent = year.tiangan;
+                    document.getElementById('yearDizhi').textContent = year.dizhi;
+                    document.getElementById('monthTiangan').textContent = month.tiangan;
+                    document.getElementById('monthDizhi').textContent = month.dizhi;
+                    document.getElementById('dayTiangan').textContent = day.tiangan;
+                    document.getElementById('dayDizhi').textContent = day.dizhi;
+                    document.getElementById('hourTiangan').textContent = hour.tiangan;
+                    document.getElementById('hourDizhi').textContent = hour.dizhi;
+
+                    if (cachedProfile.qiyunAge) {
+                        document.getElementById('qiyunAge').textContent = cachedProfile.qiyunAge + '岁';
+                    }
+                }
+
+                return cachedProfile;
+            } catch (error) {
+                console.error('加载八字数据失败:', error);
+                return null;
+            }
+        }
+
+        // 加载年度数据（运程+命局分析，随年份变化）
+        async function loadYearlyData() {
+            document.getElementById('analysisContent').textContent = '数据加载中...';
+            document.getElementById('fortuneSection').style.display = 'block';
+            document.getElementById('analysisSection').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/mingpi/yearly-fortune/${viewLunarYear}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const result = await response.json();
+                const fortune = result.data;
+
+                if (!fortune) {
+                    document.getElementById('fortuneSection').style.display = 'none';
+                    document.getElementById('analysisSection').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                    return;
+                }
+
+                // 填充运程数据
+                if (fortune.dayun) {
+                    document.getElementById('dayunValue').textContent = fortune.dayun;
+                } else {
+                    document.getElementById('dayunValue').textContent = '-';
+                }
+
+                if (fortune.liunian) {
+                    document.getElementById('liunianValue').textContent = fortune.liunian;
+                } else {
+                    document.getElementById('liunianValue').textContent = '-';
+                }
+
+                // 填充命局分析
+                if (fortune.analysis) {
+                    document.getElementById('analysisContent').textContent = fortune.analysis;
+                    document.getElementById('analysisSection').style.display = 'block';
+                } else {
+                    document.getElementById('analysisSection').style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('加载年度数据失败:', error);
+                document.getElementById('analysisContent').textContent = '加载失败，请刷新重试';
+            }
+        }
+
+        // 年份切换
+        document.getElementById('prevYear').addEventListener('click', () => {
+            if (viewLunarYear > currentLunarYear) {
+                viewLunarYear--;
+                updateYearDisplay();
+                loadYearlyData();
+            }
+        });
+
+        document.getElementById('nextYear').addEventListener('click', () => {
+            if (viewLunarYear < currentLunarYear + 1) {
+                viewLunarYear++;
+                updateYearDisplay();
+                loadYearlyData();
+            }
+        });
+
+        // 初始化
+        updateYearDisplay();
+        loadProfile();
+        loadYearlyData();
+    </script>
+</body>
+</html>

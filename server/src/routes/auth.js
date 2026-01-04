@@ -217,6 +217,66 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 });
 
 /**
+ * PUT /api/auth/username
+ * 修改登录账号
+ * 需要验证当前密码
+ */
+router.put('/username', authMiddleware, async (req, res) => {
+    try {
+        const { newUsername, password } = req.body;
+
+        if (!newUsername || !password) {
+            return res.status(400).json({ error: '请填写完整信息' });
+        }
+
+        // 验证新用户名格式
+        if (newUsername.length < 2 || newUsername.length > 20) {
+            return res.status(400).json({ error: '用户名长度需在 2-20 个字符之间' });
+        }
+
+        if (!/^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(newUsername)) {
+            return res.status(400).json({ error: '用户名只能包含字母、数字、下划线和中文' });
+        }
+
+        // 查询当前用户
+        const user = queryOne('SELECT password_hash, username FROM users WHERE id = ?', [req.user.id]);
+
+        if (!user) {
+            return res.status(404).json({ error: '用户不存在' });
+        }
+
+        // 验证密码
+        const isValid = await verifyPassword(password, user.password_hash);
+        if (!isValid) {
+            return res.status(400).json({ error: '密码错误' });
+        }
+
+        // 检查新用户名是否与当前相同
+        if (newUsername === user.username) {
+            return res.status(400).json({ error: '新用户名与当前相同' });
+        }
+
+        // 检查新用户名是否已被使用
+        const existing = queryOne('SELECT id FROM users WHERE username = ? AND id != ?', [newUsername, req.user.id]);
+        if (existing) {
+            return res.status(400).json({ error: '该用户名已被使用' });
+        }
+
+        // 更新用户名
+        run('UPDATE users SET username = ? WHERE id = ?', [newUsername, req.user.id]);
+
+        res.json({
+            success: true,
+            message: '用户名修改成功，请重新登录',
+            newUsername
+        });
+    } catch (error) {
+        console.error('修改用户名错误:', error);
+        res.status(500).json({ error: '修改用户名失败，请稍后重试' });
+    }
+});
+
+/**
  * POST /api/auth/visit
  * 记录用户访问页面（前端在页面加载时调用）
  */

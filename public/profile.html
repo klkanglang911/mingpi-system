@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>个人中心 · 灵庐书院</title>
+    <!-- 国内 CDN 字体 -->
+    <link rel="preconnect" href="https://fonts.font.im">
+    <link href="https://fonts.font.im/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink-black: #1a1a1a;
+            --ink-light: #3d3d3d;
+            --paper-white: #f8f5f0;
+            --paper-cream: #efe9e0;
+            --vermilion: #c23a2b;
+            --vermilion-light: #e85a4b;
+            --gold-accent: #b8860b;
+            --mist-gray: #9a9590;
+            --shadow-ink: rgba(26, 26, 26, 0.08);
+            --border-light: rgba(26, 26, 26, 0.1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { font-size: 16px; }
+
+        body {
+            font-family: "Noto Serif SC", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", serif;
+            background: var(--paper-white);
+            color: var(--ink-black);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            font-variant-ligatures: common-ligatures;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/></filter><rect width="300" height="300" filter="url(%23noise)" opacity="0.03"/></svg>'),
+                radial-gradient(ellipse at 20% 10%, rgba(200, 195, 185, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 90%, rgba(180, 175, 165, 0.3) 0%, transparent 40%),
+                radial-gradient(ellipse at 60% 40%, rgba(190, 185, 175, 0.2) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 1.5rem 1.25rem 80px;
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header-ornament {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .ornament-line {
+            width: 3rem;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--ink-light), transparent);
+        }
+
+        .ornament-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--vermilion);
+            border-radius: 50%;
+        }
+
+        .title {
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            font-weight: 600;
+            font-size: 2.5rem;
+            letter-spacing: 0.3rem;
+            color: var(--ink-black);
+            text-shadow: 2px 2px 4px var(--shadow-ink);
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--mist-gray);
+            margin-top: 0.5rem;
+        }
+
+        /* 账户设置区域 */
+        .account-section {
+            background: linear-gradient(135deg, var(--paper-cream) 0%, var(--paper-white) 100%);
+            border-left: 3px solid var(--vermilion);
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 12px var(--shadow-ink);
+            animation: fadeInLeft 0.6s ease-out 0.2s both;
+        }
+
+        .account-title {
+            font-size: 0.65rem;
+            color: var(--vermilion);
+            letter-spacing: 0.2rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .account-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .account-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.85rem 1rem;
+            background: var(--paper-white);
+            border: 1px solid var(--border-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .account-item:hover {
+            background: var(--paper-cream);
+            border-color: var(--gold-accent);
+        }
+
+        .account-item.danger:hover {
+            background: rgba(194, 58, 43, 0.05);
+            border-color: var(--vermilion);
+        }
+
+        .account-item-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .account-item-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--ink-light);
+        }
+
+        .account-item-text {
+            font-size: 0.9rem;
+            color: var(--ink-black);
+        }
+
+        .account-item.danger .account-item-text {
+            color: var(--vermilion);
+        }
+
+        .account-item-arrow {
+            width: 16px;
+            height: 16px;
+            color: var(--mist-gray);
+        }
+
+        /* 页脚 */
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            animation: fadeInUp 0.6s ease-out 0.6s both;
+        }
+
+        .footer-text {
+            font-size: 0.75rem;
+            color: var(--mist-gray);
+            letter-spacing: 0.15rem;
+        }
+
+        /* 底部导航栏 */
+        .bottom-navbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--paper-white);
+            border-top: 1px solid rgba(26, 26, 26, 0.08);
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+            z-index: 100;
+            box-shadow: 0 -2px 12px var(--shadow-ink);
+        }
+
+        .bottom-navbar .nav-item {
+            flex: 1;
+            max-width: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--mist-gray);
+            font-size: 0.7rem;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .bottom-navbar .nav-item:active {
+            background: rgba(194, 58, 43, 0.05);
+        }
+
+        .bottom-navbar .nav-item.active {
+            color: var(--vermilion);
+        }
+
+        .bottom-navbar .nav-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 2px;
+            background: var(--vermilion);
+            border-radius: 0 0 2px 2px;
+        }
+
+        .bottom-navbar .nav-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bottom-navbar .nav-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+        }
+
+        .bottom-navbar .nav-item.active .nav-icon svg {
+            stroke-width: 2;
+        }
+
+        .bottom-navbar .nav-label {
+            font-size: 0.65rem;
+            letter-spacing: 0.02em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 360px) {
+            html { font-size: 14px; }
+            .container { padding: 1rem 1rem 70px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-ornament">
+                <span class="ornament-line"></span>
+                <span class="ornament-dot"></span>
+                <span class="ornament-line"></span>
+            </div>
+            <h1 class="title">个人中心</h1>
+            <p class="subtitle" id="userName">-</p>
+        </header>
+
+        <!-- 账户设置区 -->
+        <section class="account-section">
+            <div class="account-title">· 账户设置 ·</div>
+            <div class="account-list">
+                <div class="account-item" id="changeUsernameBtn">
+                    <div class="account-item-left">
+                        <svg class="account-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        <span class="account-item-text">修改登录账号</span>
+                    </div>
+                    <svg class="account-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </div>
+
+                <div class="account-item" id="changePasswordBtn">
+                    <div class="account-item-left">
+                        <svg class="account-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <span class="account-item-text">修改密码</span>
+                    </div>
+                    <svg class="account-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </div>
+
+                <div class="account-item danger" id="logoutBtn">
+                    <div class="account-item-left">
+                        <svg class="account-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        <span class="account-item-text">退出登录</span>
+                    </div>
+                    <svg class="account-item-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <footer class="footer">
+            <p class="footer-text">人间有净土 · 欢迎来灵庐</p>
+        </footer>
+    </div>
+
+    <!-- 底部导航栏 -->
+    <nav class="bottom-navbar">
+        <a href="/main" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="nav-label">流星赶月</span>
+        </a>
+        <a href="/fortune" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+            </span>
+            <span class="nav-label">岁运分析</span>
+        </a>
+        <a href="/seasons" class="nav-item">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+            </span>
+            <span class="nav-label">四季财官</span>
+        </a>
+        <a href="/profile" class="nav-item active">
+            <span class="nav-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+            </span>
+            <span class="nav-label">个人中心</span>
+        </a>
+    </nav>
+
+    <script>
+        // 检查登录状态
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // 获取用户信息
+        const user = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}');
+        document.getElementById('userName').textContent = user.username || '-';
+
+        // 修改账号 - 跳转到修改账号页面
+        document.getElementById('changeUsernameBtn').addEventListener('click', () => {
+            window.location.href = '/change-username.html';
+        });
+
+        // 修改密码 - 跳转到修改密码页面
+        document.getElementById('changePasswordBtn').addEventListener('click', () => {
+            window.location.href = '/update-password.html';
+        });
+
+        // 退出登录
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (confirm('确定要退出登录吗？')) {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('authStorage');
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>
